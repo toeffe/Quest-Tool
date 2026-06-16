@@ -32,8 +32,12 @@ export function buildLoadFunction(ctx: CompileContext): string {
       const score = qc.objectives[j];
       switch (qc.quest.type) {
         case 'kill': {
-          const mob = statId(o.target ?? 'minecraft:zombie');
-          lines.push(`scoreboard objectives add ${score.killed} minecraft.killed:${mob}`);
+          if (o.spawnZone) {
+            lines.push(`scoreboard objectives add ${score.killed} dummy`);
+          } else {
+            const mob = statId(o.target ?? 'minecraft:zombie');
+            lines.push(`scoreboard objectives add ${score.killed} minecraft.killed:${mob}`);
+          }
           break;
         }
         case 'gather':
@@ -91,10 +95,16 @@ export function buildResetFunction(ctx: CompileContext): string {
     lines.push(`scoreboard players set @s ${qc.near} 0`);
     lines.push(`scoreboard players set @s ${qc.trigger} 0`);
     if (!isInstantTalk) lines.push(`scoreboard players set @s ${qc.done} 0`);
-    for (const score of qc.objectives) {
+    for (let j = 0; j < questObjectives(qc.quest).length; j++) {
+      const score = qc.objectives[j];
+      const o = questObjectives(qc.quest)[j];
       switch (qc.quest.type) {
         case 'kill':
           lines.push(`scoreboard players set @s ${score.killed} 0`);
+          if (o.spawnZone) {
+            lines.push(`kill @e[tag=${score.mobTag}]`);
+            lines.push(`scoreboard players set ${score.timerHolder} ${SYS_OBJECTIVE} 0`);
+          }
           break;
         case 'gather':
         case 'delivery':

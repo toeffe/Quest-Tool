@@ -14,6 +14,12 @@ export interface ObjectiveScores {
   killed: string;
   /** Reached latch (exploration only): 1 once the player gets close enough. */
   reached: string;
+  /** Entity tag for quest-spawned kill mobs (kill spawn zones only). */
+  mobTag: string;
+  /** Fake-player holder for spawn timer ticks on qt_sys. */
+  timerHolder: string;
+  /** Fake-player holder for live mob count on qt_sys. */
+  liveHolder: string;
 }
 
 export interface QuestContext {
@@ -69,6 +75,9 @@ export function buildContext(project: Project): CompileContext {
         progress: `q${index}p${j}`,
         killed: `q${index}k${j}`,
         reached: `q${index}r${j}`,
+        mobTag: `qk_${index}_${j}`,
+        timerHolder: `#qk_${index}_${j}_t`,
+        liveHolder: `#qk_${index}_${j}_live`,
       })),
       done: `q${index}d`,
       near: `q${index}n`,

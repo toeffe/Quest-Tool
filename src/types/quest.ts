@@ -101,10 +101,14 @@ export interface Objective {
   amount?: number;
   /** Human-readable label shown to the player. */
   description?: string;
-  /** For exploration: the location to discover. */
+  /** For exploration: the location to discover. For kill spawn zones: zone center. */
   location?: Coordinates;
-  /** For exploration: how close (blocks) the player must get. */
+  /** For exploration: how close (blocks) the player must get. For kill spawn zones: spawn radius. */
   radius?: number;
+  /** When true (kill quests only), spawn tagged mobs in location/radius; only those kills count. */
+  spawnZone?: boolean;
+  /** Max live mobs in the spawn zone at once (kill spawn zones only). Defaults to min(amount, 5). */
+  zoneCap?: number;
 }
 
 export type RewardType =

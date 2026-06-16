@@ -87,6 +87,64 @@ describe('quest tick generation', () => {
     expect(files['quests/0_talk/accept.mcfunction']).toContain('Grant rewards');
     expect(files['quests/0_talk/complete.mcfunction']).toBeUndefined();
   });
+
+  it('zoned kill quests use dummy killed objective and spawn zone tick logic', () => {
+    const project = createProject('P');
+    project.namespace = 'p';
+    const q = createQuest('Chickens', 'kill');
+    q.objectives = [
+      {
+        target: 'minecraft:chicken',
+        amount: 5,
+        description: 'Slay chickens',
+        spawnZone: true,
+        location: { x: 10, y: 64, z: 20 },
+        radius: 5,
+      },
+    ];
+    project.quests = [q];
+    const ctx = buildContext(project);
+    const files = compileQuest(ctx, ctx.quests[0]);
+    const tick = files['quests/0_chickens/tick.mcfunction'];
+    expect(tick).toContain('tag=qk_0_0');
+    expect(tick).toContain('spawn_mob_0');
+    expect(tick).toContain('distance=6..');
+    expect(tick).toContain('matches 0 run function');
+    expect(tick).not.toContain('matches ..0 run function');
+    expect(files['quests/0_chickens/spawn_mob_0.mcfunction']).toContain('summon minecraft:chicken');
+    expect(files['quests/0_chickens/spawn_mob_0.mcfunction']).not.toContain('NoAI:1b');
+    expect(files['quests/0_chickens/spawn_mob_0.mcfunction']).toContain('spreadplayers');
+    expect(files['quests/0_chickens/spawn_mob_0.mcfunction']).toContain('matches 5.. run return 0');
+    expect(files['quests/0_chickens/kill_credit_0.mcfunction']).toContain('scoreboard players add @s q0k0 1');
+    const accept = files['quests/0_chickens/accept.mcfunction'];
+    expect(accept).toContain('kill @e[tag=qk_0_0]');
+    expect(accept).toContain('scoreboard players set #qk_0_0_t qt_sys 0');
+  });
+
+  it('zoned kill quests respect a custom live mob cap', () => {
+    const project = createProject('P');
+    project.namespace = 'p';
+    const q = createQuest('Chickens', 'kill');
+    q.objectives = [
+      {
+        target: 'minecraft:chicken',
+        amount: 10,
+        zoneCap: 3,
+        description: 'Slay chickens',
+        spawnZone: true,
+        location: { x: 10, y: 64, z: 20 },
+        radius: 5,
+      },
+    ];
+    project.quests = [q];
+    const ctx = buildContext(project);
+    const files = compileQuest(ctx, ctx.quests[0]);
+    const tick = files['quests/0_chickens/tick.mcfunction'];
+    expect(tick).toContain('max 3 live');
+    expect(tick).toContain('matches ..2');
+    expect(files['quests/0_chickens/spawn_mob_0.mcfunction']).toContain('max 3 live');
+    expect(files['quests/0_chickens/spawn_mob_0.mcfunction']).toContain('matches 3.. run return 0');
+  });
 });
 
 describe('quest chains', () => {

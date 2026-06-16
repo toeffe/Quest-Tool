@@ -4,6 +4,8 @@ import {
   namespaced,
   questObjectives,
 } from './context';
+import { killQuestMobsCommand, spawnOneInZone, zonePopulationCap, containMobsInZone } from './npc';
+import { normalizeEntityId } from '../data/mobs';
 import { rewardCommands } from './platform';
 import { NOW_HOLDER, SYS_OBJECTIVE } from './load';
 import { escapeSnbtString, tellraw, type TextPart } from './text';
@@ -30,25 +32,158 @@ interface ObjectiveInfo {
   y: number;
   z: number;
   radius: number;
+  spawnZone: boolean;
+  /** Resolved max live mobs in spawn zone. */
+  cap: number;
   /** Per-objective scoreboard names. */
   progress: string;
   killed: string;
   reached: string;
+  mobTag: string;
+  timerHolder: string;
+  liveHolder: string;
 }
 
 function objectiveInfos(qc: QuestContext): ObjectiveInfo[] {
-  return questObjectives(qc.quest).map((o, j) => ({
-    amount: Math.max(1, o.amount ?? 1),
-    item: namespaced(o.target ?? 'minecraft:stone'),
-    desc: o.description ?? qc.quest.name,
-    x: o.location?.x ?? 0,
-    y: o.location?.y ?? 64,
-    z: o.location?.z ?? 0,
-    radius: Math.max(1, o.radius ?? 5),
-    progress: qc.objectives[j].progress,
-    killed: qc.objectives[j].killed,
-    reached: qc.objectives[j].reached,
-  }));
+  return questObjectives(qc.quest).map((o, j) => {
+    const amount = Math.max(1, o.amount ?? 1);
+    return {
+      amount,
+      item: namespaced(o.target ?? 'minecraft:stone'),
+      desc: o.description ?? qc.quest.name,
+      x: o.location?.x ?? 0,
+      y: o.location?.y ?? 64,
+      z: o.location?.z ?? 0,
+      radius: Math.max(1, o.radius ?? 5),
+      spawnZone: !!o.spawnZone,
+      cap: zonePopulationCap(amount, o.zoneCap),
+      progress: qc.objectives[j].progress,
+      killed: qc.objectives[j].killed,
+      reached: qc.objectives[j].reached,
+      mobTag: qc.objectives[j].mobTag,
+      timerHolder: qc.objectives[j].timerHolder,
+      liveHolder: qc.objectives[j].liveHolder,
+    };
+  });
+}
+
+function killAdvancementId(ctx: CompileContext, qc: QuestContext, j: number): string {
+  return `${ctx.namespace}:${qc.fnBase}/kill_${j}`;
+}
+
+/** Advancement JSON for counting tagged quest mob kills. */
+export function buildKillZoneAdvancement(
+  ctx: CompileContext,
+  qc: QuestContext,
+  j: number,
+  entityType: string,
+  mobTag: string,
+): object {
+  return {
+    criteria: {
+      killed_quest_mob: {
+        trigger: 'minecraft:player_killed_entity',
+        conditions: {
+          entity: {
+            type: normalizeEntityId(entityType),
+            nbt: `{Tags:["${mobTag}"]}`,
+          },
+        },
+      },
+    },
+    rewards: {
+      function: `${ctx.namespace}:${qc.fnBase}/kill_credit_${j}`,
+    },
+    requirements: [['killed_quest_mob']],
+  };
+}
+
+/** Advancement file paths for zoned kill objectives. */
+export function buildKillZoneAdvancementFiles(
+  ctx: CompileContext,
+  qc: QuestContext,
+): Record<string, string> {
+  const files: Record<string, string> = {};
+  if (qc.quest.type !== 'kill') return files;
+  const infos = objectiveInfos(qc);
+  for (let j = 0; j < infos.length; j++) {
+    if (!infos[j].spawnZone) continue;
+    const path = `data/${ctx.namespace}/advancement/${qc.fnBase}/kill_${j}.json`;
+    files[path] = JSON.stringify(buildKillZoneAdvancement(ctx, qc, j, infos[j].item, infos[j].mobTag), null, 2) + '\n';
+  }
+  return files;
+}
+
+function cleanupSpawnZoneLines(qc: QuestContext): string[] {
+  if (qc.quest.type !== 'kill') return [];
+  const lines: string[] = [];
+  for (const info of objectiveInfos(qc)) {
+    if (info.spawnZone) lines.push(killQuestMobsCommand(info.mobTag));
+  }
+  return lines;
+}
+
+function countLiveMobsInZone(info: ObjectiveInfo): string[] {
+  return [
+    `scoreboard players set ${info.liveHolder} ${SYS_OBJECTIVE} 0`,
+    // Count all tagged quest mobs (not distance-filtered) so wanderers don't break the cap.
+    `execute as @e[type=${info.item},tag=${info.mobTag}] run scoreboard players add ${info.liveHolder} ${SYS_OBJECTIVE} 1`,
+  ];
+}
+
+function containZoneMobs(info: ObjectiveInfo): string[] {
+  return containMobsInZone(info.item, info.mobTag, info.x, info.y, info.z, info.radius);
+}
+
+function buildZoneTickLines(ctx: CompileContext, qc: QuestContext, infos: ObjectiveInfo[]): string[] {
+  const lines: string[] = [];
+  const ns = ctx.namespace;
+  for (let j = 0; j < infos.length; j++) {
+    const info = infos[j];
+    if (!info.spawnZone) continue;
+    const cap = info.cap;
+    const capMinus1 = cap - 1;
+    lines.push(`# Spawn zone objective ${j + 1} (max ${cap} live)`);
+    lines.push(...containZoneMobs(info));
+    lines.push(...countLiveMobsInZone(info));
+    // Count down respawn timer only while below cap and timer is still running.
+    lines.push(
+      `execute if entity @a[scores={${qc.state}=1}] if score ${info.liveHolder} ${SYS_OBJECTIVE} matches ..${capMinus1} if score ${info.timerHolder} ${SYS_OBJECTIVE} matches 1.. run scoreboard players remove ${info.timerHolder} ${SYS_OBJECTIVE} 1`,
+    );
+    // Spawn exactly once when timer hits 0 — not on every tick while timer <= 0.
+    lines.push(
+      `execute if entity @a[scores={${qc.state}=1}] if score ${info.liveHolder} ${SYS_OBJECTIVE} matches ..${capMinus1} if score ${info.timerHolder} ${SYS_OBJECTIVE} matches 0 run function ${ns}:${qc.fnBase}/spawn_mob_${j}`,
+    );
+  }
+  return lines;
+}
+
+function buildSpawnMobFunction(info: ObjectiveInfo): string {
+  const cap = info.cap;
+  return (
+    [
+      `# Spawn one quest mob in the zone (max ${cap} live)`,
+      ...countLiveMobsInZone(info),
+      `execute if score ${info.liveHolder} ${SYS_OBJECTIVE} matches ${cap}.. run return 0`,
+      ...spawnOneInZone(info.item, info.mobTag, info.x, info.y, info.z, info.radius),
+      `execute store result score ${info.timerHolder} ${SYS_OBJECTIVE} run random value 60..160`,
+    ].join('\n') + '\n'
+  );
+}
+
+function buildKillCreditFunction(ctx: CompileContext, qc: QuestContext, j: number, info: ObjectiveInfo): string {
+  const advId = killAdvancementId(ctx, qc, j);
+  return (
+    [
+      `# Credit a tagged kill for objective ${j + 1}`,
+      `execute unless score @s ${qc.state} matches 1 run advancement revoke @s only ${advId}`,
+      `execute unless score @s ${qc.state} matches 1 run return 0`,
+      `execute if score @s ${info.killed} matches ${info.amount}.. run advancement revoke @s only ${advId}`,
+      `execute if score @s ${info.killed} matches ${info.amount}.. run return 0`,
+      `scoreboard players add @s ${info.killed} 1`,
+      `advancement revoke @s only ${advId}`,
+    ].join('\n') + '\n'
+  );
 }
 
 /** Action-bar progress for a single objective with a live score, e.g. "Slay zombies: 3/5". */
@@ -86,7 +221,12 @@ function unlockTargets(ctx: CompileContext, qc: QuestContext): QuestContext[] {
 /** Reward + completion + chain + done lines, shared by turn-in and instant talk quests. */
 function completionBody(ctx: CompileContext, qc: QuestContext): string[] {
   const quest = qc.quest;
-  const lines: string[] = ['# Grant rewards'];
+  const lines: string[] = [];
+  const cleanup = cleanupSpawnZoneLines(qc);
+  if (cleanup.length) {
+    lines.push('# Cleanup spawn zone mobs', ...cleanup);
+  }
+  lines.push('# Grant rewards');
   for (const reward of quest.rewards) {
     lines.push(...rewardCommands(ctx.project.platform, reward));
   }
@@ -120,11 +260,18 @@ function completionBody(ctx: CompileContext, qc: QuestContext): string[] {
       lines.push(`scoreboard players set @s ${next.state} 1`);
       lines.push(`scoreboard players set @s ${next.near} 0`);
       lines.push(`scoreboard players set @s ${next.done} 0`);
-      for (const score of next.objectives) {
+      for (let oi = 0; oi < next.objectives.length; oi++) {
+        const score = next.objectives[oi];
         switch (next.quest.type) {
-          case 'kill':
+          case 'kill': {
             lines.push(`scoreboard players set @s ${score.killed} 0`);
+            const nextObjs = questObjectives(next.quest);
+            if (nextObjs[oi]?.spawnZone) {
+              lines.push(killQuestMobsCommand(score.mobTag));
+              lines.push(`scoreboard players set ${score.timerHolder} ${SYS_OBJECTIVE} 0`);
+            }
             break;
+          }
           case 'gather':
           case 'delivery':
           case 'daily':
@@ -191,6 +338,9 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
     } else {
       // Count satisfied objectives into the `done` aggregate each tick.
       tick.push(`execute as @a[scores={${qc.state}=1}] run scoreboard players set @s ${qc.done} 0`);
+      if (quest.type === 'kill' && infos.some((i) => i.spawnZone)) {
+        tick.push(...buildZoneTickLines(ctx, qc, infos));
+      }
       for (const info of infos) {
         switch (quest.type) {
           case 'kill':
@@ -285,6 +435,10 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
       switch (quest.type) {
         case 'kill':
           accept.push(`scoreboard players set @s ${info.killed} 0`);
+          if (info.spawnZone) {
+            accept.push(killQuestMobsCommand(info.mobTag));
+            accept.push(`scoreboard players set ${info.timerHolder} ${SYS_OBJECTIVE} 0`);
+          }
           break;
         case 'gather':
         case 'delivery':
@@ -372,6 +526,12 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
   }
   turnin.push(...completionBody(ctx, qc));
   files[`${qc.fnBase}/turnin.mcfunction`] = turnin.join('\n') + '\n';
+
+  for (let j = 0; j < infos.length; j++) {
+    if (!infos[j].spawnZone) continue;
+    files[`${qc.fnBase}/spawn_mob_${j}.mcfunction`] = buildSpawnMobFunction(infos[j]);
+    files[`${qc.fnBase}/kill_credit_${j}.mcfunction`] = buildKillCreditFunction(ctx, qc, j, infos[j]);
+  }
 
   return files;
 }

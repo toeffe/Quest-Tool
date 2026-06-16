@@ -119,3 +119,52 @@ export function spawnFunctionLines(qc: QuestContext): string[] {
   lines.push(`say [Quest Tool] Spawned NPC(s) for "${qc.quest.name}".`);
   return lines;
 }
+
+/** Remove quest-spawned kill mobs for a given tag. */
+export function killQuestMobsCommand(tag: string): string {
+  return `kill @e[tag=${tag}]`;
+}
+
+/** Max live mobs in a spawn zone. Uses zoneCap when set, otherwise min(amount, 5). */
+export function zonePopulationCap(amount: number, zoneCap?: number): number {
+  if (zoneCap != null && zoneCap >= 1) return zoneCap;
+  return Math.min(Math.max(1, amount), 5);
+}
+
+/**
+ * Summon one quest mob in the zone and spread it within radius.
+ * Mobs keep normal AI; the zone tick pulls them back if they leave the area.
+ */
+export function spawnOneInZone(
+  entityType: string,
+  tag: string,
+  x: number,
+  y: number,
+  z: number,
+  radius: number,
+): string[] {
+  const entity = normalizeEntityId(entityType);
+  const tags = ['questtool', tag].map((t) => `"${t}"`).join(',');
+  const spread = Math.max(1, radius);
+  return [
+    `summon ${entity} ${x} ${y} ${z} {Tags:[${tags}],PersistenceRequired:1b}`,
+    `spreadplayers ${x} ${z} 1 ${spread} false @e[type=${entity},tag=${tag},distance=..1,limit=1]`,
+  ];
+}
+
+/** Pull tagged quest mobs back into the zone if knocked or pushed outside. */
+export function containMobsInZone(
+  entityType: string,
+  tag: string,
+  x: number,
+  y: number,
+  z: number,
+  radius: number,
+): string[] {
+  const entity = normalizeEntityId(entityType);
+  const spread = Math.max(1, radius);
+  const outsideDist = radius + 1;
+  return [
+    `execute positioned ${x} ${y} ${z} as @e[type=${entity},tag=${tag},distance=${outsideDist}..] run spreadplayers ${x} ${z} 1 ${spread} false @s`,
+  ];
+}

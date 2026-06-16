@@ -50,8 +50,14 @@ function shortId(id: string | undefined): string {
 
 function oneObjectiveSummary(quest: Quest, o: Quest['objectives'][number]): string {
   switch (quest.type) {
-    case 'kill':
-      return `Kill ${o.amount ?? 0} ${shortId(o.target)}`;
+    case 'kill': {
+      const base = `Kill ${o.amount ?? 0} ${shortId(o.target)}`;
+      if (o.spawnZone && o.location) {
+        const cap = o.zoneCap ?? Math.min(Math.max(1, o.amount ?? 1), 5);
+        return `${base} @ (${o.location.x}, ${o.location.y}, ${o.location.z}) r=${o.radius ?? 5} cap=${cap}`;
+      }
+      return base;
+    }
     case 'gather':
       return `Gather ${o.amount ?? 0} ${shortId(o.target)}`;
     case 'delivery':

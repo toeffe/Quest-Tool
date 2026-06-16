@@ -53,6 +53,31 @@ describe('datapack structure', () => {
     expect(load).toContain('minecraft.killed:minecraft.zombie');
   });
 
+  it('zoned kill quests use dummy killed scoreboard and emit advancement files', () => {
+    const project = sampleProject();
+    project.quests[0].objectives = [
+      {
+        target: 'minecraft:chicken',
+        amount: 5,
+        description: 'Slay chickens',
+        spawnZone: true,
+        location: { x: 10, y: 64, z: 20 },
+        radius: 5,
+      },
+    ];
+    const files = buildDatapackFiles(project);
+    const load = files['data/testpack/function/load.mcfunction'];
+    expect(load).toContain('scoreboard objectives add q0k0 dummy');
+    expect(load).not.toContain('minecraft.killed:minecraft.chicken');
+    const advPath = Object.keys(files).find((p) => /advancement\/quests\/0_.*\/kill_0\.json$/.test(p));
+    expect(advPath).toBeDefined();
+    const adv = JSON.parse(files[advPath!]);
+    expect(adv.criteria.killed_quest_mob.trigger).toBe('minecraft:player_killed_entity');
+    expect(adv.rewards.function).toContain('kill_credit_0');
+    const turnin = Object.entries(files).find(([p]) => /turnin\.mcfunction$/.test(p))?.[1] ?? '';
+    expect(turnin).toContain('kill @e[tag=qk_0_0]');
+  });
+
   it('disables command feedback on load using the 1.21.11 gamerule id', () => {
     const files = buildDatapackFiles(sampleProject());
     const load = files['data/testpack/function/load.mcfunction'];

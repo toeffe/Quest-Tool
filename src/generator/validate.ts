@@ -29,6 +29,12 @@ function objectiveIssues(quest: Quest): string[] {
       case 'daily':
         if (!o.target) out.push(`${where} is missing a target item/mob.`);
         if (!o.amount || o.amount < 1) out.push(`${where} amount must be at least 1.`);
+        if (quest.type === 'kill' && o.spawnZone && !o.location) {
+          out.push(`${where} spawn zone is enabled but no location is set.`);
+        }
+        if (quest.type === 'kill' && o.spawnZone && o.zoneCap != null && o.zoneCap < 1) {
+          out.push(`${where} spawn cap must be at least 1.`);
+        }
         break;
       case 'exploration':
         if (!o.location) out.push(`${where} is missing a target location.`);

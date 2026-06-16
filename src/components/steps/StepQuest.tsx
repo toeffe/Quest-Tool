@@ -40,6 +40,10 @@ const SPAWN_MODES: { value: SpawnMode; label: string }[] = [
 
 const usesItemTarget = (t: QuestType) => t === 'gather' || t === 'delivery' || t === 'daily';
 
+function defaultZoneCap(amount: number): number {
+  return Math.min(Math.max(1, amount), 5);
+}
+
 export function StepQuest({ quest, onChange }: Props) {
   const objectives: Objective[] = quest.objectives.length ? quest.objectives : [{}];
   const isMultiType = quest.type !== 'talk';
@@ -138,23 +142,75 @@ export function StepQuest({ quest, onChange }: Props) {
               />
 
               {quest.type === 'kill' && (
-                <div className="grid-2">
-                  <DataListInput
-                    label="Mob / creature"
-                    hint="Pick any Minecraft mob, or type a custom/modded entity id."
-                    value={obj.target ?? ''}
-                    onChange={(target) => setObjectiveAt(i, { target })}
-                    options={MOB_OPTIONS}
-                    listId="mc-mob-list"
-                    placeholder="minecraft:zombie"
-                  />
-                  <NumberInput
-                    label="Amount to kill"
-                    min={1}
-                    value={obj.amount ?? 1}
-                    onChange={(amount) => setObjectiveAt(i, { amount })}
-                  />
-                </div>
+                <>
+                  <div className="grid-2">
+                    <DataListInput
+                      label="Mob / creature"
+                      hint="Pick any Minecraft mob, or type a custom/modded entity id."
+                      value={obj.target ?? ''}
+                      onChange={(target) => setObjectiveAt(i, { target })}
+                      options={MOB_OPTIONS}
+                      listId="mc-mob-list"
+                      placeholder="minecraft:zombie"
+                    />
+                    <NumberInput
+                      label="Amount to kill"
+                      min={1}
+                      value={obj.amount ?? 1}
+                      onChange={(amount) => setObjectiveAt(i, { amount })}
+                    />
+                  </div>
+                  <Field
+                    label="Spawn mobs in a zone?"
+                    hint="When enabled, tagged mobs spawn in the area below and only those kills count."
+                  >
+                    <PillSelect
+                      value={obj.spawnZone ? 'yes' : 'no'}
+                      options={[
+                        { value: 'no', label: 'No - any kill counts' },
+                        { value: 'yes', label: 'Yes - spawn zone' },
+                      ]}
+                      onChange={(v) =>
+                        setObjectiveAt(i, {
+                          spawnZone: v === 'yes',
+                          location:
+                            v === 'yes'
+                              ? obj.location ?? { x: 100, y: 64, z: 100 }
+                              : obj.location,
+                          radius: v === 'yes' ? obj.radius ?? 5 : obj.radius,
+                          zoneCap:
+                            v === 'yes'
+                              ? obj.zoneCap ?? defaultZoneCap(obj.amount ?? 1)
+                              : obj.zoneCap,
+                        })
+                      }
+                    />
+                  </Field>
+                  {obj.spawnZone && (
+                    <>
+                      <Field label="Zone center" hint="World coordinates for the center of the spawn area.">
+                        <CoordsRow
+                          value={obj.location ?? { x: 100, y: 64, z: 100 }}
+                          onChange={(location) => setObjectiveAt(i, { location })}
+                        />
+                      </Field>
+                      <NumberInput
+                        label="Spawn radius (blocks)"
+                        hint="Mobs spawn within this distance of the zone center."
+                        min={1}
+                        value={obj.radius ?? 5}
+                        onChange={(radius) => setObjectiveAt(i, { radius })}
+                      />
+                      <NumberInput
+                        label="Live mob cap"
+                        hint="Max mobs alive in the zone at once. New ones spawn after kills."
+                        min={1}
+                        value={obj.zoneCap ?? defaultZoneCap(obj.amount ?? 1)}
+                        onChange={(zoneCap) => setObjectiveAt(i, { zoneCap })}
+                      />
+                    </>
+                  )}
+                </>
               )}
 
               {usesItemTarget(quest.type) && (

@@ -7,12 +7,16 @@ interface Props {
 
 function objectiveLine(quest: Quest, o: Quest['objectives'][number]): string {
   const desc = o.description || quest.name;
+  const zoneHint =
+    quest.type === 'kill' && o.spawnZone && o.location
+      ? ` @ ${o.location.x},${o.location.y},${o.location.z} r=${o.radius ?? 5} cap=${o.zoneCap ?? Math.min(Math.max(1, o.amount ?? 1), 5)}`
+      : '';
   switch (quest.type) {
     case 'kill':
     case 'gather':
     case 'delivery':
     case 'daily':
-      return `${desc}: 0/${o.amount ?? 1}`;
+      return `${desc}: 0/${o.amount ?? 1}${zoneHint}`;
     default:
       return desc;
   }

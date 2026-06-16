@@ -8,10 +8,11 @@ import {
   buildResetFunction,
   buildResetAllFunction,
 } from './load';
-import { compileQuest } from './questFunctions';
+import { compileQuest, buildKillZoneAdvancementFiles } from './questFunctions';
 import { spawnFunctionLines } from './npc';
 import { installGuide } from './platform';
 import { tellraw } from './text';
+import { questObjectives } from './context';
 
 /** A flat map of file paths (inside the ZIP) to their text contents. */
 export type FileMap = Record<string, string>;
@@ -45,6 +46,22 @@ function setupGuideFunction(ctx: CompileContext): string {
         },
       ]),
     );
+    if (qc.quest.type === 'kill') {
+      for (let j = 0; j < questObjectives(qc.quest).length; j++) {
+        const o = questObjectives(qc.quest)[j];
+        if (!o.spawnZone || !o.location) continue;
+        const r = Math.max(1, o.radius ?? 5);
+        lines.push(
+          tellraw('@s', [
+            { text: `  spawn zone ${j + 1}: `, color: 'gray' },
+            {
+              text: `${o.location.x} ${o.location.y} ${o.location.z} (r=${r})`,
+              color: 'white',
+            },
+          ]),
+        );
+      }
+    }
   }
   lines.push(
     tellraw('@s', [
@@ -162,6 +179,7 @@ export function buildDatapackFiles(project: Project): FileMap {
       files[`${fnRoot}/${rel}`] = content;
     }
     files[`${fnRoot}/${qc.spawnFn}.mcfunction`] = spawnFunctionLines(qc).join('\n') + '\n';
+    Object.assign(files, buildKillZoneAdvancementFiles(ctx, qc));
   }
 
   files[`${fnRoot}/spawn_all.mcfunction`] = spawnAllFunction(ctx);
