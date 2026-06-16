@@ -30,13 +30,17 @@ This is a fully static, client-side app (no server, no database — everything r
 in the browser and saves to local storage), so it hosts on GitHub Pages as-is.
 
 1. Push this repository to GitHub.
-2. In the repo, open **Settings -> Pages** and set **Source** to **GitHub Actions**.
+2. In the repo, open **Settings -> Pages** and set **Source** to **GitHub Actions**
+   (not "Deploy from a branch"). If branch deploy is enabled, visitors get the raw
+   source `index.html` (`/src/main.tsx`) instead of the built app.
 3. Push to `main` (or run the workflow manually). The included
    [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) builds the app and
-   publishes it.
+   publishes the `dist/` folder.
 
 The workflow builds with `VITE_BASE=/` so asset paths work at a custom domain root
-(e.g. `https://quest.toeffe.uk/`). Locally, `npm run dev`/`build` also use `/`.
+(e.g. `https://quest.toeffe.uk/`). The custom domain is set via
+[`public/CNAME`](public/CNAME), which Vite copies into every deploy. Locally,
+`npm run dev`/`build` also use `/` as the base.
 
 ## How the generated datapack works
 
