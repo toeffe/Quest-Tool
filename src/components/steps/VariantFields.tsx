@@ -7,6 +7,29 @@ interface Props {
   onChange: (variants: Record<string, string>) => void;
 }
 
+const AGE_OPTIONS = [
+  { value: 'adult', label: 'Adult' },
+  { value: 'baby', label: 'Baby' },
+];
+
+/** Adult vs baby appearance for villagers (uses permanent baby Age NBT). */
+export function BabySelect({
+  value,
+  onChange,
+}: {
+  value?: boolean;
+  onChange: (baby: boolean) => void;
+}) {
+  return (
+    <Select
+      label="Age (appearance)"
+      value={value ? 'baby' : 'adult'}
+      options={AGE_OPTIONS}
+      onChange={(v) => onChange(v === 'baby')}
+    />
+  );
+}
+
 /** Renders appearance sub-variant selectors for the given mob entity type. */
 export function VariantFields({ entityType, variants, onChange }: Props) {
   const fields = variantFieldsFor(entityType);

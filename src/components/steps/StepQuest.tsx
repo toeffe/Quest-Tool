@@ -18,8 +18,8 @@ import {
 import { defaultObjectiveFor, newObjectiveFor } from '../../types/factory';
 import { toIdentifier } from '../../types/ids';
 import { CoordsRow } from './StepNPC';
-import { MOB_OPTIONS } from '../../data/mobs';
-import { VariantFields } from './VariantFields';
+import { MOB_OPTIONS, isVillager } from '../../data/mobs';
+import { VariantFields, BabySelect } from './VariantFields';
 import { QuestPreview } from '../preview/QuestPreview';
 
 interface Props {
@@ -276,11 +276,18 @@ export function StepQuest({ quest, onChange }: Props) {
                 listId="mc-mob-list"
                 placeholder="minecraft:villager"
               />
-              <VariantFields
-                entityType={quest.targetNpc.entityType}
-                variants={quest.targetNpc.variants}
-                onChange={(variants) => setTarget({ variants })}
-              />
+              {isVillager(quest.targetNpc.entityType) ? (
+                <BabySelect
+                  value={quest.targetNpc.baby}
+                  onChange={(baby) => setTarget({ baby })}
+                />
+              ) : (
+                <VariantFields
+                  entityType={quest.targetNpc.entityType}
+                  variants={quest.targetNpc.variants}
+                  onChange={(variants) => setTarget({ variants })}
+                />
+              )}
               <TextArea
                 label="Target dialogue"
                 hint="Shown when the player reaches this NPC."

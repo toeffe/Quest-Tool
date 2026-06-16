@@ -1,16 +1,14 @@
 import { type Coordinates, type Npc, type TargetNpc } from '../types/quest';
 import { type QuestContext } from './context';
+import { normalizeEntityId } from '../data/mobs';
 import { buildVariantNbt } from '../data/mobVariants';
 import { escapeSnbtString } from './text';
 
+/** Age value that keeps baby mobs from ever growing up. */
+const PERMANENT_BABY_AGE = -2147483648;
+
 function professionId(value: string): string {
   const v = (value || 'none').toLowerCase();
-  return v.includes(':') ? v : `minecraft:${v}`;
-}
-
-/** Ensure an entity id has a namespace, defaulting to a villager if blank. */
-function entityId(value: string): string {
-  const v = (value || '').trim() || 'minecraft:villager';
   return v.includes(':') ? v : `minecraft:${v}`;
 }
 
@@ -27,12 +25,13 @@ function summonNpc(opts: {
   name: string;
   profession: string;
   variant: string;
+  baby?: boolean;
   variants?: Record<string, string>;
   displayTag: string;
   extraTags: string[];
   position: string;
 }): string {
-  const entity = entityId(opts.entityType);
+  const entity = normalizeEntityId(opts.entityType);
   const tags = ['questtool', opts.displayTag, ...opts.extraTags]
     .map((t) => `"${t}"`)
     .join(',');
@@ -51,6 +50,7 @@ function summonNpc(opts: {
         `type:"${professionId(opts.variant)}",level:2}`,
       `Offers:{Recipes:[]}`,
     );
+    if (opts.baby) fields.push(`Age:${PERMANENT_BABY_AGE}`);
   } else {
     fields.push(...buildVariantNbt(entity, opts.variants));
   }
@@ -81,6 +81,7 @@ export function spawnGiverCommand(qc: QuestContext): string {
     name: npc.name,
     profession: npc.profession,
     variant: npc.variant,
+    baby: npc.baby,
     variants: npc.variants,
     displayTag: qc.npcTag,
     extraTags: [qc.giverTag],
@@ -96,6 +97,7 @@ export function spawnTargetCommand(qc: QuestContext): string | null {
     name: target.name,
     profession: 'none',
     variant: 'plains',
+    baby: target.baby,
     variants: target.variants,
     displayTag: qc.npcTargetTag,
     extraTags: [qc.targetTag],

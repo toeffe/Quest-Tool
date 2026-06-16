@@ -121,6 +121,21 @@ describe('datapack structure', () => {
     expect(spawn).not.toContain('VillagerData');
   });
 
+  it('summons a baby villager with permanent Age NBT when baby is enabled', () => {
+    const project = sampleProject();
+    project.quests[0].npc.baby = true;
+    const files = buildDatapackFiles(project);
+    const spawn = Object.entries(files).find(([p]) => /spawn\/0_/.test(p))?.[1] ?? '';
+    expect(spawn).toContain('summon minecraft:villager');
+    expect(spawn).toContain('Age:-2147483648');
+  });
+
+  it('does not add Age NBT for adult villagers by default', () => {
+    const files = buildDatapackFiles(sampleProject());
+    const spawn = Object.entries(files).find(([p]) => /spawn\/0_/.test(p))?.[1] ?? '';
+    expect(spawn).not.toContain('Age:');
+  });
+
   it('builds raw commands containing every file path', () => {
     const raw = buildRawCommands(sampleProject());
     expect(raw).toContain('# ===== pack.mcmeta =====');

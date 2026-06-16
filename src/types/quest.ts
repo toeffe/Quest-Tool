@@ -65,6 +65,8 @@ export interface Npc {
   profession: string;
   /** Villager biome variant for appearance (only used when entityType is a villager). */
   variant: string;
+  /** When true, spawns as a permanently baby villager (Age:-2147483648). */
+  baby?: boolean;
   /** Appearance sub-variants for non-villager mobs, keyed by NBT field name. */
   variants?: Record<string, string>;
   dialogue: NpcDialogue;
@@ -82,6 +84,8 @@ export interface TargetNpc {
   tag: string;
   /** Entity type used for the target NPC. */
   entityType: string;
+  /** When true, spawns as a permanently baby villager (Age:-2147483648). */
+  baby?: boolean;
   /** Appearance sub-variants for non-villager mobs, keyed by NBT field name. */
   variants?: Record<string, string>;
   /** Dialogue shown when the player reaches the target NPC. */

@@ -1,8 +1,8 @@
 import { type Coordinates, type Quest, type SpawnMode } from '../../types/quest';
 import { TextInput, TextArea, Select, NumberInput, DataListInput } from '../ui/Field';
 import { toIdentifier } from '../../types/ids';
-import { MOB_OPTIONS } from '../../data/mobs';
-import { VariantFields } from './VariantFields';
+import { MOB_OPTIONS, isVillager } from '../../data/mobs';
+import { VariantFields, BabySelect } from './VariantFields';
 import { QuestPreview } from '../preview/QuestPreview';
 
 interface Props {
@@ -17,11 +17,6 @@ const PROFESSIONS = [
 ];
 
 const VARIANTS = ['plains', 'desert', 'jungle', 'savanna', 'snow', 'swamp', 'taiga'];
-
-/** Villagers expose profession/variant appearance options; other mobs do not. */
-function isVillager(entityType: string): boolean {
-  return (entityType ?? 'minecraft:villager') === 'minecraft:villager';
-}
 
 const SPAWN_MODES: { value: SpawnMode; label: string }[] = [
   { value: 'player', label: 'At my location (recommended)' },
@@ -83,7 +78,7 @@ export function StepNPC({ quest, onChange }: Props) {
           placeholder="minecraft:villager"
         />
         {isVillager(npc.entityType) ? (
-          <div className="grid-2">
+          <div className="grid-3">
             <Select
               label="Profession (appearance)"
               value={npc.profession}
@@ -96,6 +91,7 @@ export function StepNPC({ quest, onChange }: Props) {
               options={VARIANTS.map((v) => ({ value: v, label: v }))}
               onChange={(variant) => update({ variant })}
             />
+            <BabySelect value={npc.baby} onChange={(baby) => update({ baby })} />
           </div>
         ) : (
           <VariantFields

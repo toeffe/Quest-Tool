@@ -99,3 +99,13 @@ export function mobLabel(id: string): string {
 }
 
 export const MOB_OPTIONS = MOB_IDS.map((value) => ({ value, label: mobLabel(value) }));
+
+/** Ensure an entity id has a namespace, defaulting to villager if blank. */
+export function normalizeEntityId(value: string): string {
+  const v = (value || '').trim() || 'minecraft:villager';
+  return v.includes(':') ? v : `minecraft:${v}`;
+}
+
+export function isVillager(entityType: string): boolean {
+  return normalizeEntityId(entityType) === 'minecraft:villager';
+}
