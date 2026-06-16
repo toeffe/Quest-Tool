@@ -35,9 +35,8 @@ in the browser and saves to local storage), so it hosts on GitHub Pages as-is.
    [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) builds the app and
    publishes it.
 
-The workflow sets `VITE_BASE` to `/<repo-name>/` automatically, so asset paths work
-under `https://<user>.github.io/<repo>/` without any manual config. Locally, `npm run
-dev`/`build` use `/` as the base.
+The workflow builds with `VITE_BASE=/` so asset paths work at a custom domain root
+(e.g. `https://quest.toeffe.uk/`). Locally, `npm run dev`/`build` also use `/`.
 
 ## How the generated datapack works
 

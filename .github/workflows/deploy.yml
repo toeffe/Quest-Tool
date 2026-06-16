@@ -33,9 +33,9 @@ jobs:
 
       - name: Build
         run: npm run build
-        # Resolve asset URLs under https://<user>.github.io/<repo>/
+        # Custom domain (quest.toeffe.uk) serves at the site root, not /repo/.
         env:
-          VITE_BASE: /${{ github.event.repository.name }}/
+          VITE_BASE: /
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
