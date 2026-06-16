@@ -57,7 +57,7 @@ to verify everything. Full install steps for your chosen platform are bundled in
 
 ## Minecraft 1.21.11 notes
 
-- `pack.mcmeta` uses the new `min_format`/`max_format` schema (datapack format 75).
+- `pack.mcmeta` uses `min_format`/`max_format` `[94, 1]` (datapack format 94.1 for 1.21.11).
 - Functions use the singular `function/` and `tags/function/` folders.
 - Text components use the 1.21.5+ field names (`click_event`, `hover_event`).
 

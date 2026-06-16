@@ -14,12 +14,13 @@ function sampleProject(): Project {
 }
 
 describe('datapack structure', () => {
-  it('emits pack.mcmeta with the 1.21.11 min_format/max_format schema', () => {
+  it('emits pack.mcmeta with min_format/max_format for datapack format 94.1', () => {
     const files = buildDatapackFiles(sampleProject());
     const meta = JSON.parse(files['pack.mcmeta']);
-    expect(meta.pack.min_format).toBe(DATAPACK_FORMAT);
-    expect(meta.pack.max_format).toBe(DATAPACK_FORMAT);
+    expect(meta.pack.min_format).toEqual([...DATAPACK_FORMAT]);
+    expect(meta.pack.max_format).toEqual([...DATAPACK_FORMAT]);
     expect(meta.pack.pack_format).toBeUndefined();
+    expect(meta.pack.supported_formats).toBeUndefined();
   });
 
   it('uses the singular function/ folder layout and minecraft load/tick tags', () => {
@@ -133,6 +134,6 @@ describe('datapack structure', () => {
     expect(zip.file('pack.mcmeta')).not.toBeNull();
     expect(zip.file('data/testpack/function/load.mcfunction')).not.toBeNull();
     const meta = JSON.parse(await zip.file('pack.mcmeta')!.async('string'));
-    expect(meta.pack.min_format).toBe(DATAPACK_FORMAT);
+    expect(meta.pack.min_format).toEqual([...DATAPACK_FORMAT]);
   });
 });
