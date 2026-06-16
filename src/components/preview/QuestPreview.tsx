@@ -1,0 +1,74 @@
+import { type Quest } from '../../types/quest';
+
+interface Props {
+  quest: Quest;
+  variant?: 'dialogue' | 'objective';
+}
+
+function objectiveLine(quest: Quest, o: Quest['objectives'][number]): string {
+  const desc = o.description || quest.name;
+  switch (quest.type) {
+    case 'kill':
+    case 'gather':
+    case 'delivery':
+    case 'daily':
+      return `${desc}: 0/${o.amount ?? 1}`;
+    default:
+      return desc;
+  }
+}
+
+/**
+ * A lightweight in-game preview: NPC dialogue rendered as Minecraft-style chat,
+ * or the objective(s) rendered like the on-screen action bar. The preview keeps
+ * a dark "in-game" look in both app themes.
+ */
+export function QuestPreview({ quest, variant = 'dialogue' }: Props) {
+  if (variant === 'objective') {
+    const objectives = quest.objectives.length ? quest.objectives : [{}];
+    return (
+      <div className="card" style={{ marginBottom: 0 }}>
+        <h3>In-game preview</h3>
+        <div className="mc-screen">
+          {objectives.map((o, i) => (
+            <div key={i} className="mc-actionbar">
+              {objectiveLine(quest, o)}
+            </div>
+          ))}
+        </div>
+        <div className="hint" style={{ marginTop: 8 }}>
+          The action bar updates live as the player makes progress.
+        </div>
+      </div>
+    );
+  }
+
+  const d = quest.npc.dialogue;
+  const lines: { text: string; tone: string }[] = [
+    { text: d.greeting, tone: 'white' },
+    { text: d.offer, tone: 'yellow' },
+    { text: d.inProgress, tone: 'white' },
+    { text: d.completion, tone: 'green' },
+  ];
+
+  return (
+    <div className="card" style={{ marginBottom: 0 }}>
+      <h3>In-game preview</h3>
+      <div className="mc-screen">
+        {lines.map((line, i) => (
+          <div key={i} className="mc-chat-line">
+            <span className="mc-name">&lt;{quest.npc.name || 'NPC'}&gt;</span>{' '}
+            <span className={`mc-text ${line.tone}`}>{line.text || '...'}</span>
+          </div>
+        ))}
+        <div className="mc-chat-line">
+          <span className="mc-button">[ Accept Quest ]</span>
+        </div>
+      </div>
+      <div className="hint" style={{ marginTop: 8 }}>
+        This is roughly how the dialogue appears in chat. The button uses /trigger (no cheats
+        needed).
+      </div>
+    </div>
+  );
+}
