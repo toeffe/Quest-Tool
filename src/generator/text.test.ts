@@ -20,6 +20,18 @@ describe('text components (1.21.5+ format)', () => {
     expect(c).toContain('\\"hi\\"');
   });
 
+  it('escapes newlines and tabs in text', () => {
+    const c = partToComponent({ text: 'line one\nline two\there' });
+    expect(c).toContain('line one\\nline two\\there');
+    expect(c).not.toMatch(/"text":"[^"]*\n/);
+  });
+
+  it('builds a single-line tellraw command for multiline dialogue', () => {
+    const cmd = tellraw('@s', [{ text: 'Han er borte i minen.\nKan du hjelpe?' }]);
+    expect(cmd).toContain('\\n');
+    expect(cmd.split('\n')).toHaveLength(1);
+  });
+
   it('builds a tellraw command with a list component', () => {
     const cmd = tellraw('@s', [{ text: 'a' }, { text: 'b', color: 'red' }]);
     expect(cmd.startsWith('tellraw @s ["",')).toBe(true);

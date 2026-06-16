@@ -56,6 +56,19 @@ describe('quest tick generation', () => {
     expect(offer).toContain('scoreboard players set @s q0n 1');
   });
 
+  it('keeps multiline offer dialogue on a single mcfunction line', () => {
+    const project = createProject('P');
+    project.namespace = 'p';
+    const q = createQuest('Lost Son', 'kill');
+    q.npc.dialogue.offer = 'Han er borte i minen.\nKan du hjelpe meg?';
+    project.quests = [q];
+    const ctx = buildContext(project);
+    const offer = compileQuest(ctx, ctx.quests[0])['quests/0_lost_son/offer.mcfunction'];
+    const offerLine = offer.split('\n')[2];
+    expect(offerLine).toContain('Han er borte i minen.\\nKan du hjelpe meg?');
+    expect(offerLine.startsWith('execute if score @s q0n matches 0 run tellraw @s')).toBe(true);
+  });
+
   it('delivery quests verify and remove items on turn-in', () => {
     const files = compileFirst('delivery');
     const turnin = files['quests/0_q/turnin.mcfunction'];

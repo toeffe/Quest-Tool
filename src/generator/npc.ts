@@ -1,10 +1,7 @@
 import { type Coordinates, type Npc, type TargetNpc } from '../types/quest';
 import { type QuestContext } from './context';
 import { buildVariantNbt } from '../data/mobVariants';
-
-function escapeName(name: string): string {
-  return name.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-}
+import { escapeSnbtString } from './text';
 
 function professionId(value: string): string {
   const v = (value || 'none').toLowerCase();
@@ -46,7 +43,7 @@ function summonNpc(opts: {
     `Silent:1b`,
     `PersistenceRequired:1b`,
     `CustomNameVisible:1b`,
-    `CustomName:{text:"${escapeName(opts.name)}"}`,
+    `CustomName:{text:"${escapeSnbtString(opts.name)}"}`,
   ];
   if (entity === 'minecraft:villager') {
     fields.push(

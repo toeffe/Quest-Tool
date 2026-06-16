@@ -6,13 +6,9 @@ import {
 } from './context';
 import { rewardCommands } from './platform';
 import { NOW_HOLDER, SYS_OBJECTIVE } from './load';
-import { tellraw, type TextPart } from './text';
+import { escapeSnbtString, tellraw, type TextPart } from './text';
 
 const RANGE_ALL = '-2147483648..2147483647';
-
-function esc(value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-}
 
 function npcSay(name: string, message: string, color: TextPart['color'] = 'white'): TextPart[] {
   return [
@@ -59,7 +55,7 @@ function objectiveInfos(qc: QuestContext): ObjectiveInfo[] {
 function progressActionbar(scoreName: string, info: ObjectiveInfo): string {
   return (
     `title @s actionbar ["",` +
-    `{"text":"${esc(info.desc)}: ","color":"yellow"},` +
+    `{"text":"${escapeSnbtString(info.desc)}: ","color":"yellow"},` +
     `{"score":{"name":"@s","objective":"${scoreName}"},"color":"gold"},` +
     `{"text":"/${info.amount}","color":"yellow"}]`
   );
@@ -103,7 +99,7 @@ function completionBody(ctx: CompileContext, qc: QuestContext): string[] {
         `{"text":"[Quests] ","color":"gold"},` +
         `{"selector":"@s","color":"white"},` +
         `{"text":" completed ","color":"yellow"},` +
-        `{"text":"${esc(quest.name)}","color":"white"},` +
+        `{"text":"${escapeSnbtString(quest.name)}","color":"white"},` +
         `{"text":"!","color":"yellow"}]`,
     );
   }
@@ -189,7 +185,7 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
     if (quest.type === 'talk') {
       // Talk completes by reaching the target NPC; a single objective only.
       tick.push(
-        `execute as @a[scores={${qc.state}=1}] run title @s actionbar ["",{"text":"${esc(infos[0].desc)}","color":"yellow"}]`,
+        `execute as @a[scores={${qc.state}=1}] run title @s actionbar ["",{"text":"${escapeSnbtString(infos[0].desc)}","color":"yellow"}]`,
         `execute as @e[tag=${qc.targetTag},limit=1] at @s as @a[distance=..4,scores={${qc.state}=1}] at @s run function ${ns}:${qc.fnBase}/complete`,
       );
     } else {
@@ -222,7 +218,7 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
       // Action bar: live single-objective count, or aggregate for multiple.
       if (objCount === 1 && quest.type === 'exploration') {
         tick.push(
-          `execute as @a[scores={${qc.state}=1}] run title @s actionbar ["",{"text":"${esc(infos[0].desc)}","color":"yellow"}]`,
+          `execute as @a[scores={${qc.state}=1}] run title @s actionbar ["",{"text":"${escapeSnbtString(infos[0].desc)}","color":"yellow"}]`,
         );
       } else if (objCount === 1) {
         const live = quest.type === 'kill' ? infos[0].killed : infos[0].progress;

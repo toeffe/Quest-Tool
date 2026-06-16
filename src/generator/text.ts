@@ -27,13 +27,19 @@ export interface TextPart {
   hover?: string;
 }
 
-function escape(value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+/** Escape a value for use inside SNBT/JSON double-quoted strings in commands. */
+export function escapeSnbtString(value: string): string {
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t');
 }
 
 /** Serialize a single text part to a 1.21.5+ SNBT/JSON text component object. */
 export function partToComponent(part: TextPart): string {
-  const fields: string[] = [`"text":"${escape(part.text)}"`];
+  const fields: string[] = [`"text":"${escapeSnbtString(part.text)}"`];
   if (part.color) fields.push(`"color":"${part.color}"`);
   if (part.bold) fields.push(`"bold":true`);
   if (part.italic) fields.push(`"italic":true`);
@@ -41,17 +47,17 @@ export function partToComponent(part: TextPart): string {
 
   if (part.runCommand) {
     fields.push(
-      `"click_event":{"action":"run_command","command":"${escape(part.runCommand)}"}`,
+      `"click_event":{"action":"run_command","command":"${escapeSnbtString(part.runCommand)}"}`,
     );
   } else if (part.suggestCommand) {
     fields.push(
-      `"click_event":{"action":"suggest_command","command":"${escape(part.suggestCommand)}"}`,
+      `"click_event":{"action":"suggest_command","command":"${escapeSnbtString(part.suggestCommand)}"}`,
     );
   }
 
   if (part.hover) {
     fields.push(
-      `"hover_event":{"action":"show_text","value":"${escape(part.hover)}"}`,
+      `"hover_event":{"action":"show_text","value":"${escapeSnbtString(part.hover)}"}`,
     );
   }
 
