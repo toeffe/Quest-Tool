@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createProject, createQuest } from '../types/factory';
+import { createProject, createQuest, createCustomItem } from '../types/factory';
 import { buildContext } from './context';
 import { compileQuest } from './questFunctions';
 
@@ -74,6 +74,23 @@ describe('quest tick generation', () => {
     const turnin = files['quests/0_q/turnin.mcfunction'];
     expect(turnin).toContain('run return 0');
     expect(turnin).toContain('clear @s minecraft:bread 3');
+  });
+
+  it('gather quests use component clear for custom item objectives', () => {
+    const project = createProject('P');
+    project.namespace = 'p';
+    const item = createCustomItem('general', 'Ancient Coin');
+    item.baseItem = 'minecraft:gold_nugget';
+    item.tag = 'ancient_coin';
+    project.customItems = [item];
+    const q = createQuest('Gather', 'gather');
+    q.objectives = [{ customItemId: item.id, amount: 5, description: 'Find coins' }];
+    project.quests = [q];
+    const ctx = buildContext(project);
+    const tick = compileQuest(ctx, ctx.quests[0])['quests/0_gather/tick.mcfunction'];
+    expect(tick).toContain(
+      'clear @s minecraft:gold_nugget[custom_data={questtool_id:"ancient_coin"}] 0',
+    );
   });
 
   it('talk quests with no target complete instantly on accept', () => {

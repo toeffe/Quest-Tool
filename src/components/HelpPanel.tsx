@@ -15,6 +15,10 @@ const VIEWS = [
     title: 'In-Game Commands',
     body: 'A reference of the admin commands the generated datapack adds (spawning NPCs, resets, debug).',
   },
+  {
+    title: 'Custom Items',
+    body: 'Define trophy collectibles, food, tools, and more. Pick them as quest rewards or gather/delivery targets. Items use component syntax — no custom textures unless you add a resource pack.',
+  },
 ];
 
 const STEPS = ['NPC', 'Quest', 'Rewards', 'Chain', 'Generate'];
@@ -43,7 +47,7 @@ export function HelpPanel({ onClose }: Props) {
         ))}
       </div>
 
-      <div className="help-views">
+      <div className="help-views" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
         {VIEWS.map((v) => (
           <div key={v.title} className="help-view">
             <strong>{v.title}</strong>

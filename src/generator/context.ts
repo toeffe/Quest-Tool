@@ -1,4 +1,5 @@
 import { type Project, type Quest } from '../types/quest';
+import { type CustomItem } from '../types/item';
 import { toIdentifier } from '../types/ids';
 
 /**
@@ -56,6 +57,8 @@ export interface CompileContext {
   quests: QuestContext[];
   /** Quick lookup from quest name to its context (for chains). */
   byName: Map<string, QuestContext>;
+  /** Custom items keyed by internal id. */
+  customItemsById: Map<string, CustomItem>;
 }
 
 /** A quest always compiles with at least one objective. */
@@ -96,7 +99,12 @@ export function buildContext(project: Project): CompileContext {
   const byName = new Map<string, QuestContext>();
   for (const qc of quests) byName.set(qc.quest.name, qc);
 
-  return { project, namespace, quests, byName };
+  const customItemsById = new Map<string, CustomItem>();
+  for (const item of project.customItems ?? []) {
+    customItemsById.set(item.id, item);
+  }
+
+  return { project, namespace, quests, byName, customItemsById };
 }
 
 /** Convert an entity/item id like "minecraft:zombie" to the stat suffix "minecraft.zombie". */

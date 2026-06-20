@@ -1,0 +1,38 @@
+/** Common vanilla base items for custom item datalist suggestions. */
+export const BASE_ITEM_IDS = [
+  'minecraft:paper',
+  'minecraft:stick',
+  'minecraft:book',
+  'minecraft:apple',
+  'minecraft:bread',
+  'minecraft:golden_apple',
+  'minecraft:diamond',
+  'minecraft:emerald',
+  'minecraft:gold_ingot',
+  'minecraft:iron_ingot',
+  'minecraft:nether_star',
+  'minecraft:totem_of_undying',
+  'minecraft:iron_sword',
+  'minecraft:diamond_sword',
+  'minecraft:bow',
+  'minecraft:shield',
+  'minecraft:leather',
+  'minecraft:feather',
+  'minecraft:bone',
+  'minecraft:ender_pearl',
+  'minecraft:experience_bottle',
+  'minecraft:potion',
+  'minecraft:map',
+  'minecraft:compass',
+  'minecraft:clock',
+  'minecraft:name_tag',
+  'minecraft:saddle',
+  'minecraft:flint',
+  'minecraft:coal',
+  'minecraft:blaze_rod',
+] as const;
+
+export const BASE_ITEM_OPTIONS = BASE_ITEM_IDS.map((id) => ({
+  value: id,
+  label: id.replace(/^minecraft:/, '').replace(/_/g, ' '),
+}));

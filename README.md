@@ -11,6 +11,7 @@ datapacks, or coding knowledge required.
 - Quest types: talk, kill, gather, delivery, exploration, daily/repeatable, plus chains
 - Villager-based quest givers with proximity dialogue and clickable accept/turn-in
 - Rewards: items, XP, money, permissions, custom commands
+- **Custom Items** tab: define reusable items (names, lore, food, tools, collectibles) using Minecraft 1.21 item components; use them in rewards and gather/delivery objectives
 - Targets PaperMC, Vanilla servers, and Open-to-LAN single-player
 - Validation, raw-command preview, and one-click datapack ZIP download
 - Auto-saves to your browser; import/export projects as JSON
@@ -52,8 +53,14 @@ once per approach to avoid chat spam.
 
 After installing the pack and running `/reload`, use
 `/function <namespace>:setup_guide` to spawn NPCs and `/function <namespace>:debug`
-to verify everything. Full install steps for your chosen platform are bundled in
+to verify everything. If you defined custom items, run
+`/function <namespace>:give_custom_items` to receive one of each for testing.
+Full install steps for your chosen platform are bundled in
 `install.txt` inside the datapack.
+
+### Custom items
+
+Custom items are vanilla base items with **item components** (custom name, lore, food, tool rules, etc.). Each item gets a stable internal tag in `custom_data` so gather/delivery quests can count the right stacks. They look like their base item unless you add a separate resource pack.
 
 ## Minecraft 1.21.11 notes
 

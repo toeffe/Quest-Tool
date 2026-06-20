@@ -7,6 +7,7 @@ import {
 import { killQuestMobsCommand, spawnOneInZone, zonePopulationCap, containMobsInZone } from './npc';
 import { normalizeEntityId } from '../data/mobs';
 import { rewardCommands } from './platform';
+import { resolveObjectiveStack, itemDisplayLabel } from './items';
 import { NOW_HOLDER, SYS_OBJECTIVE } from './load';
 import { escapeSnbtString, tellraw, type TextPart } from './text';
 
@@ -27,6 +28,8 @@ function giver(qc: QuestContext): string {
 interface ObjectiveInfo {
   amount: number;
   item: string;
+  /** Human-readable item name for player messages. */
+  label: string;
   desc: string;
   x: number;
   y: number;
@@ -44,12 +47,15 @@ interface ObjectiveInfo {
   liveHolder: string;
 }
 
-function objectiveInfos(qc: QuestContext): ObjectiveInfo[] {
+function objectiveInfos(ctx: CompileContext, qc: QuestContext): ObjectiveInfo[] {
   return questObjectives(qc.quest).map((o, j) => {
     const amount = Math.max(1, o.amount ?? 1);
+    const item =
+      resolveObjectiveStack(ctx.project, o) ?? namespaced(o.target ?? 'minecraft:stone');
     return {
       amount,
-      item: namespaced(o.target ?? 'minecraft:stone'),
+      item,
+      label: itemDisplayLabel(ctx.project, o),
       desc: o.description ?? qc.quest.name,
       x: o.location?.x ?? 0,
       y: o.location?.y ?? 64,
@@ -105,7 +111,7 @@ export function buildKillZoneAdvancementFiles(
 ): Record<string, string> {
   const files: Record<string, string> = {};
   if (qc.quest.type !== 'kill') return files;
-  const infos = objectiveInfos(qc);
+  const infos = objectiveInfos(ctx, qc);
   for (let j = 0; j < infos.length; j++) {
     if (!infos[j].spawnZone) continue;
     const path = `data/${ctx.namespace}/advancement/${qc.fnBase}/kill_${j}.json`;
@@ -114,10 +120,10 @@ export function buildKillZoneAdvancementFiles(
   return files;
 }
 
-function cleanupSpawnZoneLines(qc: QuestContext): string[] {
+function cleanupSpawnZoneLines(ctx: CompileContext, qc: QuestContext): string[] {
   if (qc.quest.type !== 'kill') return [];
   const lines: string[] = [];
-  for (const info of objectiveInfos(qc)) {
+  for (const info of objectiveInfos(ctx, qc)) {
     if (info.spawnZone) lines.push(killQuestMobsCommand(info.mobTag));
   }
   return lines;
@@ -222,13 +228,13 @@ function unlockTargets(ctx: CompileContext, qc: QuestContext): QuestContext[] {
 function completionBody(ctx: CompileContext, qc: QuestContext): string[] {
   const quest = qc.quest;
   const lines: string[] = [];
-  const cleanup = cleanupSpawnZoneLines(qc);
+  const cleanup = cleanupSpawnZoneLines(ctx, qc);
   if (cleanup.length) {
     lines.push('# Cleanup spawn zone mobs', ...cleanup);
   }
   lines.push('# Grant rewards');
   for (const reward of quest.rewards) {
-    lines.push(...rewardCommands(ctx.project.platform, reward));
+    lines.push(...rewardCommands(ctx.project.platform, reward, ctx.customItemsById));
   }
 
   lines.push(tellraw('@s', npcSay(quest.npc.name, quest.npc.dialogue.completion, 'green')));
@@ -306,7 +312,7 @@ function completionBody(ctx: CompileContext, qc: QuestContext): string[] {
 export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<string, string> {
   const ns = ctx.namespace;
   const quest = qc.quest;
-  const infos = objectiveInfos(qc);
+  const infos = objectiveInfos(ctx, qc);
   const objCount = infos.length;
   const files: Record<string, string> = {};
   const isInstantTalk = quest.type === 'talk' && !quest.targetNpc;
@@ -515,7 +521,7 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
       turnin.push(
         `execute store result score @s ${info.progress} run clear @s ${info.item} 0`,
         `execute if score @s ${info.progress} matches ..${info.amount - 1} run ${tellraw('@s', [
-          { text: `You still need ${info.amount}x ${info.item}.`, color: 'red' },
+          { text: `You still need ${info.amount}x ${info.label}.`, color: 'red' },
         ])}`,
         `execute if score @s ${info.progress} matches ..${info.amount - 1} run return 0`,
       );

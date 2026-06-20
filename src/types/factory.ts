@@ -5,9 +5,13 @@ import {
   type QuestType,
   type Reward,
 } from './quest';
-import { uid } from './ids';
+import {
+  type CustomItem,
+  type CustomItemKind,
+} from './item';
+import { uid, toIdentifier } from './ids';
 
-export const PROJECT_SCHEMA_VERSION = 1;
+export const PROJECT_SCHEMA_VERSION = 2;
 
 export function createNpc(): Npc {
   return {
@@ -69,6 +73,49 @@ export function createQuest(name = 'New Quest', type: QuestType = 'kill'): Quest
   };
 }
 
+export function createCustomItem(kind: CustomItemKind = 'general', name = 'New Item'): CustomItem {
+  const tag = toIdentifier(name, 'item');
+  const base: CustomItem = {
+    id: uid(),
+    name,
+    tag,
+    kind,
+    baseItem: 'minecraft:paper',
+    displayName: name,
+    lore: [],
+  };
+  switch (kind) {
+    case 'collectible':
+      return {
+        ...base,
+        baseItem: 'minecraft:paper',
+        glint: true,
+        maxStackSize: 1,
+        unbreakable: true,
+        rarity: 'rare',
+      };
+    case 'food':
+      return {
+        ...base,
+        baseItem: 'minecraft:apple',
+        food: { nutrition: 4, saturation: 0.3 },
+        consumable: { consumeSeconds: 1.6, effects: [] },
+      };
+    case 'tool':
+      return {
+        ...base,
+        baseItem: 'minecraft:stick',
+        tool: {
+          defaultMiningSpeed: 1,
+          damagePerBlock: 1,
+          rules: [{ blocks: 'minecraft:sand', speed: 100 }],
+        },
+      };
+    default:
+      return base;
+  }
+}
+
 export function createProject(name = 'My Quest Pack'): Project {
   return {
     id: uid(),
@@ -76,6 +123,7 @@ export function createProject(name = 'My Quest Pack'): Project {
     namespace: 'questpack',
     platform: 'paper',
     quests: [createQuest('First Quest', 'kill')],
+    customItems: [],
     version: PROJECT_SCHEMA_VERSION,
   };
 }

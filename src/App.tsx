@@ -16,6 +16,9 @@ import {
   renameQuestReferences,
   saveProject,
   updateQuest,
+  createAndAddCustomItem,
+  deleteCustomItem,
+  duplicateCustomItem,
 } from './state/projectStore';
 import { ProjectSidebar } from './components/ProjectSidebar';
 import { StepNPC } from './components/steps/StepNPC';
@@ -24,17 +27,20 @@ import { StepRewards } from './components/steps/StepRewards';
 import { StepChain } from './components/steps/StepChain';
 import { StepGenerate } from './components/steps/StepGenerate';
 import { CommandsPage } from './components/CommandsPage';
+import { ItemsPage } from './components/ItemsPage';
 import { FlowCanvas } from './components/flow/FlowCanvas';
 import { HelpPanel } from './components/HelpPanel';
 import { QuestChecklist } from './components/QuestChecklist';
+import { type CustomItemKind } from './types/item';
 import { type Theme, getInitialTheme, applyTheme } from './state/theme';
 
-type View = 'wizard' | 'flow' | 'commands';
+type View = 'wizard' | 'flow' | 'commands' | 'items';
 
 const VIEW_HINTS: Record<View, string> = {
   wizard: 'Edit one quest step by step',
   flow: 'See and connect all your quests',
   commands: 'Admin commands reference',
+  items: 'Create custom items for rewards and objectives',
 };
 
 const STEP_LABELS: Record<WizardStep, string> = {
@@ -130,6 +136,20 @@ export default function App() {
     reader.readAsText(file);
   }
 
+  function handleAddCustomItem(kind: CustomItemKind) {
+    const { project: next } = createAndAddCustomItem(project, kind);
+    setProject(next);
+    setView('items');
+  }
+
+  function handleDeleteCustomItem(id: string) {
+    setProject(deleteCustomItem(project, id));
+  }
+
+  function handleDuplicateCustomItem(id: string) {
+    setProject(duplicateCustomItem(project, id));
+  }
+
   const stepIndex = WIZARD_STEPS.indexOf(step);
 
   return (
@@ -171,6 +191,13 @@ export default function App() {
               title={VIEW_HINTS.commands}
             >
               In-Game Commands
+            </button>
+            <button
+              className={`view-tab ${view === 'items' ? 'active' : ''}`}
+              onClick={() => setView('items')}
+              title={VIEW_HINTS.items}
+            >
+              Custom Items
             </button>
             <span className="topnav-hint">{VIEW_HINTS[view]}</span>
           </div>
@@ -241,6 +268,16 @@ export default function App() {
 
             {view === 'commands' && <CommandsPage project={project} />}
 
+            {view === 'items' && (
+              <ItemsPage
+                project={project}
+                onChange={setProject}
+                onAdd={handleAddCustomItem}
+                onDuplicate={handleDuplicateCustomItem}
+                onDelete={handleDeleteCustomItem}
+              />
+            )}
+
             {view === 'wizard' && selectedQuest && step !== 'generate' && (
               <QuestChecklist project={project} quest={selectedQuest} />
             )}
@@ -249,12 +286,17 @@ export default function App() {
               <StepNPC quest={selectedQuest} onChange={handleQuestChange} />
             )}
             {view === 'wizard' && selectedQuest && step === 'quest' && (
-              <StepQuest quest={selectedQuest} onChange={handleQuestChange} />
+              <StepQuest
+                quest={selectedQuest}
+                customItems={project.customItems ?? []}
+                onChange={handleQuestChange}
+              />
             )}
             {view === 'wizard' && selectedQuest && step === 'rewards' && (
               <StepRewards
                 quest={selectedQuest}
                 platform={project.platform}
+                customItems={project.customItems ?? []}
                 onChange={handleQuestChange}
               />
             )}

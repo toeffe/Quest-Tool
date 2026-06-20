@@ -13,6 +13,7 @@ import { spawnFunctionLines } from './npc';
 import { installGuide } from './platform';
 import { tellraw } from './text';
 import { questObjectives } from './context';
+import { buildGiveCustomItemsFunction } from './items';
 
 /** A flat map of file paths (inside the ZIP) to their text contents. */
 export type FileMap = Record<string, string>;
@@ -119,6 +120,7 @@ function readmeText(project: Project, ctx: CompileContext): string {
     `- /function ${ctx.namespace}:setup_guide   - list NPC spawn commands`,
     `- /function ${ctx.namespace}:spawn_all     - spawn every NPC at your feet`,
     `- /function ${ctx.namespace}:debug         - check NPCs and your quest state`,
+    `- /function ${ctx.namespace}:give_custom_items - give one of each custom item (testing)`,
     `- /function ${ctx.namespace}:reset         - reset YOUR quest progress`,
     `- /execute as <player> run function ${ctx.namespace}:reset   - reset one player`,
     `- /function ${ctx.namespace}:reset_all     - reset everyone's quest progress`,
@@ -187,6 +189,12 @@ export function buildDatapackFiles(project: Project): FileMap {
   files[`${fnRoot}/debug.mcfunction`] = debugFunction(ctx);
   files[`${fnRoot}/reset.mcfunction`] = buildResetFunction(ctx);
   files[`${fnRoot}/reset_all.mcfunction`] = buildResetAllFunction(ctx);
+
+  const giveCustomItems = buildGiveCustomItemsFunction(project);
+  if (giveCustomItems) {
+    files[`${fnRoot}/give_custom_items.mcfunction`] = giveCustomItems;
+  }
+
   files['install.txt'] = readmeText(project, ctx);
 
   return files;

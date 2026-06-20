@@ -80,9 +80,20 @@ export function InspectorPanel({
         <QuestChecklist project={project} quest={quest} />
 
         {target.stage === 'npc' && <StepNPC quest={quest} onChange={onChangeQuest} />}
-        {target.stage === 'quest' && <StepQuest quest={quest} onChange={onChangeQuest} />}
+        {target.stage === 'quest' && (
+          <StepQuest
+            quest={quest}
+            customItems={project.customItems ?? []}
+            onChange={onChangeQuest}
+          />
+        )}
         {target.stage === 'rewards' && (
-          <StepRewards quest={quest} platform={project.platform} onChange={onChangeQuest} />
+          <StepRewards
+            quest={quest}
+            platform={project.platform}
+            customItems={project.customItems ?? []}
+            onChange={onChangeQuest}
+          />
         )}
         {target.stage === 'chain' && (
           <StepChain quest={quest} project={project} onChange={onChangeQuest} />

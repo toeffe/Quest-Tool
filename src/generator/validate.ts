@@ -27,7 +27,11 @@ function objectiveIssues(quest: Quest): string[] {
       case 'gather':
       case 'delivery':
       case 'daily':
-        if (!o.target) out.push(`${where} is missing a target item/mob.`);
+        if (quest.type === 'kill') {
+          if (!o.target) out.push(`${where} is missing a target mob.`);
+        } else if (!o.target && !o.customItemId) {
+          out.push(`${where} is missing a target item.`);
+        }
         if (!o.amount || o.amount < 1) out.push(`${where} amount must be at least 1.`);
         if (quest.type === 'kill' && o.spawnZone && !o.location) {
           out.push(`${where} spawn zone is enabled but no location is set.`);
@@ -47,6 +51,50 @@ function objectiveIssues(quest: Quest): string[] {
   return out;
 }
 
+function customItemIssues(project: Project): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const items = project.customItems ?? [];
+  const tagCounts = new Map<string, number>();
+  const referenced = new Set<string>();
+
+  for (const quest of project.quests) {
+    for (const o of quest.objectives) {
+      if (o.customItemId) referenced.add(o.customItemId);
+    }
+    for (const r of quest.rewards) {
+      if (r.customItemId) referenced.add(r.customItemId);
+    }
+  }
+
+  for (const item of items) {
+    const tag = toIdentifier(item.tag);
+    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+    if (!item.displayName.trim()) {
+      issues.push({ level: 'error', message: `Custom item "${item.name}" has no display name.` });
+    }
+    if (!item.baseItem.trim()) {
+      issues.push({ level: 'error', message: `Custom item "${item.name}" has no base item.` });
+    }
+    if (!referenced.has(item.id)) {
+      issues.push({
+        level: 'warning',
+        message: `Custom item "${item.name}" is not used in any quest.`,
+      });
+    }
+  }
+
+  for (const [tag, count] of tagCounts) {
+    if (count > 1) {
+      issues.push({
+        level: 'error',
+        message: `Duplicate custom item tag "${tag}" (used ${count} times).`,
+      });
+    }
+  }
+
+  return issues;
+}
+
 /** Validate the whole project; returns errors (block export) and warnings. */
 export function validateProject(project: Project): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
@@ -57,6 +105,10 @@ export function validateProject(project: Project): ValidationIssue[] {
     add('error', 'The project has no quests.');
     return issues;
   }
+
+  issues.push(...customItemIssues(project));
+
+  const customItemIds = new Set((project.customItems ?? []).map((i) => i.id));
 
   const nameCounts = new Map<string, number>();
   const npcTagCounts = new Map<string, number>();
@@ -72,6 +124,12 @@ export function validateProject(project: Project): ValidationIssue[] {
     npcTagCounts.set(npcTag, (npcTagCounts.get(npcTag) ?? 0) + 1);
 
     for (const msg of objectiveIssues(quest)) add('error', msg, quest);
+
+    for (const o of quest.objectives) {
+      if (o.customItemId && !customItemIds.has(o.customItemId)) {
+        add('error', 'An objective references a custom item that no longer exists.', quest);
+      }
+    }
 
     if (quest.npc.spawnMode === 'fixed' && !quest.npc.coordinates) {
       add('error', 'NPC spawn is set to fixed coordinates but none are provided.', quest);
@@ -107,8 +165,14 @@ export function validateProject(project: Project): ValidationIssue[] {
       if (support.note) {
         add(support.ok ? 'warning' : 'warning', `${support.note}`, quest);
       }
-      if ((reward.type === 'item' || reward.type === 'command') && !reward.value) {
-        add('error', `A ${reward.type} reward is missing its value.`, quest);
+      if (reward.type === 'item' && !reward.value && !reward.customItemId) {
+        add('error', 'An item reward is missing its item.', quest);
+      }
+      if (reward.customItemId && !customItemIds.has(reward.customItemId)) {
+        add('error', 'A reward references a custom item that no longer exists.', quest);
+      }
+      if (reward.type === 'command' && !reward.value) {
+        add('error', 'A command reward is missing its value.', quest);
       }
     }
 

@@ -1,5 +1,6 @@
 import { type Project, type Quest } from '../types/quest';
-import { createProject, PROJECT_SCHEMA_VERSION } from '../types/factory';
+import { type CustomItem } from '../types/item';
+import { createProject, createCustomItem, PROJECT_SCHEMA_VERSION } from '../types/factory';
 import { uid } from '../types/ids';
 
 const STORAGE_KEY = 'quest-tool-mc.project';
@@ -31,6 +32,9 @@ function migrate(project: Project): Project {
   next.version = PROJECT_SCHEMA_VERSION;
   if (!Array.isArray(next.quests) || next.quests.length === 0) {
     next.quests = createProject().quests;
+  }
+  if (!Array.isArray(next.customItems)) {
+    next.customItems = [];
   }
   // Backfill fields added after the initial schema (e.g. NPC entity type).
   for (const quest of next.quests) {
@@ -107,4 +111,57 @@ export function duplicateQuest(project: Project, questId: string): Project {
   const quests = [...project.quests];
   quests.splice(index + 1, 0, copy);
   return { ...project, quests };
+}
+
+// ---- Custom item operations ----
+
+export function addCustomItem(project: Project, item: CustomItem): Project {
+  const items = project.customItems ?? [];
+  return { ...project, customItems: [...items, item] };
+}
+
+export function updateCustomItem(project: Project, item: CustomItem): Project {
+  const items = project.customItems ?? [];
+  return {
+    ...project,
+    customItems: items.map((i) => (i.id === item.id ? item : i)),
+  };
+}
+
+export function deleteCustomItem(project: Project, itemId: string): Project {
+  const items = (project.customItems ?? []).filter((i) => i.id !== itemId);
+  const quests = project.quests.map((q) => ({
+    ...q,
+    objectives: q.objectives.map((o) =>
+      o.customItemId === itemId ? { ...o, customItemId: undefined } : o,
+    ),
+    rewards: q.rewards.map((r) =>
+      r.customItemId === itemId ? { ...r, customItemId: undefined, type: r.type } : r,
+    ),
+  }));
+  return { ...project, customItems: items, quests };
+}
+
+export function duplicateCustomItem(project: Project, itemId: string): Project {
+  const original = (project.customItems ?? []).find((i) => i.id === itemId);
+  if (!original) return project;
+  const copy: CustomItem = {
+    ...structuredClone(original),
+    id: uid(),
+    name: `${original.name} (copy)`,
+    tag: `${original.tag}_copy`,
+  };
+  const items = [...(project.customItems ?? [])];
+  const index = items.findIndex((i) => i.id === itemId);
+  items.splice(index + 1, 0, copy);
+  return { ...project, customItems: items };
+}
+
+export function createAndAddCustomItem(
+  project: Project,
+  kind: CustomItem['kind'] = 'general',
+): { project: Project; item: CustomItem } {
+  const n = (project.customItems ?? []).length + 1;
+  const item = createCustomItem(kind, `Item ${n}`);
+  return { project: addCustomItem(project, item), item };
 }

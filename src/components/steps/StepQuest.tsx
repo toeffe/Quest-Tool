@@ -20,11 +20,19 @@ import { toIdentifier } from '../../types/ids';
 import { CoordsRow } from './StepNPC';
 import { MOB_OPTIONS, isVillager } from '../../data/mobs';
 import { VariantFields, BabySelect } from './VariantFields';
+import { type CustomItem } from '../../types/item';
 import { QuestPreview } from '../preview/QuestPreview';
 
 interface Props {
   quest: Quest;
+  customItems: CustomItem[];
   onChange: (quest: Quest) => void;
+}
+
+type ItemSource = 'vanilla' | 'custom';
+
+function objectiveItemSource(obj: Objective): ItemSource {
+  return obj.customItemId ? 'custom' : 'vanilla';
 }
 
 const TYPE_OPTIONS = (Object.keys(QUEST_TYPE_LABELS) as QuestType[]).map((t) => ({
@@ -44,7 +52,7 @@ function defaultZoneCap(amount: number): number {
   return Math.min(Math.max(1, amount), 5);
 }
 
-export function StepQuest({ quest, onChange }: Props) {
+export function StepQuest({ quest, customItems, onChange }: Props) {
   const objectives: Objective[] = quest.objectives.length ? quest.objectives : [{}];
   const isMultiType = quest.type !== 'talk';
 
@@ -214,20 +222,76 @@ export function StepQuest({ quest, onChange }: Props) {
               )}
 
               {usesItemTarget(quest.type) && (
-                <div className="grid-2">
-                  <TextInput
-                    label="Item id"
-                    hint="e.g. minecraft:wheat, minecraft:diamond"
-                    value={obj.target ?? ''}
-                    onChange={(target) => setObjectiveAt(i, { target })}
-                  />
-                  <NumberInput
-                    label="Amount required"
-                    min={1}
-                    value={obj.amount ?? 1}
-                    onChange={(amount) => setObjectiveAt(i, { amount })}
-                  />
-                </div>
+                <>
+                  <Field
+                    label="Item source"
+                    hint="Custom items are matched by their internal tag, not display name."
+                  >
+                    <PillSelect
+                      value={objectiveItemSource(obj)}
+                      options={[
+                        { value: 'vanilla', label: 'Vanilla item' },
+                        { value: 'custom', label: 'Custom item' },
+                      ]}
+                      onChange={(source) => {
+                        if (source === 'custom') {
+                          const first = customItems[0];
+                          setObjectiveAt(i, {
+                            customItemId: first?.id,
+                            target: undefined,
+                          });
+                        } else {
+                          setObjectiveAt(i, {
+                            target: obj.target ?? 'minecraft:wheat',
+                            customItemId: undefined,
+                          });
+                        }
+                      }}
+                    />
+                  </Field>
+                  <div className="grid-2">
+                    {objectiveItemSource(obj) === 'vanilla' ? (
+                      <TextInput
+                        label="Item id"
+                        hint="e.g. minecraft:wheat, minecraft:diamond"
+                        value={obj.target ?? ''}
+                        onChange={(target) => setObjectiveAt(i, { target })}
+                      />
+                    ) : customItems.length === 0 ? (
+                      <div className="field">
+                        <label>Custom item</label>
+                        <div className="hint">
+                          No custom items yet. Open the Custom Items tab to create one.
+                        </div>
+                      </div>
+                    ) : (
+                      <Field label="Custom item">
+                        <select
+                          value={obj.customItemId ?? ''}
+                          onChange={(e) =>
+                            setObjectiveAt(i, {
+                              customItemId: e.target.value,
+                              target: undefined,
+                            })
+                          }
+                        >
+                          {!obj.customItemId && <option value="">Select an item…</option>}
+                          {customItems.map((item) => (
+                            <option key={item.id} value={item.id}>
+                              {item.name} ({item.displayName})
+                            </option>
+                          ))}
+                        </select>
+                      </Field>
+                    )}
+                    <NumberInput
+                      label="Amount required"
+                      min={1}
+                      value={obj.amount ?? 1}
+                      onChange={(amount) => setObjectiveAt(i, { amount })}
+                    />
+                  </div>
+                </>
               )}
 
               {quest.type === 'exploration' && (

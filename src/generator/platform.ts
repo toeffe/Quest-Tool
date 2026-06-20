@@ -1,6 +1,8 @@
 import { type Platform, type Reward } from '../types/quest';
+import { type CustomItem } from '../types/item';
 import { actionbar, tellraw, type TextPart } from './text';
 import { namespaced } from './context';
+import { buildGiveCommand } from './items';
 
 /**
  * Per-platform handling of rewards that depend on external systems
@@ -16,10 +18,21 @@ import { namespaced } from './context';
  * accepts target selectors; the bundled README documents this.
  */
 
-export function rewardCommands(platform: Platform, reward: Reward): string[] {
+export function rewardCommands(
+  platform: Platform,
+  reward: Reward,
+  customItemsById?: Map<string, CustomItem>,
+): string[] {
   const out: string[] = [];
   switch (reward.type) {
     case 'item': {
+      if (reward.customItemId && customItemsById) {
+        const item = customItemsById.get(reward.customItemId);
+        if (item) {
+          out.push(buildGiveCommand(item, '@s', reward.amount ?? 1));
+          break;
+        }
+      }
       const item = namespaced((reward.value ?? '').trim() || 'minecraft:stone');
       out.push(`give @s ${item} ${reward.amount ?? 1}`);
       break;

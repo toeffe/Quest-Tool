@@ -987,3 +987,36 @@ textarea {
 .react-flow__background {
   color: var(--border);
 }
+
+/* ---- Custom items page ---- */
+.items-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.items-list {
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+}
+
+.items-editor {
+  min-width: 0;
+}
+
+.command-preview {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 12px;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+@media (max-width: 900px) {
+  .items-layout {
+    grid-template-columns: 1fr;
+  }
+}

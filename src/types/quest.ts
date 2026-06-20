@@ -95,8 +95,10 @@ export interface TargetNpc {
 }
 
 export interface Objective {
-  /** For kill: mob id (e.g. "minecraft:zombie"). For gather/delivery: item id. */
+  /** For kill: mob id (e.g. "minecraft:zombie"). For gather/delivery: vanilla item id. */
   target?: string;
+  /** When set on gather/delivery/daily, matches a project custom item instead of target. */
+  customItemId?: string;
   /** Required amount (kills or items). */
   amount?: number;
   /** Human-readable label shown to the player. */
@@ -128,8 +130,10 @@ export const REWARD_TYPE_LABELS: Record<RewardType, string> = {
 
 export interface Reward {
   type: RewardType;
-  /** item id for 'item', permission node for 'permission', raw command for 'command'. */
+  /** Vanilla item id for 'item', permission node for 'permission', raw command for 'command'. */
   value?: string;
+  /** When set on item rewards, gives a project custom item instead of value. */
+  customItemId?: string;
   /** quantity for item / xp / money. */
   amount?: number;
 }
@@ -161,6 +165,8 @@ export interface Quest {
   cooldownSeconds: number;
 }
 
+import { type CustomItem } from './item';
+
 export interface Project {
   id: string;
   name: string;
@@ -168,6 +174,8 @@ export interface Project {
   namespace: string;
   platform: Platform;
   quests: Quest[];
+  /** Reusable custom item definitions for rewards and objectives. */
+  customItems?: CustomItem[];
   /** Manual Story Flow node positions, keyed by quest id (plus the Generate node). */
   flowPositions?: Record<string, { x: number; y: number }>;
   /** Schema version for migrations. */

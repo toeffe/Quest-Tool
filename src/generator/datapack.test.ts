@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { type Project } from '../types/quest';
-import { createProject, createQuest } from '../types/factory';
+import { createProject, createQuest, createCustomItem } from '../types/factory';
 import JSZip from 'jszip';
 import { buildDatapackFiles, buildRawCommands, buildDatapackZip } from './datapack';
 import { DATAPACK_FORMAT } from './packFormat';
@@ -101,6 +101,19 @@ describe('datapack structure', () => {
     const files = buildDatapackFiles(project);
     const turnin = Object.entries(files).find(([p]) => /turnin\.mcfunction$/.test(p))?.[1] ?? '';
     expect(turnin).toContain('give @s minecraft:diamond 2');
+  });
+
+  it('gives custom item rewards with item components', () => {
+    const project = sampleProject();
+    const item = createCustomItem('collectible', 'Trophy');
+    item.tag = 'trophy';
+    project.customItems = [item];
+    project.quests[0].rewards = [{ type: 'item', customItemId: item.id, amount: 1 }];
+    const files = buildDatapackFiles(project);
+    const turnin = Object.entries(files).find(([p]) => /turnin\.mcfunction$/.test(p))?.[1] ?? '';
+    expect(turnin).toContain('give @s minecraft:paper[');
+    expect(turnin).toContain('custom_data={questtool_id:"trophy"}');
+    expect(files['data/testpack/function/give_custom_items.mcfunction']).toBeDefined();
   });
 
   it('reset re-locks quests that require a prerequisite', () => {

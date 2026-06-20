@@ -5,11 +5,14 @@ import {
   type RewardType,
   REWARD_TYPE_LABELS,
 } from '../../types/quest';
+import { type CustomItem } from '../../types/item';
 import { isRewardSupported } from '../../generator/platform';
+import { PillSelect } from '../ui/Field';
 
 interface Props {
   quest: Quest;
   platform: Platform;
+  customItems: CustomItem[];
   onChange: (quest: Quest) => void;
 }
 
@@ -43,7 +46,13 @@ function valuePlaceholder(type: RewardType): string {
   }
 }
 
-export function StepRewards({ quest, platform, onChange }: Props) {
+type ItemSource = 'vanilla' | 'custom';
+
+function itemSource(reward: Reward): ItemSource {
+  return reward.customItemId ? 'custom' : 'vanilla';
+}
+
+export function StepRewards({ quest, platform, customItems, onChange }: Props) {
   const rewards = quest.rewards;
   const setRewards = (next: Reward[]) => onChange({ ...quest, rewards: next });
 
@@ -52,6 +61,22 @@ export function StepRewards({ quest, platform, onChange }: Props) {
 
   const remove = (i: number) => setRewards(rewards.filter((_, idx) => idx !== i));
   const add = () => setRewards([...rewards, defaultReward('item')]);
+
+  const setItemSource = (i: number, source: ItemSource) => {
+    const reward = rewards[i];
+    if (source === 'custom') {
+      const first = customItems[0];
+      update(i, {
+        customItemId: first?.id,
+        value: undefined,
+      });
+    } else {
+      update(i, {
+        value: reward.value ?? 'minecraft:diamond',
+        customItemId: undefined,
+      });
+    }
+  };
 
   return (
     <div>
@@ -74,8 +99,9 @@ export function StepRewards({ quest, platform, onChange }: Props) {
 
         {rewards.map((reward, i) => {
           const support = isRewardSupported(platform, reward);
-          const showValue = reward.type === 'item' || reward.type === 'permission' || reward.type === 'command';
           const showAmount = reward.type === 'item' || reward.type === 'xp' || reward.type === 'money';
+          const isItem = reward.type === 'item';
+          const source = itemSource(reward);
           return (
             <div key={i} className="card" style={{ background: 'var(--bg)', marginBottom: 12 }}>
               <div className="list-row">
@@ -96,7 +122,57 @@ export function StepRewards({ quest, platform, onChange }: Props) {
                   </select>
                 </div>
 
-                {showValue && (
+                {isItem && (
+                  <div className="field" style={{ flex: 2 }}>
+                    <label>Item source</label>
+                    <PillSelect
+                      value={source}
+                      options={[
+                        { value: 'vanilla', label: 'Vanilla item' },
+                        { value: 'custom', label: 'Custom item' },
+                      ]}
+                      onChange={(v) => setItemSource(i, v)}
+                    />
+                  </div>
+                )}
+
+                {isItem && source === 'vanilla' && (
+                  <div className="field" style={{ flex: 2 }}>
+                    <label>Item id</label>
+                    <input
+                      value={reward.value ?? ''}
+                      placeholder={valuePlaceholder('item')}
+                      onChange={(e) => update(i, { value: e.target.value })}
+                    />
+                  </div>
+                )}
+
+                {isItem && source === 'custom' && (
+                  <div className="field" style={{ flex: 2 }}>
+                    <label>Custom item</label>
+                    {customItems.length === 0 ? (
+                      <div className="hint" style={{ marginTop: 8 }}>
+                        No custom items yet. Open the Custom Items tab to create one.
+                      </div>
+                    ) : (
+                      <select
+                        value={reward.customItemId ?? ''}
+                        onChange={(e) =>
+                          update(i, { customItemId: e.target.value, value: undefined })
+                        }
+                      >
+                        {!reward.customItemId && <option value="">Select an item…</option>}
+                        {customItems.map((item) => (
+                          <option key={item.id} value={item.id}>
+                            {item.name} ({item.displayName})
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                )}
+
+                {(reward.type === 'permission' || reward.type === 'command') && (
                   <div className="field" style={{ flex: 2 }}>
                     <label>{reward.type === 'command' ? 'Command' : 'Value'}</label>
                     <input
@@ -127,10 +203,15 @@ export function StepRewards({ quest, platform, onChange }: Props) {
               {reward.type === 'command' && (
                 <div className="hint">Use {'{player}'} as a placeholder for the rewarded player.</div>
               )}
-              {reward.type === 'item' && (
+              {isItem && source === 'vanilla' && (
                 <div className="hint">
-                  Use an exact Minecraft item id (e.g. minecraft:diamond, minecraft:golden_apple). A
-                  typo means the item silently won't be given in-game.
+                  Use an exact Minecraft item id (e.g. minecraft:diamond). A typo means the item
+                  silently won't be given in-game.
+                </div>
+              )}
+              {isItem && source === 'custom' && (
+                <div className="hint">
+                  Gives the item with its custom name, lore, and components from the Items tab.
                 </div>
               )}
               {support.note && (

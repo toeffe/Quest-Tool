@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createProject, createQuest } from '../types/factory';
+import { createProject, createQuest, createCustomItem } from '../types/factory';
 import { validateProject, hasBlockingErrors } from './validate';
 
 describe('validation', () => {
@@ -43,5 +43,38 @@ describe('validation', () => {
     project.quests = [quest];
     const issues = validateProject(project);
     expect(issues.some((i) => i.level === 'warning' && /permission/i.test(i.message))).toBe(true);
+  });
+
+  it('accepts custom item objectives without a vanilla target', () => {
+    const project = createProject('Items');
+    const item = createCustomItem('general', 'Token');
+    project.customItems = [item];
+    const quest = createQuest('Gather', 'gather');
+    quest.objectives = [{ customItemId: item.id, amount: 3 }];
+    project.quests = [quest];
+    const issues = validateProject(project);
+    expect(hasBlockingErrors(issues)).toBe(false);
+  });
+
+  it('flags missing custom item references', () => {
+    const project = createProject('Broken');
+    const quest = createQuest('Gather', 'gather');
+    quest.objectives = [{ customItemId: 'missing-id', amount: 1 }];
+    project.quests = [quest];
+    const issues = validateProject(project);
+    expect(issues.some((i) => /custom item that no longer exists/.test(i.message))).toBe(true);
+  });
+
+  it('flags duplicate custom item tags', () => {
+    const project = createProject('Dup');
+    const a = createCustomItem('general', 'A');
+    const b = createCustomItem('general', 'B');
+    a.tag = 'same_tag';
+    b.tag = 'same_tag';
+    project.customItems = [a, b];
+    project.quests = [createQuest('Q', 'kill')];
+    project.quests[0].rewards = [{ type: 'item', customItemId: a.id, amount: 1 }];
+    const issues = validateProject(project);
+    expect(issues.some((i) => /Duplicate custom item tag/.test(i.message))).toBe(true);
   });
 });
