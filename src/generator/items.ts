@@ -24,7 +24,7 @@ export function buildItemStackArg(item: CustomItem): string {
   const loreLines = item.lore.filter((l) => l.trim());
   if (loreLines.length) {
     const lore = loreLines
-      .map((line) => `'{"text":"${escapeSnbtString(line.trim())}"}'`)
+      .map((line) => `{text:"${escapeSnbtString(line.trim())}",italic:false}`)
       .join(',');
     parts.push(`lore=[${lore}]`);
   }

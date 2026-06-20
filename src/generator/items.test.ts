@@ -23,7 +23,7 @@ describe('custom item commands', () => {
     expect(cmd).toContain('give @s minecraft:paper[');
     expect(cmd).toContain('custom_data={questtool_id:"royal_seal"}');
     expect(cmd).toContain('item_name="Royal Seal"');
-    expect(cmd).toContain('lore=[\'{"text":"Awarded for loyalty"}\']');
+    expect(cmd).toContain('lore=[{text:"Awarded for loyalty",italic:false}]');
     expect(cmd).toContain('enchantment_glint_override=true');
     expect(cmd).toContain('max_stack_size=1');
     expect(cmd).toContain('unbreakable={}');
@@ -70,6 +70,6 @@ describe('custom item commands', () => {
     item.lore = ['Line\nbreak'];
     const stack = buildItemStackArg(item);
     expect(stack).toContain('item_name="Say \\"hello\\""');
-    expect(stack).toContain('\\n');
+    expect(stack).toContain('{text:"Line\\nbreak",italic:false}');
   });
 });
