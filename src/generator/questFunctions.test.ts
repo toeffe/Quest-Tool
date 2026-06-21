@@ -93,6 +93,25 @@ describe('quest tick generation', () => {
     );
   });
 
+  it('gather quests remove items on turn-in when consumeOnTurnIn is set', () => {
+    const project = createProject('P');
+    project.namespace = 'p';
+    const q = createQuest('Gather', 'gather');
+    q.objectives = [
+      { target: 'minecraft:wheat', amount: 10, description: 'Saml hvede', consumeOnTurnIn: true },
+    ];
+    project.quests = [q];
+    const ctx = buildContext(project);
+    const turnin = compileQuest(ctx, ctx.quests[0])['quests/0_gather/turnin.mcfunction'];
+    expect(turnin).toContain('clear @s minecraft:wheat 10');
+  });
+
+  it('gather quests keep items on turn-in by default', () => {
+    const files = compileFirst('gather');
+    const turnin = files['quests/0_q/turnin.mcfunction'];
+    expect(turnin).not.toContain('clear @s minecraft:wheat 10');
+  });
+
   it('talk quests with no target complete instantly on accept', () => {
     const project = createProject('P');
     project.namespace = 'p';

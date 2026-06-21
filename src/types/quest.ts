@@ -111,6 +111,8 @@ export interface Objective {
   spawnZone?: boolean;
   /** Max live mobs in the spawn zone at once (kill spawn zones only). Defaults to min(amount, 5). */
   zoneCap?: number;
+  /** When true on gather/daily, remove required items from inventory on turn-in (delivery always does). */
+  consumeOnTurnIn?: boolean;
 }
 
 export type RewardType =

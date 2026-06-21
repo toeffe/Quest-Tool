@@ -291,6 +291,27 @@ export function StepQuest({ quest, customItems, onChange }: Props) {
                       onChange={(amount) => setObjectiveAt(i, { amount })}
                     />
                   </div>
+                  {quest.type === 'delivery' ? (
+                    <div className="hint">
+                      Afleveringsquests fjerner altid de krævede genstande, når spilleren afleverer.
+                    </div>
+                  ) : (
+                    <Field
+                      label="Genstande ved aflevering"
+                      hint="Fjern de krævede genstande fra inventory, når questen afleveres."
+                    >
+                      <PillSelect
+                        value={obj.consumeOnTurnIn ? 'remove' : 'keep'}
+                        options={[
+                          { value: 'keep', label: 'Behold genstande' },
+                          { value: 'remove', label: 'Fjern ved aflevering' },
+                        ]}
+                        onChange={(v) =>
+                          setObjectiveAt(i, { consumeOnTurnIn: v === 'remove' })
+                        }
+                      />
+                    </Field>
+                  )}
                 </>
               )}
 

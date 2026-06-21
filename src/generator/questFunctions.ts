@@ -4,6 +4,7 @@ import {
   namespaced,
   questObjectives,
 } from './context';
+import { type Quest } from '../types/quest';
 import { killQuestMobsCommand, spawnOneInZone, zonePopulationCap, containMobsInZone } from './npc';
 import { normalizeEntityId } from '../data/mobs';
 import { rewardCommands } from './platform';
@@ -46,6 +47,8 @@ interface ObjectiveInfo {
   mobTag: string;
   timerHolder: string;
   liveHolder: string;
+  /** Remove this objective's items from inventory on turn-in. */
+  consumeOnTurnIn: boolean;
 }
 
 function objectiveInfos(ctx: CompileContext, qc: QuestContext): ObjectiveInfo[] {
@@ -70,8 +73,14 @@ function objectiveInfos(ctx: CompileContext, qc: QuestContext): ObjectiveInfo[] 
       mobTag: qc.objectives[j].mobTag,
       timerHolder: qc.objectives[j].timerHolder,
       liveHolder: qc.objectives[j].liveHolder,
+      consumeOnTurnIn:
+        qc.quest.type === 'delivery' || !!(o.consumeOnTurnIn && usesItemTarget(qc.quest.type)),
     };
   });
+}
+
+function usesItemTarget(type: Quest['type']): boolean {
+  return type === 'gather' || type === 'delivery' || type === 'daily';
 }
 
 function killAdvancementId(ctx: CompileContext, qc: QuestContext, j: number): string {
@@ -516,9 +525,10 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
 
   // ---- turnin.mcfunction ----
   const turnin: string[] = [`# Turn in`, `scoreboard players set @s ${qc.trigger} 0`];
-  if (quest.type === 'delivery') {
-    // Verify every delivery objective still has its items before consuming any.
-    for (const info of infos) {
+  const consumeInfos = infos.filter((info) => info.consumeOnTurnIn);
+  if (consumeInfos.length) {
+    // Verify every consuming objective still has its items before removing any.
+    for (const info of consumeInfos) {
       turnin.push(
         `execute store result score @s ${info.progress} run clear @s ${info.item} 0`,
         `execute if score @s ${info.progress} matches ..${info.amount - 1} run ${tellraw('@s', [
@@ -527,7 +537,7 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
         `execute if score @s ${info.progress} matches ..${info.amount - 1} run return 0`,
       );
     }
-    for (const info of infos) {
+    for (const info of consumeInfos) {
       turnin.push(`clear @s ${info.item} ${info.amount}`);
     }
   }
