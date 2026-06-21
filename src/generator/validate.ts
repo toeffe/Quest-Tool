@@ -33,13 +33,25 @@ function objectiveIssues(quest: Quest): string[] {
           out.push(`${where} is missing a target item.`);
         }
         if (!o.amount || o.amount < 1) out.push(`${where} amount must be at least 1.`);
-        if (quest.type === 'kill' && o.spawnZone && !o.location) {
+        if ((quest.type === 'kill' || quest.type === 'gather') && o.spawnZone && !o.location) {
           out.push(`${where} spawn zone is enabled but no location is set.`);
         }
-        if (quest.type === 'kill' && o.spawnZone && o.zoneCap != null && o.zoneCap < 1) {
+        if (
+          (quest.type === 'kill' || quest.type === 'gather') &&
+          o.spawnZone &&
+          o.zoneCap != null &&
+          o.zoneCap < 1
+        ) {
           out.push(`${where} spawn cap must be at least 1.`);
         }
-        if (quest.type === 'kill' && o.spawnZone && o.zoneDropMode === 'custom') {
+        if (quest.type === 'gather' && o.spawnZone && !o.zoneMob) {
+          out.push(`${where} spawn zone is enabled but no mob/creature is set.`);
+        }
+        if (
+          (quest.type === 'kill' || quest.type === 'gather') &&
+          o.spawnZone &&
+          o.zoneDropMode === 'custom'
+        ) {
           const drops = o.zoneDrops ?? [];
           if (!drops.length) {
             out.push(`${where} custom drops is enabled but no drops are configured.`);

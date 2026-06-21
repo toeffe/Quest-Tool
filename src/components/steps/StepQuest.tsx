@@ -4,8 +4,6 @@ import {
   type QuestType,
   type SpawnMode,
   type TargetNpc,
-  type ZoneDrop,
-  type ZoneDropMode,
   QUEST_TYPE_LABELS,
 } from '../../types/quest';
 import {
@@ -24,6 +22,7 @@ import { MOB_OPTIONS, isVillager } from '../../data/mobs';
 import { VariantFields, BabySelect } from './VariantFields';
 import { type CustomItem } from '../../types/item';
 import { QuestPreview } from '../preview/QuestPreview';
+import { SpawnZoneFields } from './SpawnZoneFields';
 
 interface Props {
   quest: Quest;
@@ -49,18 +48,6 @@ const SPAWN_MODES: { value: SpawnMode; label: string }[] = [
 ];
 
 const usesItemTarget = (t: QuestType) => t === 'gather' || t === 'delivery' || t === 'daily';
-
-function defaultZoneCap(amount: number): number {
-  return Math.min(Math.max(1, amount), 5);
-}
-
-function defaultZoneDrop(): ZoneDrop {
-  return { target: 'minecraft:rotten_flesh', amount: 1, chance: 100 };
-}
-
-function zoneDropSource(drop: ZoneDrop): ItemSource {
-  return drop.customItemId ? 'custom' : 'vanilla';
-}
 
 export function StepQuest({ quest, customItems, onChange }: Props) {
   const objectives: Objective[] = quest.objectives.length ? quest.objectives : [{}];
@@ -186,224 +173,12 @@ export function StepQuest({ quest, customItems, onChange }: Props) {
                       onChange={(amount) => setObjectiveAt(i, { amount })}
                     />
                   </div>
-                  <Field
-                    label="Spawn mobs in a zone?"
-                    hint="When enabled, tagged mobs spawn in the area below and only those kills count."
-                  >
-                    <PillSelect
-                      value={obj.spawnZone ? 'yes' : 'no'}
-                      options={[
-                        { value: 'no', label: 'No - any kill counts' },
-                        { value: 'yes', label: 'Yes - spawn zone' },
-                      ]}
-                      onChange={(v) =>
-                        setObjectiveAt(i, {
-                          spawnZone: v === 'yes',
-                          location:
-                            v === 'yes'
-                              ? obj.location ?? { x: 100, y: 64, z: 100 }
-                              : obj.location,
-                          radius: v === 'yes' ? obj.radius ?? 5 : obj.radius,
-                          zoneCap:
-                            v === 'yes'
-                              ? obj.zoneCap ?? defaultZoneCap(obj.amount ?? 1)
-                              : obj.zoneCap,
-                          zoneDropMode: v === 'yes' ? obj.zoneDropMode ?? 'none' : obj.zoneDropMode,
-                          zoneDrops: v === 'yes' ? obj.zoneDrops : obj.zoneDrops,
-                        })
-                      }
-                    />
-                  </Field>
-                  {obj.spawnZone && (
-                    <>
-                      <Field label="Zone center" hint="World coordinates for the center of the spawn area.">
-                        <CoordsRow
-                          value={obj.location ?? { x: 100, y: 64, z: 100 }}
-                          onChange={(location) => setObjectiveAt(i, { location })}
-                        />
-                      </Field>
-                      <NumberInput
-                        label="Spawn radius (blocks)"
-                        hint="Mobs spawn within this distance of the zone center."
-                        min={1}
-                        value={obj.radius ?? 5}
-                        onChange={(radius) => setObjectiveAt(i, { radius })}
-                      />
-                      <NumberInput
-                        label="Live mob cap"
-                        hint="Max mobs alive in the zone at once. New ones spawn after kills."
-                        min={1}
-                        value={obj.zoneCap ?? defaultZoneCap(obj.amount ?? 1)}
-                        onChange={(zoneCap) => setObjectiveAt(i, { zoneCap })}
-                      />
-                      <Field
-                        label="Drop behavior"
-                        hint="What items drop when players kill quest-spawned mobs in this zone."
-                      >
-                        <PillSelect
-                          value={obj.zoneDropMode ?? 'none'}
-                          options={[
-                            { value: 'none', label: 'No drops' },
-                            { value: 'vanilla', label: 'Vanilla drops' },
-                            { value: 'custom', label: 'Custom drops' },
-                          ]}
-                          onChange={(mode) => {
-                            const zoneDropMode = mode as ZoneDropMode;
-                            setObjectiveAt(i, {
-                              zoneDropMode,
-                              zoneDrops:
-                                zoneDropMode === 'custom'
-                                  ? obj.zoneDrops?.length
-                                    ? obj.zoneDrops
-                                    : [defaultZoneDrop()]
-                                  : obj.zoneDrops,
-                            });
-                          }}
-                        />
-                      </Field>
-                      {obj.zoneDropMode === 'custom' && (
-                        <div>
-                          <div className="row-between" style={{ marginBottom: 10 }}>
-                            <label style={{ fontWeight: 600, fontSize: 13 }}>Drop list</label>
-                            <button
-                              className="btn small"
-                              type="button"
-                              onClick={() =>
-                                setObjectiveAt(i, {
-                                  zoneDrops: [...(obj.zoneDrops ?? []), defaultZoneDrop()],
-                                })
-                              }
-                            >
-                              + Add drop
-                            </button>
-                          </div>
-                          {(obj.zoneDrops ?? []).length === 0 && (
-                            <p className="muted" style={{ fontSize: 13 }}>
-                              Add at least one item drop.
-                            </p>
-                          )}
-                          {(obj.zoneDrops ?? []).map((drop, di) => {
-                            const source = zoneDropSource(drop);
-                            const updateDrop = (patch: Partial<ZoneDrop>) => {
-                              const zoneDrops = (obj.zoneDrops ?? []).map((d, idx) =>
-                                idx === di ? { ...d, ...patch } : d,
-                              );
-                              setObjectiveAt(i, { zoneDrops });
-                            };
-                            const removeDrop = () => {
-                              const zoneDrops = (obj.zoneDrops ?? []).filter((_, idx) => idx !== di);
-                              setObjectiveAt(i, { zoneDrops });
-                            };
-                            return (
-                              <div
-                                key={di}
-                                className="card"
-                                style={{ background: 'var(--bg)', marginBottom: 10 }}
-                              >
-                                <div className="list-row">
-                                  <div className="field" style={{ flex: 2 }}>
-                                    <label>Item source</label>
-                                    <PillSelect
-                                      value={source}
-                                      options={[
-                                        { value: 'vanilla', label: 'Vanilla item' },
-                                        { value: 'custom', label: 'Custom item' },
-                                      ]}
-                                      onChange={(v) => {
-                                        if (v === 'custom') {
-                                          const first = customItems[0];
-                                          updateDrop({
-                                            customItemId: first?.id,
-                                            target: undefined,
-                                          });
-                                        } else {
-                                          updateDrop({
-                                            target: drop.target ?? 'minecraft:rotten_flesh',
-                                            customItemId: undefined,
-                                          });
-                                        }
-                                      }}
-                                    />
-                                  </div>
-                                  {source === 'vanilla' ? (
-                                    <div className="field" style={{ flex: 2 }}>
-                                      <label>Item id</label>
-                                      <input
-                                        value={drop.target ?? ''}
-                                        placeholder="minecraft:rotten_flesh"
-                                        onChange={(e) =>
-                                          updateDrop({ target: e.target.value })
-                                        }
-                                      />
-                                    </div>
-                                  ) : customItems.length === 0 ? (
-                                    <div className="field" style={{ flex: 2 }}>
-                                      <label>Custom item</label>
-                                      <div className="hint">
-                                        No custom items yet. Open the Custom Items tab.
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className="field" style={{ flex: 2 }}>
-                                      <label>Custom item</label>
-                                      <select
-                                        value={drop.customItemId ?? ''}
-                                        onChange={(e) =>
-                                          updateDrop({
-                                            customItemId: e.target.value,
-                                            target: undefined,
-                                          })
-                                        }
-                                      >
-                                        {!drop.customItemId && (
-                                          <option value="">Select an item…</option>
-                                        )}
-                                        {customItems.map((item) => (
-                                          <option key={item.id} value={item.id}>
-                                            {item.name} ({item.displayName})
-                                          </option>
-                                        ))}
-                                      </select>
-                                    </div>
-                                  )}
-                                  <div className="field" style={{ maxWidth: 100 }}>
-                                    <label>Amount</label>
-                                    <input
-                                      type="number"
-                                      min={1}
-                                      value={drop.amount ?? 1}
-                                      onChange={(e) =>
-                                        updateDrop({ amount: Number(e.target.value) })
-                                      }
-                                    />
-                                  </div>
-                                  <div className="field" style={{ maxWidth: 100 }}>
-                                    <label>Chance %</label>
-                                    <input
-                                      type="number"
-                                      min={1}
-                                      max={100}
-                                      value={drop.chance ?? 100}
-                                      onChange={(e) =>
-                                        updateDrop({ chance: Number(e.target.value) })
-                                      }
-                                    />
-                                  </div>
-                                  <button
-                                    className="btn small danger"
-                                    type="button"
-                                    onClick={removeDrop}
-                                  >
-                                    Remove
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </>
-                  )}
+                  <SpawnZoneFields
+                    variant="kill"
+                    obj={obj}
+                    customItems={customItems}
+                    onChange={(patch) => setObjectiveAt(i, patch)}
+                  />
                 </>
               )}
 
@@ -505,6 +280,14 @@ export function StepQuest({ quest, customItems, onChange }: Props) {
                       />
                     )}
                   </Field>
+                  {quest.type === 'gather' && (
+                    <SpawnZoneFields
+                      variant="gather"
+                      obj={obj}
+                      customItems={customItems}
+                      onChange={(patch) => setObjectiveAt(i, patch)}
+                    />
+                  )}
                 </>
               )}
 

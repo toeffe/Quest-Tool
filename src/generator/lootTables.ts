@@ -169,7 +169,7 @@ export function needsEmptyLootTable(
   quests: { type: string; objectives: { spawnZone?: boolean; zoneDropMode?: ZoneDropMode }[] }[],
 ): boolean {
   for (const quest of quests) {
-    if (quest.type !== 'kill') continue;
+    if (quest.type !== 'kill' && quest.type !== 'gather') continue;
     for (const o of quest.objectives) {
       if (o.spawnZone && o.zoneDropMode === 'none') return true;
     }

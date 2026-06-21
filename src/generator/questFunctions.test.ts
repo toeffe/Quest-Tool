@@ -170,6 +170,36 @@ describe('quest tick generation', () => {
     expect(accept).toContain('scoreboard players set #qk_0_0_t qt_sys 0');
   });
 
+  it('zoned gather quests spawn farm mobs and track item progress', () => {
+    const project = createProject('P');
+    project.namespace = 'p';
+    const q = createQuest('Leather', 'gather');
+    q.objectives = [
+      {
+        target: 'minecraft:leather',
+        amount: 5,
+        description: 'Collect leather',
+        spawnZone: true,
+        zoneMob: 'minecraft:cow',
+        location: { x: 10, y: 64, z: 20 },
+        radius: 5,
+        zoneDropMode: 'vanilla',
+      },
+    ];
+    project.quests = [q];
+    const ctx = buildContext(project);
+    const files = compileQuest(ctx, ctx.quests[0]);
+    const tick = files['quests/0_leather/tick.mcfunction'];
+    expect(tick).toContain('tag=qk_0_0');
+    expect(tick).toContain('spawn_mob_0');
+    expect(tick).toContain('store result score @s q0p0 run clear @s minecraft:leather 0');
+    expect(files['quests/0_leather/spawn_mob_0.mcfunction']).toContain('summon minecraft:cow');
+    expect(files['quests/0_leather/kill_credit_0.mcfunction']).toBeUndefined();
+    const accept = files['quests/0_leather/accept.mcfunction'];
+    expect(accept).toContain('kill @e[tag=qk_0_0]');
+    expect(accept).toContain('scoreboard players set #qk_0_0_t qt_sys 0');
+  });
+
   it('zoned kill quests respect a custom live mob cap', () => {
     const project = createProject('P');
     project.namespace = 'p';

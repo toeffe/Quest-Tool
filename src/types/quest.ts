@@ -118,19 +118,21 @@ export interface Objective {
   amount?: number;
   /** Human-readable label shown to the player. */
   description?: string;
-  /** For exploration: the location to discover. For kill spawn zones: zone center. */
+  /** For exploration: the location to discover. For spawn zones: zone center. */
   location?: Coordinates;
-  /** For exploration: how close (blocks) the player must get. For kill spawn zones: spawn radius. */
+  /** For exploration: how close (blocks) the player must get. For spawn zones: spawn radius. */
   radius?: number;
-  /** When true (kill quests only), spawn tagged mobs in location/radius; only those kills count. */
+  /** When true, spawn tagged mobs in location/radius (kill: only those kills count; gather: farm drops). */
   spawnZone?: boolean;
-  /** Max live mobs in the spawn zone at once (kill spawn zones only). Defaults to min(amount, 5). */
+  /** Gather spawn zones: entity type to spawn (e.g. "minecraft:cow"). Kill zones use target. */
+  zoneMob?: string;
+  /** Max live mobs in the spawn zone at once. Defaults to min(amount, 5). */
   zoneCap?: number;
   /** When true on gather/daily, remove required items from inventory on turn-in (delivery always does). */
   consumeOnTurnIn?: boolean;
-  /** Kill spawn zones only: what items drop when tagged mobs die. */
+  /** Spawn zones: what items drop when tagged mobs die. */
   zoneDropMode?: ZoneDropMode;
-  /** Kill spawn zones only: custom drop list when zoneDropMode is 'custom'. */
+  /** Spawn zones: custom drop list when zoneDropMode is 'custom'. */
   zoneDrops?: ZoneDrop[];
 }
 

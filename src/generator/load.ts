@@ -109,6 +109,12 @@ export function buildResetFunction(ctx: CompileContext): string {
           }
           break;
         case 'gather':
+          lines.push(`scoreboard players set @s ${score.progress} 0`);
+          if (o.spawnZone) {
+            lines.push(`kill @e[tag=${score.mobTag}]`);
+            lines.push(`scoreboard players set ${score.timerHolder} ${SYS_OBJECTIVE} 0`);
+          }
+          break;
         case 'delivery':
         case 'daily':
           lines.push(`scoreboard players set @s ${score.progress} 0`);

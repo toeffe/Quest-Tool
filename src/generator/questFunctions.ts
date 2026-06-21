@@ -35,7 +35,10 @@ function giver(qc: QuestContext): string {
 
 interface ObjectiveInfo {
   amount: number;
+  /** Item id for gather/delivery progress, or mob id for kill objectives. */
   item: string;
+  /** Entity type spawned in a spawn zone. */
+  entity: string;
   /** Human-readable item name for player messages. */
   label: string;
   desc: string;
@@ -61,15 +64,26 @@ interface ObjectiveInfo {
   deathLootTable?: string;
 }
 
+function questSupportsSpawnZone(type: Quest['type']): boolean {
+  return type === 'kill' || type === 'gather';
+}
+
+function spawnZoneEntity(quest: Quest, o: Quest['objectives'][number]): string {
+  if (quest.type === 'kill') return namespaced(o.target ?? 'minecraft:zombie');
+  return namespaced(o.zoneMob ?? 'minecraft:cow');
+}
+
 function objectiveInfos(ctx: CompileContext, qc: QuestContext): ObjectiveInfo[] {
   return questObjectives(qc.quest).map((o, j) => {
     const amount = Math.max(1, o.amount ?? 1);
     const item =
       resolveObjectiveStack(ctx.project, o) ?? namespaced(o.target ?? 'minecraft:stone');
+    const entity = spawnZoneEntity(qc.quest, o);
     const zoneDropMode = o.spawnZone ? (o.zoneDropMode ?? 'vanilla') : undefined;
     return {
       amount,
       item,
+      entity,
       label: itemDisplayLabel(ctx.project, o),
       desc: o.description ?? qc.quest.name,
       x: o.location?.x ?? 0,
@@ -151,7 +165,7 @@ export function buildZoneLootTableFiles(
   qc: QuestContext,
 ): Record<string, string> {
   const files: Record<string, string> = {};
-  if (qc.quest.type !== 'kill') return files;
+  if (!questSupportsSpawnZone(qc.quest.type)) return files;
   const objectives = questObjectives(qc.quest);
   for (let j = 0; j < objectives.length; j++) {
     const o = objectives[j];
@@ -166,7 +180,7 @@ export function buildZoneLootTableFiles(
 }
 
 function cleanupSpawnZoneLines(ctx: CompileContext, qc: QuestContext): string[] {
-  if (qc.quest.type !== 'kill') return [];
+  if (!questSupportsSpawnZone(qc.quest.type)) return [];
   const lines: string[] = [];
   for (const info of objectiveInfos(ctx, qc)) {
     if (info.spawnZone) lines.push(killQuestMobsCommand(info.mobTag));
@@ -174,16 +188,27 @@ function cleanupSpawnZoneLines(ctx: CompileContext, qc: QuestContext): string[] 
   return lines;
 }
 
+function resetSpawnZoneLines(info: ObjectiveInfo): string[] {
+  return resetSpawnZoneByScore(info.mobTag, info.timerHolder);
+}
+
+function resetSpawnZoneByScore(mobTag: string, timerHolder: string): string[] {
+  return [
+    killQuestMobsCommand(mobTag),
+    `scoreboard players set ${timerHolder} ${SYS_OBJECTIVE} 0`,
+  ];
+}
+
 function countLiveMobsInZone(info: ObjectiveInfo): string[] {
   return [
     `scoreboard players set ${info.liveHolder} ${SYS_OBJECTIVE} 0`,
     // Count all tagged quest mobs (not distance-filtered) so wanderers don't break the cap.
-    `execute as @e[type=${info.item},tag=${info.mobTag}] run scoreboard players add ${info.liveHolder} ${SYS_OBJECTIVE} 1`,
+    `execute as @e[type=${info.entity},tag=${info.mobTag}] run scoreboard players add ${info.liveHolder} ${SYS_OBJECTIVE} 1`,
   ];
 }
 
 function containZoneMobs(info: ObjectiveInfo): string[] {
-  return containMobsInZone(info.item, info.mobTag, info.x, info.y, info.z, info.radius);
+  return containMobsInZone(info.entity, info.mobTag, info.x, info.y, info.z, info.radius);
 }
 
 function buildZoneTickLines(ctx: CompileContext, qc: QuestContext, infos: ObjectiveInfo[]): string[] {
@@ -217,7 +242,7 @@ function buildSpawnMobFunction(info: ObjectiveInfo): string {
       ...countLiveMobsInZone(info),
       `execute if score ${info.liveHolder} ${SYS_OBJECTIVE} matches ${cap}.. run return 0`,
       ...spawnOneInZone(
-        info.item,
+        info.entity,
         info.mobTag,
         info.x,
         info.y,
@@ -321,17 +346,21 @@ function completionBody(ctx: CompileContext, qc: QuestContext): string[] {
       lines.push(`scoreboard players set @s ${next.done} 0`);
       for (let oi = 0; oi < next.objectives.length; oi++) {
         const score = next.objectives[oi];
+        const nextObjs = questObjectives(next.quest);
         switch (next.quest.type) {
           case 'kill': {
             lines.push(`scoreboard players set @s ${score.killed} 0`);
-            const nextObjs = questObjectives(next.quest);
             if (nextObjs[oi]?.spawnZone) {
-              lines.push(killQuestMobsCommand(score.mobTag));
-              lines.push(`scoreboard players set ${score.timerHolder} ${SYS_OBJECTIVE} 0`);
+              lines.push(...resetSpawnZoneByScore(score.mobTag, score.timerHolder));
             }
             break;
           }
           case 'gather':
+            lines.push(`scoreboard players set @s ${score.progress} 0`);
+            if (nextObjs[oi]?.spawnZone) {
+              lines.push(...resetSpawnZoneByScore(score.mobTag, score.timerHolder));
+            }
+            break;
           case 'delivery':
           case 'daily':
             lines.push(`scoreboard players set @s ${score.progress} 0`);
@@ -397,7 +426,7 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
     } else {
       // Count satisfied objectives into the `done` aggregate each tick.
       tick.push(`execute as @a[scores={${qc.state}=1}] run scoreboard players set @s ${qc.done} 0`);
-      if (quest.type === 'kill' && infos.some((i) => i.spawnZone)) {
+      if (questSupportsSpawnZone(quest.type) && infos.some((i) => i.spawnZone)) {
         tick.push(...buildZoneTickLines(ctx, qc, infos));
       }
       for (const info of infos) {
@@ -494,12 +523,12 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
       switch (quest.type) {
         case 'kill':
           accept.push(`scoreboard players set @s ${info.killed} 0`);
-          if (info.spawnZone) {
-            accept.push(killQuestMobsCommand(info.mobTag));
-            accept.push(`scoreboard players set ${info.timerHolder} ${SYS_OBJECTIVE} 0`);
-          }
+          if (info.spawnZone) accept.push(...resetSpawnZoneLines(info));
           break;
         case 'gather':
+          accept.push(`scoreboard players set @s ${info.progress} 0`);
+          if (info.spawnZone) accept.push(...resetSpawnZoneLines(info));
+          break;
         case 'delivery':
         case 'daily':
           accept.push(`scoreboard players set @s ${info.progress} 0`);
@@ -590,7 +619,14 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
   for (let j = 0; j < infos.length; j++) {
     if (!infos[j].spawnZone) continue;
     files[`${qc.fnBase}/spawn_mob_${j}.mcfunction`] = buildSpawnMobFunction(infos[j]);
-    files[`${qc.fnBase}/kill_credit_${j}.mcfunction`] = buildKillCreditFunction(ctx, qc, j, infos[j]);
+    if (quest.type === 'kill') {
+      files[`${qc.fnBase}/kill_credit_${j}.mcfunction`] = buildKillCreditFunction(
+        ctx,
+        qc,
+        j,
+        infos[j],
+      );
+    }
   }
 
   return files;

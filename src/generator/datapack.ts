@@ -54,7 +54,7 @@ function setupGuideFunction(ctx: CompileContext): string {
         },
       ]),
     );
-    if (qc.quest.type === 'kill') {
+    if (qc.quest.type === 'kill' || qc.quest.type === 'gather') {
       for (let j = 0; j < questObjectives(qc.quest).length; j++) {
         const o = questObjectives(qc.quest)[j];
         if (!o.spawnZone || !o.location) continue;

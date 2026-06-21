@@ -90,6 +90,22 @@ describe('validation', () => {
     };
   }
 
+  it('flags gather spawn zone missing mob', () => {
+    const project = createProject('Zone');
+    const quest = createQuest('Farm', 'gather');
+    quest.objectives = [
+      {
+        target: 'minecraft:leather',
+        amount: 5,
+        spawnZone: true,
+        location: { x: 0, y: 64, z: 0 },
+      },
+    ];
+    project.quests = [quest];
+    const issues = validateProject(project);
+    expect(issues.some((i) => /no mob\/creature is set/.test(i.message))).toBe(true);
+  });
+
   it('flags custom spawn zone drops with no entries', () => {
     const project = createProject('Zone');
     const quest = createQuest('Arena', 'kill');
