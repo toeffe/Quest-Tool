@@ -81,10 +81,10 @@ export function StepQuest({ quest, customItems, onChange }: Props) {
   function setTarget(patch: Partial<TargetNpc>) {
     const base: TargetNpc =
       quest.targetNpc ?? {
-        name: 'Target NPC',
+        name: 'Mål-NPC',
         tag: 'target_npc',
         entityType: 'minecraft:villager',
-        dialogue: 'You found me! Now return to the quest giver.',
+        dialogue: 'Du fandt mig! Vend tilbage til questgiveren.',
         spawnMode: 'player',
       };
     onChange({ ...quest, targetNpc: { ...base, ...patch } });

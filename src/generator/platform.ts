@@ -3,6 +3,7 @@ import { type CustomItem } from '../types/item';
 import { actionbar, tellraw, type TextPart } from './text';
 import { namespaced } from './context';
 import { buildGiveCommand } from './items';
+import { STR } from './strings';
 
 /**
  * Per-platform handling of rewards that depend on external systems
@@ -46,18 +47,18 @@ export function rewardCommands(
       if (platform === 'paper') {
         out.push(`execute as @s run eco give @s ${amount}`);
       }
-      out.push(reward_message(`You earned ${amount} coins!`, 'gold'));
+      out.push(reward_message(STR.coinsEarned(amount), 'gold'));
       break;
     }
     case 'permission': {
       const node = reward.value ?? 'quest.reward';
       if (platform === 'paper') {
         out.push(`execute as @s run lp user @s permission set ${node} true`);
-        out.push(reward_message(`Permission granted: ${node}`, 'light_purple'));
+        out.push(reward_message(STR.permissionGranted(node), 'light_purple'));
       } else {
         out.push(
           reward_message(
-            `You unlocked: ${node} (ask staff to enable it)`,
+            STR.permissionUnlocked(node),
             'light_purple',
           ),
         );

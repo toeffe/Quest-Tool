@@ -11,9 +11,10 @@ import {
 import { compileQuest, buildKillZoneAdvancementFiles } from './questFunctions';
 import { spawnFunctionLines } from './npc';
 import { installGuide } from './platform';
-import { tellraw } from './text';
+import { tellraw, escapeSnbtString } from './text';
 import { questObjectives } from './context';
 import { buildGiveCustomItemsFunction } from './items';
+import { STR } from './strings';
 
 /** A flat map of file paths (inside the ZIP) to their text contents. */
 export type FileMap = Record<string, string>;
@@ -21,17 +22,17 @@ export type FileMap = Record<string, string>;
 function setupGuideFunction(ctx: CompileContext): string {
   const lines = [
     `# Setup guide - lists how to spawn each NPC`,
-    tellraw('@s', [{ text: '=== Quest Tool: NPC Setup ===', color: 'gold', bold: true }]),
+    tellraw('@s', [{ text: STR.setupGuideTitle, color: 'gold', bold: true }]),
   ];
   for (const qc of ctx.quests) {
     const npc = qc.quest.npc;
     let where: string;
     if (npc.spawnMode === 'fixed' && npc.coordinates) {
-      where = `fixed at ${npc.coordinates.x} ${npc.coordinates.y} ${npc.coordinates.z}`;
+      where = STR.setupFixedAt(npc.coordinates.x, npc.coordinates.y, npc.coordinates.z);
     } else if (npc.spawnMode === 'manual') {
-      where = 'manual placement (run the command where you want it)';
+      where = STR.setupManual;
     } else {
-      where = 'at your location (stand where you want it, then run)';
+      where = STR.setupAtPlayer;
     }
     lines.push(
       tellraw('@s', [
@@ -43,7 +44,7 @@ function setupGuideFunction(ctx: CompileContext): string {
           text: `  > /function ${ctx.namespace}:${qc.spawnFn}`,
           color: 'aqua',
           suggestCommand: `/function ${ctx.namespace}:${qc.spawnFn}`,
-          hover: 'Click to put this command in your chat box',
+          hover: STR.setupCommandHover,
         },
       ]),
     );
@@ -54,7 +55,7 @@ function setupGuideFunction(ctx: CompileContext): string {
         const r = Math.max(1, o.radius ?? 5);
         lines.push(
           tellraw('@s', [
-            { text: `  spawn zone ${j + 1}: `, color: 'gray' },
+            { text: STR.setupSpawnZone(j), color: 'gray' },
             {
               text: `${o.location.x} ${o.location.y} ${o.location.z} (r=${r})`,
               color: 'white',
@@ -66,8 +67,8 @@ function setupGuideFunction(ctx: CompileContext): string {
   }
   lines.push(
     tellraw('@s', [
-      { text: 'Tip: ', color: 'green' },
-      { text: `run /function ${ctx.namespace}:spawn_all to place every NPC at once.`, color: 'gray' },
+      { text: STR.setupTipLabel, color: 'green' },
+      { text: STR.setupTip(ctx.namespace), color: 'gray' },
     ]),
   );
   return lines.join('\n') + '\n';
@@ -84,13 +85,13 @@ function spawnAllFunction(ctx: CompileContext): string {
 function debugFunction(ctx: CompileContext): string {
   const lines = [
     `# Debug - verify NPC tags and quest state`,
-    tellraw('@s', [{ text: '=== Quest Tool: Debug ===', color: 'gold', bold: true }]),
+    tellraw('@s', [{ text: STR.debugTitle, color: 'gold', bold: true }]),
   ];
   for (const qc of ctx.quests) {
     lines.push(
-      `execute if entity @e[tag=${qc.giverTag}] run tellraw @s ["",{"text":"[OK] ","color":"green"},{"text":"${qc.quest.name} giver present"}]`,
-      `execute unless entity @e[tag=${qc.giverTag}] run tellraw @s ["",{"text":"[!!] ","color":"red"},{"text":"${qc.quest.name} giver MISSING - run its spawn function"}]`,
-      `tellraw @s ["",{"text":"  your state: ","color":"gray"},{"score":{"name":"@s","objective":"${qc.state}"},"color":"white"},{"text":" (0 avail,1 active,2 ready,3 done,4 cooldown,-1 locked)","color":"dark_gray"}]`,
+      `execute if entity @e[tag=${qc.giverTag}] run tellraw @s ["",{"text":"[OK] ","color":"green"},{"text":"${escapeSnbtString(STR.debugGiverOk(qc.quest.name))}"}]`,
+      `execute unless entity @e[tag=${qc.giverTag}] run tellraw @s ["",{"text":"[!!] ","color":"red"},{"text":"${escapeSnbtString(STR.debugGiverMissing(qc.quest.name))}"}]`,
+      `tellraw @s ["",{"text":"${STR.debugYourState}","color":"gray"},{"score":{"name":"@s","objective":"${qc.state}"},"color":"white"},{"text":"${STR.debugStateLegend}","color":"dark_gray"}]`,
     );
   }
   return lines.join('\n') + '\n';

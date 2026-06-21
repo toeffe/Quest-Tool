@@ -162,6 +162,6 @@ export function createAndAddCustomItem(
   kind: CustomItem['kind'] = 'general',
 ): { project: Project; item: CustomItem } {
   const n = (project.customItems ?? []).length + 1;
-  const item = createCustomItem(kind, `Item ${n}`);
+  const item = createCustomItem(kind, `Genstand ${n}`);
   return { project: addCustomItem(project, item), item };
 }

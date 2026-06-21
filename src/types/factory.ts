@@ -15,16 +15,16 @@ export const PROJECT_SCHEMA_VERSION = 2;
 
 export function createNpc(): Npc {
   return {
-    name: 'Quest Giver',
+    name: 'Questgiver',
     tag: 'quest_giver',
     entityType: 'minecraft:villager',
     profession: 'librarian',
     variant: 'plains',
     dialogue: {
-      greeting: 'Greetings, traveler! I have need of someone with your talents.',
-      offer: 'Will you help me?',
-      inProgress: 'Have you finished the task yet?',
-      completion: 'Wonderful work! Here is your reward.',
+      greeting: 'Hej, rejsende! Jeg har brug for en som dig.',
+      offer: 'Vil du hjælpe mig?',
+      inProgress: 'Er du færdig med opgaven endnu?',
+      completion: 'Fantastisk arbejde! Her er din belønning.',
     },
     spawnMode: 'player',
   };
@@ -34,21 +34,21 @@ export function createNpc(): Npc {
 export function newObjectiveFor(type: QuestType): Quest['objectives'][number] {
   switch (type) {
     case 'kill':
-      return { target: 'minecraft:zombie', amount: 5, description: 'Slay zombies' };
+      return { target: 'minecraft:zombie', amount: 5, description: 'Dræb zombier' };
     case 'gather':
-      return { target: 'minecraft:wheat', amount: 10, description: 'Collect wheat' };
+      return { target: 'minecraft:wheat', amount: 10, description: 'Saml hvede' };
     case 'delivery':
-      return { target: 'minecraft:bread', amount: 3, description: 'Deliver bread' };
+      return { target: 'minecraft:bread', amount: 3, description: 'Aflever brød' };
     case 'exploration':
       return {
         location: { x: 100, y: 64, z: 100 },
         radius: 5,
-        description: 'Discover the marked location',
+        description: 'Find det markerede sted',
       };
     case 'talk':
-      return { description: 'Speak with the target' };
+      return { description: 'Tal med målet' };
     case 'daily':
-      return { target: 'minecraft:rotten_flesh', amount: 8, description: 'Gather rotten flesh' };
+      return { target: 'minecraft:rotten_flesh', amount: 8, description: 'Saml råddent kød' };
     default:
       return {};
   }
@@ -58,13 +58,13 @@ export function defaultObjectiveFor(type: QuestType): Quest['objectives'] {
   return [newObjectiveFor(type)];
 }
 
-export function createQuest(name = 'New Quest', type: QuestType = 'kill'): Quest {
+export function createQuest(name = 'Ny quest', type: QuestType = 'kill'): Quest {
   return {
     id: uid(),
     name,
     type,
-    category: 'General',
-    description: 'A quest awaits.',
+    category: 'Generelt',
+    description: 'En quest venter.',
     npc: createNpc(),
     objectives: defaultObjectiveFor(type),
     rewards: [{ type: 'xp', amount: 50 } as Reward],
@@ -73,7 +73,7 @@ export function createQuest(name = 'New Quest', type: QuestType = 'kill'): Quest
   };
 }
 
-export function createCustomItem(kind: CustomItemKind = 'general', name = 'New Item'): CustomItem {
+export function createCustomItem(kind: CustomItemKind = 'general', name = 'Nyt item'): CustomItem {
   const tag = toIdentifier(name, 'item');
   const base: CustomItem = {
     id: uid(),
@@ -116,13 +116,13 @@ export function createCustomItem(kind: CustomItemKind = 'general', name = 'New I
   }
 }
 
-export function createProject(name = 'My Quest Pack'): Project {
+export function createProject(name = 'Mit quest-pakke'): Project {
   return {
     id: uid(),
     name,
     namespace: 'questpack',
     platform: 'paper',
-    quests: [createQuest('First Quest', 'kill')],
+    quests: [createQuest('Første quest', 'kill')],
     customItems: [],
     version: PROJECT_SCHEMA_VERSION,
   };

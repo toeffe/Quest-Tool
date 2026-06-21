@@ -3,6 +3,7 @@ import { type QuestContext } from './context';
 import { normalizeEntityId } from '../data/mobs';
 import { buildVariantNbt } from '../data/mobVariants';
 import { escapeSnbtString } from './text';
+import { STR } from './strings';
 
 /** Age value that keeps baby mobs from ever growing up. */
 const PERMANENT_BABY_AGE = -2147483648;
@@ -116,7 +117,7 @@ export function spawnFunctionLines(qc: QuestContext): string[] {
   if (target) {
     lines.push(killTargetCommand(qc), target);
   }
-  lines.push(`say [Quest Tool] Spawned NPC(s) for "${qc.quest.name}".`);
+  lines.push(`say ${STR.npcSpawned(qc.quest.name)}`);
   return lines;
 }
 

@@ -1,4 +1,6 @@
 import { type CompileContext, questObjectives, statId } from './context';
+import { STR } from './strings';
+import { escapeSnbtString } from './text';
 
 /** System objective + score holder used for the global gametime read (daily cooldowns). */
 export const SYS_OBJECTIVE = 'qt_sys';
@@ -57,7 +59,7 @@ export function buildLoadFunction(ctx: CompileContext): string {
     }
   }
 
-  lines.push(`tellraw @a {"text":"[Quest Tool] ${ctx.project.name} loaded.","color":"green"}`);
+  lines.push(`tellraw @a {"text":"${escapeSnbtString(STR.packLoaded(ctx.project.name))}","color":"green"}`);
   return lines.join('\n') + '\n';
 }
 
@@ -121,7 +123,7 @@ export function buildResetFunction(ctx: CompileContext): string {
     if (qc.quest.type === 'daily') lines.push(`scoreboard players set @s ${qc.state}cd 0`);
   }
   lines.push(
-    `tellraw @s {"text":"[Quest Tool] Your quest progress has been reset.","color":"yellow"}`,
+    `tellraw @s {"text":"${STR.resetSelf}","color":"yellow"}`,
   );
   return lines.join('\n') + '\n';
 }
@@ -132,7 +134,7 @@ export function buildResetAllFunction(ctx: CompileContext): string {
     [
       `# Reset quest progress for all online players`,
       `execute as @a run function ${ctx.namespace}:reset`,
-      `tellraw @a {"text":"[Quest Tool] All quest progress has been reset.","color":"yellow"}`,
+      `tellraw @a {"text":"${STR.resetAll}","color":"yellow"}`,
     ].join('\n') + '\n'
   );
 }

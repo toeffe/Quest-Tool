@@ -1,4 +1,5 @@
 import { type Quest } from '../../types/quest';
+import { STR } from '../../generator/strings';
 
 interface Props {
   quest: Quest;
@@ -66,7 +67,7 @@ export function QuestPreview({ quest, variant = 'dialogue' }: Props) {
           </div>
         ))}
         <div className="mc-chat-line">
-          <span className="mc-button">[ Accept Quest ]</span>
+          <span className="mc-button">{STR.acceptQuestButton}</span>
         </div>
       </div>
       <div className="hint" style={{ marginTop: 8 }}>

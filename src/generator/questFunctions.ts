@@ -10,6 +10,7 @@ import { rewardCommands } from './platform';
 import { resolveObjectiveStack, itemDisplayLabel } from './items';
 import { NOW_HOLDER, SYS_OBJECTIVE } from './load';
 import { escapeSnbtString, tellraw, type TextPart } from './text';
+import { STR } from './strings';
 
 const RANGE_ALL = '-2147483648..2147483647';
 
@@ -206,7 +207,7 @@ function progressActionbar(scoreName: string, info: ObjectiveInfo): string {
 function doneActionbar(qc: QuestContext, total: number): string {
   return (
     `title @s actionbar ["",` +
-    `{"text":"Objectives: ","color":"yellow"},` +
+    `{"text":"${STR.objectivesProgress}","color":"yellow"},` +
     `{"score":{"name":"@s","objective":"${qc.done}"},"color":"gold"},` +
     `{"text":"/${total}","color":"yellow"}]`
   );
@@ -242,9 +243,9 @@ function completionBody(ctx: CompileContext, qc: QuestContext): string[] {
   if (quest.chain.announce) {
     lines.push(
       `tellraw @a ["",` +
-        `{"text":"[Quests] ","color":"gold"},` +
+        `{"text":"${STR.questsAnnouncePrefix}","color":"gold"},` +
         `{"selector":"@s","color":"white"},` +
-        `{"text":" completed ","color":"yellow"},` +
+        `{"text":"${STR.questsAnnounceCompleted}","color":"yellow"},` +
         `{"text":"${escapeSnbtString(quest.name)}","color":"white"},` +
         `{"text":"!","color":"yellow"}]`,
     );
@@ -290,7 +291,7 @@ function completionBody(ctx: CompileContext, qc: QuestContext): string[] {
       }
       lines.push(
         tellraw('@s', [
-          { text: 'New quest started: ', color: 'aqua' },
+          { text: STR.newQuestStarted, color: 'aqua' },
           { text: next.quest.name, color: 'white', bold: true },
         ]),
       );
@@ -298,9 +299,9 @@ function completionBody(ctx: CompileContext, qc: QuestContext): string[] {
       lines.push(`scoreboard players set @s ${next.state} 0`);
       lines.push(
         tellraw('@s', [
-          { text: 'New quest available: ', color: 'aqua' },
+          { text: STR.newQuestAvailable, color: 'aqua' },
           { text: next.quest.name, color: 'white', bold: true },
-          { text: ` (see ${next.quest.npc.name})`, color: 'gray' },
+          { text: STR.seeNpc(next.quest.npc.name), color: 'gray' },
         ]),
       );
     }
@@ -414,11 +415,11 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
       `execute if score @s ${qc.near} matches 0 run ${tellraw('@s', npcSay(quest.npc.name, quest.npc.dialogue.offer, 'yellow'))}`,
       `execute if score @s ${qc.near} matches 0 run ${tellraw('@s', [
         {
-          text: '[ Accept Quest ]',
+          text: STR.acceptQuestButton,
           color: 'green',
           bold: true,
           runCommand: `trigger ${qc.trigger}`,
-          hover: 'Click to accept this quest',
+          hover: STR.acceptQuestHover,
         },
       ])}`,
       `scoreboard players set @s ${qc.near} 1`,
@@ -458,15 +459,15 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
     }
     accept.push(
       tellraw('@s', [
-        { text: 'Quest accepted: ', color: 'green' },
+        { text: STR.questAccepted, color: 'green' },
         { text: quest.name, color: 'white', bold: true },
       ]),
       tellraw('@s', [
         {
           text:
             objCount === 1
-              ? `Objective: ${infos[0].desc}`
-              : `Objectives: ${objCount} to complete`,
+              ? STR.objectiveSingle(infos[0].desc)
+              : STR.objectivesMultiple(objCount),
           color: 'gray',
         },
       ]),
@@ -483,8 +484,8 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
       `scoreboard players set @s ${qc.state} 2`,
       `scoreboard players set @s ${qc.near} 0`,
       tellraw('@s', [
-        { text: 'Objective complete! ', color: 'green', bold: true },
-        { text: `Return to ${quest.npc.name}.`, color: 'yellow' },
+        { text: STR.objectiveComplete, color: 'green', bold: true },
+        { text: STR.returnToNpc(quest.npc.name), color: 'yellow' },
       ]),
     ].join('\n') + '\n';
 
@@ -500,14 +501,14 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
   files[`${qc.fnBase}/ready.mcfunction`] =
     [
       `# Ready-to-claim prompt (fires once per approach)`,
-      `execute if score @s ${qc.near} matches 0 run ${tellraw('@s', npcSay(quest.npc.name, 'You have done it! Let me reward you.', 'green'))}`,
+      `execute if score @s ${qc.near} matches 0 run ${tellraw('@s', npcSay(quest.npc.name, STR.readyForReward, 'green'))}`,
       `execute if score @s ${qc.near} matches 0 run ${tellraw('@s', [
         {
-          text: '[ Turn In Quest ]',
+          text: STR.turnInQuestButton,
           color: 'gold',
           bold: true,
           runCommand: `trigger ${qc.trigger}`,
-          hover: 'Click to claim your reward',
+          hover: STR.turnInQuestHover,
         },
       ])}`,
       `scoreboard players set @s ${qc.near} 1`,
@@ -521,7 +522,7 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
       turnin.push(
         `execute store result score @s ${info.progress} run clear @s ${info.item} 0`,
         `execute if score @s ${info.progress} matches ..${info.amount - 1} run ${tellraw('@s', [
-          { text: `You still need ${info.amount}x ${info.label}.`, color: 'red' },
+          { text: STR.deliveryStillNeed(info.amount, info.label), color: 'red' },
         ])}`,
         `execute if score @s ${info.progress} matches ..${info.amount - 1} run return 0`,
       );
