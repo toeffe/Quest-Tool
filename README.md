@@ -15,7 +15,8 @@ datapacks, or coding knowledge required.
 - Kill quest **spawn zones**: control whether datapack-spawned mobs drop items (none, vanilla loot, or a custom drop list)
 - Targets PaperMC, Vanilla servers, and Open-to-LAN single-player
 - Validation, raw-command preview, and one-click datapack ZIP download
-- Auto-saves to your browser; import/export projects as JSON
+- Auto-saves to your browser; datapack downloads include `quest-tool-project.json` for re-import
+- Import projects from JSON or a previously downloaded datapack ZIP
 
 ## Getting started
 

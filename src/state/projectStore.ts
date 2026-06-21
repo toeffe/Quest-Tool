@@ -3,7 +3,12 @@ import { type CustomItem } from '../types/item';
 import { createProject, createCustomItem, PROJECT_SCHEMA_VERSION } from '../types/factory';
 import { uid } from '../types/ids';
 
+import JSZip from 'jszip';
+
 const STORAGE_KEY = 'quest-tool-mc.project';
+
+/** Bundled inside every generated datapack ZIP for restore in Quest Tool MC. */
+export const PROJECT_BACKUP_FILENAME = 'quest-tool-project.json';
 
 /** Load the saved project from localStorage, or create a fresh one. */
 export function loadProject(): Project {
@@ -57,6 +62,31 @@ function migrate(project: Project): Project {
 /** Serialize the project for download. */
 export function exportProjectJson(project: Project): string {
   return JSON.stringify(project, null, 2);
+}
+
+/** Safe download name for a standalone project JSON export. */
+export function projectJsonFileName(project: Project): string {
+  const base = (project.name || 'project').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  return `${base || 'project'}.json`;
+}
+
+/**
+ * Read project JSON from a standalone .json file or a datapack .zip that contains
+ * {@link PROJECT_BACKUP_FILENAME} (included in every generated datapack download).
+ */
+export async function readProjectJsonFromFile(file: File): Promise<string> {
+  const name = file.name.toLowerCase();
+  if (name.endsWith('.zip')) {
+    const zip = await JSZip.loadAsync(await file.arrayBuffer());
+    const entry = zip.file(PROJECT_BACKUP_FILENAME);
+    if (!entry) {
+      throw new Error(
+        `This ZIP does not contain ${PROJECT_BACKUP_FILENAME}. Use a Quest Tool MC datapack download, or import a .json project file.`,
+      );
+    }
+    return entry.async('string');
+  }
+  return file.text();
 }
 
 /** Parse an imported JSON string into a project (throws on invalid input). */

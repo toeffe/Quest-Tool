@@ -5,7 +5,10 @@ interface Props {
 const VIEWS = [
   {
     title: 'Quest Builder',
-    body: 'Edit one quest at a time through five steps: NPC, Quest, Rewards, Chain, then Generate. Kill quests with spawn zones can set drop behavior: no drops, vanilla mob loot, or a custom drop list (vanilla or custom items).',
+    body:
+      'Edit one quest at a time through five steps: NPC, Quest, Rewards, Chain, then Generate. ' +
+      'Kill quests with spawn zones can set drop behavior: no drops, vanilla mob loot, or a custom drop list. ' +
+      'Download the datapack on Generate — the ZIP includes quest-tool-project.json so you can re-import your work from the sidebar.',
   },
   {
     title: 'Story Flow',
@@ -17,7 +20,9 @@ const VIEWS = [
   },
   {
     title: 'Custom Items',
-    body: 'Define trophy collectibles, food, tools, and more. Pick them as quest rewards or gather/delivery targets. Items use component syntax — no custom textures unless you add a resource pack.',
+    body:
+      'Define trophy collectibles, food, tools, and more. Use them as quest rewards, gather/delivery targets, ' +
+      'or spawn-zone mob drops. Items use component syntax — no custom textures unless you add a resource pack.',
   },
 ];
 
@@ -34,8 +39,9 @@ export function HelpPanel({ onClose }: Props) {
       </div>
 
       <p className="muted" style={{ marginTop: 0 }}>
-        Build quests for Minecraft Java 1.21.11, then export a ready-to-install datapack. Pick a
-        quest in the left sidebar, fill in the steps, and head to Generate when you are ready.
+        Build quests for Minecraft Java 1.21.11, then export a ready-to-install datapack. Your work
+        auto-saves in this browser. Use Import in the sidebar to restore a JSON file or a datapack
+        ZIP you downloaded earlier.
       </p>
 
       <div className="help-flow">

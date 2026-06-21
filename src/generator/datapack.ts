@@ -1,5 +1,6 @@
 import JSZip from 'jszip';
 import { type Project } from '../types/quest';
+import { exportProjectJson, PROJECT_BACKUP_FILENAME } from '../state/projectStore';
 import { buildPackMeta, MINECRAFT_VERSION } from './packFormat';
 import { buildContext, type CompileContext } from './context';
 import {
@@ -131,6 +132,12 @@ function readmeText(project: Project, ctx: CompileContext): string {
     `- /execute as <player> run function ${ctx.namespace}:reset   - reset one player`,
     `- /function ${ctx.namespace}:reset_all     - reset everyone's quest progress`,
     ``,
+    `Editor project backup`,
+    `=====================`,
+    `This ZIP also contains ${PROJECT_BACKUP_FILENAME} — your full Quest Tool MC project`,
+    `(quests, custom items, spawn zones, etc.). Import it in the app to restore or edit`,
+    `your work later. Minecraft ignores this file when loading the datapack.`,
+    ``,
     `Note: this pack runs "gamerule send_command_feedback false" on load so the`,
     `[ Accept ]/[ Turn In ] buttons do not spam "Triggered [..]" into chat.`,
     `To restore command feedback, run: gamerule send_command_feedback true`,
@@ -229,6 +236,7 @@ export async function buildDatapackZip(project: Project): Promise<Blob> {
   for (const [path, content] of Object.entries(files)) {
     zip.file(path, content);
   }
+  zip.file(PROJECT_BACKUP_FILENAME, exportProjectJson(project));
   return zip.generateAsync({ type: 'blob' });
 }
 

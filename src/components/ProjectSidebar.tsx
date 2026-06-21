@@ -16,7 +16,6 @@ interface Props {
   onRenameProject: (name: string) => void;
   onNamespace: (namespace: string) => void;
   onPlatform: (platform: Platform) => void;
-  onExport: () => void;
   onImport: (file: File) => void;
 }
 
@@ -30,7 +29,6 @@ export function ProjectSidebar({
   onRenameProject,
   onNamespace,
   onPlatform,
-  onExport,
   onImport,
 }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -119,16 +117,17 @@ export function ProjectSidebar({
       </div>
 
       <div className="sidebar-footer">
-        <button className="btn block" onClick={onExport}>
-          Export project (JSON)
-        </button>
+        <div className="hint" style={{ margin: '0 0 10px', fontSize: 12 }}>
+          Download a datapack on Generate — it includes a project
+          backup you can re-import below.
+        </div>
         <button className="btn block ghost" onClick={() => fileRef.current?.click()}>
-          Import project (JSON)
+          Import project (datapack ZIP)
         </button>
         <input
           ref={fileRef}
           type="file"
-          accept="application/json"
+          accept="application/json,.json,.zip,application/zip"
           style={{ display: 'none' }}
           onChange={(e) => {
             const file = e.target.files?.[0];

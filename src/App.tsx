@@ -10,7 +10,6 @@ import {
   addQuest,
   deleteQuest,
   duplicateQuest,
-  exportProjectJson,
   importProjectJson,
   loadProject,
   renameQuestReferences,
@@ -19,6 +18,7 @@ import {
   createAndAddCustomItem,
   deleteCustomItem,
   duplicateCustomItem,
+  readProjectJsonFromFile,
 } from './state/projectStore';
 import { ProjectSidebar } from './components/ProjectSidebar';
 import { StepNPC } from './components/steps/StepNPC';
@@ -111,29 +111,16 @@ export default function App() {
     if (selectedId === id) setSelectedId(next.quests[0]?.id ?? '');
   }
 
-  function handleExport() {
-    const blob = new Blob([exportProjectJson(project)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${project.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'project'}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function handleImport(file: File) {
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const imported = importProjectJson(String(reader.result));
-        setProject(imported);
-        setSelectedId(imported.quests[0]?.id ?? '');
-        setStep('npc');
-      } catch (err) {
-        alert(`Could not import project: ${(err as Error).message}`);
-      }
-    };
-    reader.readAsText(file);
+  async function handleImport(file: File) {
+    try {
+      const json = await readProjectJsonFromFile(file);
+      const imported = importProjectJson(json);
+      setProject(imported);
+      setSelectedId(imported.quests[0]?.id ?? '');
+      setStep('npc');
+    } catch (err) {
+      alert(`Could not import project: ${(err as Error).message}`);
+    }
   }
 
   function handleAddCustomItem(kind: CustomItemKind) {
@@ -164,7 +151,6 @@ export default function App() {
         onRenameProject={(name) => setProject({ ...project, name })}
         onNamespace={(namespace) => setProject({ ...project, namespace })}
         onPlatform={(platform) => setProject({ ...project, platform })}
-        onExport={handleExport}
         onImport={handleImport}
       />
 

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createProject, createQuest, createCustomItem } from '../types/factory';
+import { type Objective } from '../types/quest';
 import { validateProject, hasBlockingErrors } from './validate';
 
 describe('validation', () => {
@@ -76,5 +77,77 @@ describe('validation', () => {
     project.quests[0].rewards = [{ type: 'item', customItemId: a.id, amount: 1 }];
     const issues = validateProject(project);
     expect(issues.some((i) => /Duplicate custom item tag/.test(i.message))).toBe(true);
+  });
+
+  function spawnZoneObjective(patch: Partial<Objective> = {}): Objective {
+    return {
+      target: 'minecraft:zombie',
+      amount: 5,
+      spawnZone: true,
+      location: { x: 0, y: 64, z: 0 },
+      zoneDropMode: 'custom',
+      ...patch,
+    };
+  }
+
+  it('flags custom spawn zone drops with no entries', () => {
+    const project = createProject('Zone');
+    const quest = createQuest('Arena', 'kill');
+    quest.objectives = [spawnZoneObjective({ zoneDrops: [] })];
+    project.quests = [quest];
+    const issues = validateProject(project);
+    expect(issues.some((i) => /no drops are configured/.test(i.message))).toBe(true);
+    expect(hasBlockingErrors(issues)).toBe(true);
+  });
+
+  it('flags spawn zone drop missing item', () => {
+    const project = createProject('Zone');
+    const quest = createQuest('Arena', 'kill');
+    quest.objectives = [spawnZoneObjective({ zoneDrops: [{ amount: 1 }] })];
+    project.quests = [quest];
+    const issues = validateProject(project);
+    expect(issues.some((i) => /missing an item/.test(i.message))).toBe(true);
+  });
+
+  it('flags invalid spawn zone drop chance', () => {
+    const project = createProject('Zone');
+    const quest = createQuest('Arena', 'kill');
+    quest.objectives = [
+      spawnZoneObjective({ zoneDrops: [{ target: 'minecraft:bone', chance: 0 }] }),
+    ];
+    project.quests = [quest];
+    const issues = validateProject(project);
+    expect(issues.some((i) => /chance must be between 1 and 100/.test(i.message))).toBe(true);
+  });
+
+  it('flags spawn zone drop referencing missing custom item', () => {
+    const project = createProject('Zone');
+    const quest = createQuest('Arena', 'kill');
+    quest.objectives = [
+      spawnZoneObjective({ zoneDrops: [{ customItemId: 'missing-id', amount: 1 }] }),
+    ];
+    project.quests = [quest];
+    const issues = validateProject(project);
+    expect(
+      issues.some((i) => /spawn zone drop references a custom item that no longer exists/.test(i.message)),
+    ).toBe(true);
+  });
+
+  it('accepts valid custom spawn zone drops', () => {
+    const project = createProject('Zone');
+    const item = createCustomItem('collectible', 'Trophy');
+    project.customItems = [item];
+    const quest = createQuest('Arena', 'kill');
+    quest.objectives = [
+      spawnZoneObjective({
+        zoneDrops: [
+          { target: 'minecraft:bone', amount: 2, chance: 50 },
+          { customItemId: item.id, amount: 1 },
+        ],
+      }),
+    ];
+    project.quests = [quest];
+    const issues = validateProject(project);
+    expect(hasBlockingErrors(issues)).toBe(false);
   });
 });

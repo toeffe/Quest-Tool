@@ -12,6 +12,7 @@ import {
 } from '../../generator/datapack';
 import { installGuide } from '../../generator/platform';
 import { buildContext } from '../../generator/context';
+import { exportProjectJson, projectJsonFileName } from '../../state/projectStore';
 
 interface Props {
   project: Project;
@@ -55,12 +56,23 @@ export function StepGenerate({ project }: Props) {
     setTimeout(() => setCopied(false), 1500);
   }
 
+  function handleProjectBackup() {
+    const blob = new Blob([exportProjectJson(project)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = projectJsonFileName(project);
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div>
       <h1 className="step-title">Generate &amp; Export</h1>
       <p className="step-sub">
         Validate your quests, preview the generated commands, and download a ready-to-install
-        datapack for Minecraft 1.21.11.
+        datapack for Minecraft 1.21.11. The ZIP includes <code>quest-tool-project.json</code> so
+        you can re-import your work later.
       </p>
 
       <div className="card">
@@ -104,7 +116,9 @@ export function StepGenerate({ project }: Props) {
         </div>
         {downloaded && (
           <div className="success-banner">
-            Datapack downloaded. Drop it into your world's datapacks folder and run /reload.
+            Datapack downloaded. Drop it into your world&apos;s datapacks folder and run /reload.
+            Your project backup is inside the ZIP as quest-tool-project.json — keep the file if
+            you want to edit this pack again later.
           </div>
         )}
         <div className="toolbar">
@@ -117,9 +131,17 @@ export function StepGenerate({ project }: Props) {
         </div>
         {blocked && (
           <p className="muted" style={{ marginTop: 4 }}>
-            Fix the errors above to enable export.
+            Fix the errors above to download the datapack. You can still save a project backup
+            as JSON while you work.
           </p>
         )}
+        <div className="toolbar" style={{ marginTop: blocked ? 10 : 0 }}>
+          {blocked && (
+            <button className="btn primary" type="button" onClick={handleProjectBackup}>
+              Download project backup (.json)
+            </button>
+          )}
+        </div>
       </div>
 
       {!blocked && (

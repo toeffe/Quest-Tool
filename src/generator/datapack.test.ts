@@ -3,6 +3,7 @@ import { type Project } from '../types/quest';
 import { createProject, createQuest, createCustomItem } from '../types/factory';
 import JSZip from 'jszip';
 import { buildDatapackFiles, buildRawCommands, buildDatapackZip } from './datapack';
+import { PROJECT_BACKUP_FILENAME } from '../state/projectStore';
 import { DATAPACK_FORMAT } from './packFormat';
 
 function sampleProject(): Project {
@@ -224,6 +225,9 @@ describe('datapack structure', () => {
     const zip = await JSZip.loadAsync(bytes);
     expect(zip.file('pack.mcmeta')).not.toBeNull();
     expect(zip.file('data/testpack/function/load.mcfunction')).not.toBeNull();
+    expect(zip.file(PROJECT_BACKUP_FILENAME)).not.toBeNull();
+    const backup = JSON.parse(await zip.file(PROJECT_BACKUP_FILENAME)!.async('string'));
+    expect(backup.name).toBe('Test Pack');
     const meta = JSON.parse(await zip.file('pack.mcmeta')!.async('string'));
     expect(meta.pack.min_format).toEqual([...DATAPACK_FORMAT]);
   });

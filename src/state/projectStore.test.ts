@@ -1,11 +1,14 @@
 import { describe, it, expect } from 'vitest';
+import JSZip from 'jszip';
 import { createProject, createQuest, PROJECT_SCHEMA_VERSION } from '../types/factory';
 import {
   importProjectJson,
+  exportProjectJson,
   createAndAddCustomItem,
   deleteCustomItem,
+  readProjectJsonFromFile,
+  PROJECT_BACKUP_FILENAME,
 } from './projectStore';
-
 describe('projectStore migration', () => {
   it('backfills customItems when importing schema v1 projects', () => {
     const legacy = {
@@ -68,5 +71,20 @@ describe('custom item CRUD', () => {
     expect(next.quests[0].rewards[0].customItemId).toBeUndefined();
     expect(next.quests[0].objectives[0].customItemId).toBeUndefined();
     expect(next.quests[0].objectives[0].zoneDrops![0].customItemId).toBeUndefined();
+  });
+});
+
+describe('project import files', () => {
+  it('reads project JSON from a datapack ZIP backup', async () => {
+    const project = createProject('Zip Pack');
+    project.namespace = 'zippack';
+    const zip = new JSZip();
+    zip.file(PROJECT_BACKUP_FILENAME, exportProjectJson(project));
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const file = new File([blob], 'pack.zip', { type: 'application/zip' });
+    const json = await readProjectJsonFromFile(file);
+    const restored = importProjectJson(json);
+    expect(restored.name).toBe('Zip Pack');
+    expect(restored.namespace).toBe('zippack');
   });
 });
