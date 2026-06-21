@@ -66,6 +66,11 @@ function positionFor(mode: string, coords?: Coordinates): string {
   return '~ ~ ~';
 }
 
+/** Align a freshly spawned NPC with the command executor's facing. */
+function faceExecutorCommand(tag: string, position: string): string {
+  return `execute at @s rotated as @s run tp @e[tag=${tag},limit=1,sort=nearest] ${position} ~ ~`;
+}
+
 /** Remove any existing copy of this quest's giver before spawning a fresh one. */
 export function killGiverCommand(qc: QuestContext): string {
   return `kill @e[tag=${qc.giverTag}]`;
@@ -75,35 +80,43 @@ export function killTargetCommand(qc: QuestContext): string {
   return `kill @e[tag=${qc.targetTag}]`;
 }
 
-export function spawnGiverCommand(qc: QuestContext): string {
+export function spawnGiverCommand(qc: QuestContext): string[] {
   const npc: Npc = qc.quest.npc;
-  return summonNpc({
-    entityType: npc.entityType,
-    name: npc.name,
-    profession: npc.profession,
-    variant: npc.variant,
-    baby: npc.baby,
-    variants: npc.variants,
-    displayTag: qc.npcTag,
-    extraTags: [qc.giverTag],
-    position: positionFor(npc.spawnMode, npc.coordinates),
-  });
+  const position = positionFor(npc.spawnMode, npc.coordinates);
+  return [
+    summonNpc({
+      entityType: npc.entityType,
+      name: npc.name,
+      profession: npc.profession,
+      variant: npc.variant,
+      baby: npc.baby,
+      variants: npc.variants,
+      displayTag: qc.npcTag,
+      extraTags: [qc.giverTag],
+      position,
+    }),
+    faceExecutorCommand(qc.giverTag, position),
+  ];
 }
 
-export function spawnTargetCommand(qc: QuestContext): string | null {
+export function spawnTargetCommand(qc: QuestContext): string[] | null {
   const target: TargetNpc | undefined = qc.quest.targetNpc;
   if (!target) return null;
-  return summonNpc({
-    entityType: target.entityType,
-    name: target.name,
-    profession: 'none',
-    variant: 'plains',
-    baby: target.baby,
-    variants: target.variants,
-    displayTag: qc.npcTargetTag,
-    extraTags: [qc.targetTag],
-    position: positionFor(target.spawnMode, target.coordinates),
-  });
+  const position = positionFor(target.spawnMode, target.coordinates);
+  return [
+    summonNpc({
+      entityType: target.entityType,
+      name: target.name,
+      profession: 'none',
+      variant: 'plains',
+      baby: target.baby,
+      variants: target.variants,
+      displayTag: qc.npcTargetTag,
+      extraTags: [qc.targetTag],
+      position,
+    }),
+    faceExecutorCommand(qc.targetTag, position),
+  ];
 }
 
 /** Lines for the per-quest spawn function (giver + optional target). */
@@ -111,11 +124,11 @@ export function spawnFunctionLines(qc: QuestContext): string[] {
   const lines = [
     `# Spawn NPC(s) for quest: ${qc.quest.name}`,
     killGiverCommand(qc),
-    spawnGiverCommand(qc),
+    ...spawnGiverCommand(qc),
   ];
   const target = spawnTargetCommand(qc);
   if (target) {
-    lines.push(killTargetCommand(qc), target);
+    lines.push(killTargetCommand(qc), ...target);
   }
   lines.push(`say ${STR.npcSpawned(qc.quest.name)}`);
   return lines;

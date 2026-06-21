@@ -174,6 +174,9 @@ describe('datapack structure', () => {
     expect(spawn).toContain('NoAI:1b');
     expect(spawn).toContain('CustomName:{text:');
     expect(spawn).toContain('Offers:{Recipes:[]}');
+    expect(spawn).toContain(
+      'execute at @s rotated as @s run tp @e[tag=qg_0,limit=1,sort=nearest] ~ ~ ~ ~ ~',
+    );
   });
 
   it('summons a non-villager NPC without villager-only NBT', () => {
