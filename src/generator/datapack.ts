@@ -8,12 +8,17 @@ import {
   buildResetFunction,
   buildResetAllFunction,
 } from './load';
-import { compileQuest, buildKillZoneAdvancementFiles } from './questFunctions';
+import { compileQuest, buildKillZoneAdvancementFiles, buildZoneLootTableFiles } from './questFunctions';
 import { spawnFunctionLines } from './npc';
 import { installGuide } from './platform';
 import { tellraw, escapeSnbtString } from './text';
 import { questObjectives } from './context';
 import { buildGiveCustomItemsFunction } from './items';
+import {
+  buildEmptyEntityLootTable,
+  emptyLootTablePath,
+  needsEmptyLootTable,
+} from './lootTables';
 import { STR } from './strings';
 
 /** A flat map of file paths (inside the ZIP) to their text contents. */
@@ -183,6 +188,12 @@ export function buildDatapackFiles(project: Project): FileMap {
     }
     files[`${fnRoot}/${qc.spawnFn}.mcfunction`] = spawnFunctionLines(qc).join('\n') + '\n';
     Object.assign(files, buildKillZoneAdvancementFiles(ctx, qc));
+    Object.assign(files, buildZoneLootTableFiles(ctx, qc));
+  }
+
+  if (needsEmptyLootTable(project.quests)) {
+    files[emptyLootTablePath(ns)] =
+      JSON.stringify(buildEmptyEntityLootTable(), null, 2) + '\n';
   }
 
   files[`${fnRoot}/spawn_all.mcfunction`] = spawnAllFunction(ctx);

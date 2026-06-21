@@ -143,12 +143,14 @@ export function spawnOneInZone(
   y: number,
   z: number,
   radius: number,
+  deathLootTable?: string,
 ): string[] {
   const entity = normalizeEntityId(entityType);
   const tags = ['questtool', tag].map((t) => `"${t}"`).join(',');
   const spread = Math.max(1, radius);
+  const lootField = deathLootTable ? `,DeathLootTable:"${deathLootTable}"` : '';
   return [
-    `summon ${entity} ${x} ${y} ${z} {Tags:[${tags}],PersistenceRequired:1b}`,
+    `summon ${entity} ${x} ${y} ${z} {Tags:[${tags}],PersistenceRequired:1b${lootField}}`,
     `spreadplayers ${x} ${z} 1 ${spread} false @e[type=${entity},tag=${tag},distance=..1,limit=1]`,
   ];
 }

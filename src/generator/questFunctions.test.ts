@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createProject, createQuest, createCustomItem } from '../types/factory';
 import { buildContext } from './context';
-import { compileQuest } from './questFunctions';
+import { compileQuest, buildZoneLootTableFiles } from './questFunctions';
 
 function compileFirst(type: Parameters<typeof createQuest>[1]) {
   const project = createProject('P');
@@ -98,7 +98,7 @@ describe('quest tick generation', () => {
     project.namespace = 'p';
     const q = createQuest('Gather', 'gather');
     q.objectives = [
-      { target: 'minecraft:wheat', amount: 10, description: 'Saml hvede', consumeOnTurnIn: true },
+      { target: 'minecraft:wheat', amount: 10, description: 'Collect wheat', consumeOnTurnIn: true },
     ];
     project.quests = [q];
     const ctx = buildContext(project);
@@ -106,9 +106,22 @@ describe('quest tick generation', () => {
     expect(turnin).toContain('clear @s minecraft:wheat 10');
   });
 
-  it('gather quests keep items on turn-in by default', () => {
+  it('gather quests remove items on turn-in by default', () => {
     const files = compileFirst('gather');
     const turnin = files['quests/0_q/turnin.mcfunction'];
+    expect(turnin).toContain('clear @s minecraft:wheat 10');
+  });
+
+  it('gather quests keep items on turn-in when consumeOnTurnIn is false', () => {
+    const project = createProject('P');
+    project.namespace = 'p';
+    const q = createQuest('Gather', 'gather');
+    q.objectives = [
+      { target: 'minecraft:wheat', amount: 10, description: 'Collect wheat', consumeOnTurnIn: false },
+    ];
+    project.quests = [q];
+    const ctx = buildContext(project);
+    const turnin = compileQuest(ctx, ctx.quests[0])['quests/0_gather/turnin.mcfunction'];
     expect(turnin).not.toContain('clear @s minecraft:wheat 10');
   });
 
@@ -180,6 +193,79 @@ describe('quest tick generation', () => {
     expect(tick).toContain('matches ..2');
     expect(files['quests/0_chickens/spawn_mob_0.mcfunction']).toContain('max 3 live');
     expect(files['quests/0_chickens/spawn_mob_0.mcfunction']).toContain('matches 3.. run return 0');
+  });
+
+  it('zoned kill quests with no drops attach empty DeathLootTable', () => {
+    const project = createProject('P');
+    project.namespace = 'p';
+    const q = createQuest('Chickens', 'kill');
+    q.objectives = [
+      {
+        target: 'minecraft:chicken',
+        amount: 5,
+        spawnZone: true,
+        zoneDropMode: 'none',
+        location: { x: 10, y: 64, z: 20 },
+        radius: 5,
+      },
+    ];
+    project.quests = [q];
+    const ctx = buildContext(project);
+    const files = compileQuest(ctx, ctx.quests[0]);
+    expect(files['quests/0_chickens/spawn_mob_0.mcfunction']).toContain(
+      'DeathLootTable:"p:empty"',
+    );
+  });
+
+  it('zoned kill quests with vanilla drops omit DeathLootTable', () => {
+    const project = createProject('P');
+    project.namespace = 'p';
+    const q = createQuest('Chickens', 'kill');
+    q.objectives = [
+      {
+        target: 'minecraft:chicken',
+        amount: 5,
+        spawnZone: true,
+        zoneDropMode: 'vanilla',
+        location: { x: 10, y: 64, z: 20 },
+        radius: 5,
+      },
+    ];
+    project.quests = [q];
+    const ctx = buildContext(project);
+    const files = compileQuest(ctx, ctx.quests[0]);
+    expect(files['quests/0_chickens/spawn_mob_0.mcfunction']).not.toContain('DeathLootTable');
+  });
+
+  it('zoned kill quests with custom drops reference a loot table', () => {
+    const project = createProject('P');
+    project.namespace = 'p';
+    const q = createQuest('Chickens', 'kill');
+    q.objectives = [
+      {
+        target: 'minecraft:chicken',
+        amount: 5,
+        spawnZone: true,
+        zoneDropMode: 'custom',
+        zoneDrops: [
+          { target: 'minecraft:feather', amount: 2 },
+          { target: 'minecraft:chicken', amount: 1, chance: 50 },
+        ],
+        location: { x: 10, y: 64, z: 20 },
+        radius: 5,
+      },
+    ];
+    project.quests = [q];
+    const ctx = buildContext(project);
+    const files = compileQuest(ctx, ctx.quests[0]);
+    expect(files['quests/0_chickens/spawn_mob_0.mcfunction']).toContain(
+      'DeathLootTable:"p:quests/quests/0_chickens/mob_drops_0"',
+    );
+    const lootFiles = buildZoneLootTableFiles(ctx, ctx.quests[0]);
+    const lootPath = Object.keys(lootFiles)[0];
+    expect(lootPath).toContain('mob_drops_0.json');
+    const loot = JSON.parse(lootFiles[lootPath]);
+    expect(loot.pools).toHaveLength(2);
   });
 });
 

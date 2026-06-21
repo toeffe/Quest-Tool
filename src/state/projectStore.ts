@@ -36,11 +36,19 @@ function migrate(project: Project): Project {
   if (!Array.isArray(next.customItems)) {
     next.customItems = [];
   }
+  const fromVersion = project.version ?? 0;
   // Backfill fields added after the initial schema (e.g. NPC entity type).
   for (const quest of next.quests) {
     if (quest.npc && !quest.npc.entityType) quest.npc.entityType = 'minecraft:villager';
     if (quest.targetNpc && !quest.targetNpc.entityType) {
       quest.targetNpc.entityType = 'minecraft:villager';
+    }
+    if (quest.type === 'kill') {
+      for (const o of quest.objectives) {
+        if (o.spawnZone && o.zoneDropMode == null && fromVersion < 3) {
+          o.zoneDropMode = 'vanilla';
+        }
+      }
     }
   }
   return next;
@@ -132,9 +140,19 @@ export function deleteCustomItem(project: Project, itemId: string): Project {
   const items = (project.customItems ?? []).filter((i) => i.id !== itemId);
   const quests = project.quests.map((q) => ({
     ...q,
-    objectives: q.objectives.map((o) =>
-      o.customItemId === itemId ? { ...o, customItemId: undefined } : o,
-    ),
+    objectives: q.objectives.map((o) => {
+      let next = o;
+      if (o.customItemId === itemId) {
+        next = { ...next, customItemId: undefined };
+      }
+      if (next.zoneDrops?.length) {
+        const zoneDrops = next.zoneDrops.map((d) =>
+          d.customItemId === itemId ? { ...d, customItemId: undefined } : d,
+        );
+        next = { ...next, zoneDrops };
+      }
+      return next;
+    }),
     rewards: q.rewards.map((r) =>
       r.customItemId === itemId ? { ...r, customItemId: undefined, type: r.type } : r,
     ),
@@ -162,6 +180,6 @@ export function createAndAddCustomItem(
   kind: CustomItem['kind'] = 'general',
 ): { project: Project; item: CustomItem } {
   const n = (project.customItems ?? []).length + 1;
-  const item = createCustomItem(kind, `Genstand ${n}`);
+  const item = createCustomItem(kind, `Item ${n}`);
   return { project: addCustomItem(project, item), item };
 }

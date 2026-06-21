@@ -253,7 +253,7 @@ export default function App() {
             {view === 'wizard' &&
               !hintDismissed &&
               project.quests.length === 1 &&
-              project.quests[0].name === 'Første quest' && (
+              project.quests[0].name === 'First Quest' && (
                 <div className="getting-started">
                   <div>
                     <strong>New here?</strong> Fill in the steps below for this quest, then open{' '}

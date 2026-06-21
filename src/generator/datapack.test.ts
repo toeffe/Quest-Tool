@@ -78,6 +78,44 @@ describe('datapack structure', () => {
     expect(turnin).toContain('kill @e[tag=qk_0_0]');
   });
 
+  it('emits empty loot table when spawn zone uses no drops', () => {
+    const project = sampleProject();
+    project.quests[0].objectives = [
+      {
+        target: 'minecraft:chicken',
+        amount: 5,
+        spawnZone: true,
+        zoneDropMode: 'none',
+        location: { x: 10, y: 64, z: 20 },
+        radius: 5,
+      },
+    ];
+    const files = buildDatapackFiles(project);
+    expect(files['data/testpack/loot_table/empty.json']).toBeDefined();
+    const spawn = Object.entries(files).find(([p]) => /spawn_mob_0\.mcfunction$/.test(p))?.[1];
+    expect(spawn).toContain('DeathLootTable:"testpack:empty"');
+  });
+
+  it('emits custom mob drop loot tables for spawn zones', () => {
+    const project = sampleProject();
+    project.quests[0].objectives = [
+      {
+        target: 'minecraft:chicken',
+        amount: 5,
+        spawnZone: true,
+        zoneDropMode: 'custom',
+        zoneDrops: [{ target: 'minecraft:feather', amount: 3 }],
+        location: { x: 10, y: 64, z: 20 },
+        radius: 5,
+      },
+    ];
+    const files = buildDatapackFiles(project);
+    const lootPath = Object.keys(files).find((p) => /mob_drops_0\.json$/.test(p));
+    expect(lootPath).toBeDefined();
+    const loot = JSON.parse(files[lootPath!]);
+    expect(loot.pools[0].entries[0].name).toBe('minecraft:feather');
+  });
+
   it('disables command feedback on load using the 1.21.11 gamerule id', () => {
     const files = buildDatapackFiles(sampleProject());
     const load = files['data/testpack/function/load.mcfunction'];

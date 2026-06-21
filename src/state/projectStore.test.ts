@@ -20,6 +20,32 @@ describe('projectStore migration', () => {
     expect(project.version).toBe(PROJECT_SCHEMA_VERSION);
     expect(project.customItems).toEqual([]);
   });
+
+  it('backfills zoneDropMode vanilla for existing spawn zones when upgrading to v3', () => {
+    const legacy = {
+      id: 'legacy-id',
+      name: 'Legacy',
+      namespace: 'legacy',
+      platform: 'vanilla',
+      quests: [
+        {
+          ...createQuest('Arena', 'kill'),
+          objectives: [
+            {
+              target: 'minecraft:zombie',
+              amount: 5,
+              spawnZone: true,
+              location: { x: 0, y: 64, z: 0 },
+            },
+          ],
+        },
+      ],
+      version: 2,
+    };
+    const project = importProjectJson(JSON.stringify(legacy));
+    expect(project.version).toBe(PROJECT_SCHEMA_VERSION);
+    expect(project.quests[0].objectives[0].zoneDropMode).toBe('vanilla');
+  });
 });
 
 describe('custom item CRUD', () => {
@@ -36,9 +62,11 @@ describe('custom item CRUD', () => {
     project = withItem;
     project.quests[0].rewards = [{ type: 'item', customItemId: item.id, amount: 1 }];
     project.quests[0].objectives = [{ customItemId: item.id, amount: 1 }];
+    project.quests[0].objectives[0].zoneDrops = [{ customItemId: item.id, amount: 1 }];
     const next = deleteCustomItem(project, item.id);
     expect(next.customItems).toHaveLength(0);
     expect(next.quests[0].rewards[0].customItemId).toBeUndefined();
     expect(next.quests[0].objectives[0].customItemId).toBeUndefined();
+    expect(next.quests[0].objectives[0].zoneDrops![0].customItemId).toBeUndefined();
   });
 });

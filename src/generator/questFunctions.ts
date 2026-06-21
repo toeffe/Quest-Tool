@@ -9,6 +9,12 @@ import { killQuestMobsCommand, spawnOneInZone, zonePopulationCap, containMobsInZ
 import { normalizeEntityId } from '../data/mobs';
 import { rewardCommands } from './platform';
 import { resolveObjectiveStack, itemDisplayLabel } from './items';
+import {
+  resolveDeathLootTableRef,
+  buildZoneDropLootTable,
+  zoneDropLootTablePath,
+} from './lootTables';
+import { type ZoneDropMode } from '../types/quest';
 import { NOW_HOLDER, SYS_OBJECTIVE } from './load';
 import { escapeSnbtString, tellraw, type TextPart } from './text';
 import { STR } from './strings';
@@ -49,6 +55,10 @@ interface ObjectiveInfo {
   liveHolder: string;
   /** Remove this objective's items from inventory on turn-in. */
   consumeOnTurnIn: boolean;
+  /** Resolved drop behavior for spawn zones. */
+  zoneDropMode?: ZoneDropMode;
+  /** DeathLootTable id on summon, when not vanilla. */
+  deathLootTable?: string;
 }
 
 function objectiveInfos(ctx: CompileContext, qc: QuestContext): ObjectiveInfo[] {
@@ -56,6 +66,7 @@ function objectiveInfos(ctx: CompileContext, qc: QuestContext): ObjectiveInfo[] 
     const amount = Math.max(1, o.amount ?? 1);
     const item =
       resolveObjectiveStack(ctx.project, o) ?? namespaced(o.target ?? 'minecraft:stone');
+    const zoneDropMode = o.spawnZone ? (o.zoneDropMode ?? 'vanilla') : undefined;
     return {
       amount,
       item,
@@ -75,6 +86,10 @@ function objectiveInfos(ctx: CompileContext, qc: QuestContext): ObjectiveInfo[] 
       liveHolder: qc.objectives[j].liveHolder,
       consumeOnTurnIn:
         qc.quest.type === 'delivery' || !!(o.consumeOnTurnIn && usesItemTarget(qc.quest.type)),
+      zoneDropMode,
+      deathLootTable: zoneDropMode
+        ? resolveDeathLootTableRef(zoneDropMode, ctx.namespace, qc.fnBase, j)
+        : undefined,
     };
   });
 }
@@ -130,6 +145,26 @@ export function buildKillZoneAdvancementFiles(
   return files;
 }
 
+/** Loot table JSON files for spawn zone custom drops. */
+export function buildZoneLootTableFiles(
+  ctx: CompileContext,
+  qc: QuestContext,
+): Record<string, string> {
+  const files: Record<string, string> = {};
+  if (qc.quest.type !== 'kill') return files;
+  const objectives = questObjectives(qc.quest);
+  for (let j = 0; j < objectives.length; j++) {
+    const o = objectives[j];
+    if (!o.spawnZone || o.zoneDropMode !== 'custom') continue;
+    const drops = o.zoneDrops ?? [];
+    if (!drops.length) continue;
+    const path = zoneDropLootTablePath(ctx.namespace, qc.fnBase, j);
+    files[path] =
+      JSON.stringify(buildZoneDropLootTable(ctx.project, drops), null, 2) + '\n';
+  }
+  return files;
+}
+
 function cleanupSpawnZoneLines(ctx: CompileContext, qc: QuestContext): string[] {
   if (qc.quest.type !== 'kill') return [];
   const lines: string[] = [];
@@ -181,7 +216,15 @@ function buildSpawnMobFunction(info: ObjectiveInfo): string {
       `# Spawn one quest mob in the zone (max ${cap} live)`,
       ...countLiveMobsInZone(info),
       `execute if score ${info.liveHolder} ${SYS_OBJECTIVE} matches ${cap}.. run return 0`,
-      ...spawnOneInZone(info.item, info.mobTag, info.x, info.y, info.z, info.radius),
+      ...spawnOneInZone(
+        info.item,
+        info.mobTag,
+        info.x,
+        info.y,
+        info.z,
+        info.radius,
+        info.deathLootTable,
+      ),
       `execute store result score ${info.timerHolder} ${SYS_OBJECTIVE} run random value 60..160`,
     ].join('\n') + '\n'
   );

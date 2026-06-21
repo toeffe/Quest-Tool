@@ -10,7 +10,12 @@ function objectiveLine(quest: Quest, o: Quest['objectives'][number]): string {
   const desc = o.description || quest.name;
   const zoneHint =
     quest.type === 'kill' && o.spawnZone && o.location
-      ? ` @ ${o.location.x},${o.location.y},${o.location.z} r=${o.radius ?? 5} cap=${o.zoneCap ?? Math.min(Math.max(1, o.amount ?? 1), 5)}`
+      ? ` @ ${o.location.x},${o.location.y},${o.location.z} r=${o.radius ?? 5} cap=${o.zoneCap ?? Math.min(Math.max(1, o.amount ?? 1), 5)}` +
+        (o.zoneDropMode === 'vanilla'
+          ? ' drops=vanilla'
+          : o.zoneDropMode === 'custom'
+            ? ` drops=${o.zoneDrops?.length ?? 0} custom`
+            : ' drops=none')
       : '';
   switch (quest.type) {
     case 'kill':

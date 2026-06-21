@@ -136,7 +136,7 @@ export function itemDisplayLabel(
 export function buildGiveCustomItemsFunction(project: Project): string | null {
   const items = project.customItems ?? [];
   if (!items.length) return null;
-  const lines = ['# Giv én af hver brugerdefinerede genstand (til test)'];
+  const lines = ['# Give one of each custom item (for testing)'];
   for (const item of items) {
     lines.push(buildGiveCommand(item, '@s', 1));
   }

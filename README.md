@@ -12,6 +12,7 @@ datapacks, or coding knowledge required.
 - Villager-based quest givers with proximity dialogue and clickable accept/turn-in
 - Rewards: items, XP, money, permissions, custom commands
 - **Custom Items** tab: define reusable items (names, lore, food, tools, collectibles) using Minecraft 1.21 item components; use them in rewards and gather/delivery objectives
+- Kill quest **spawn zones**: control whether datapack-spawned mobs drop items (none, vanilla loot, or a custom drop list)
 - Targets PaperMC, Vanilla servers, and Open-to-LAN single-player
 - Validation, raw-command preview, and one-click datapack ZIP download
 - Auto-saves to your browser; import/export projects as JSON
@@ -61,6 +62,10 @@ Full install steps for your chosen platform are bundled in
 ### Custom items
 
 Custom items are vanilla base items with **item components** (custom name, lore, food, tool rules, etc.). Each item gets a stable internal tag in `custom_data` so gather/delivery quests can count the right stacks. They look like their base item unless you add a separate resource pack.
+
+### Spawn zone mob drops
+
+Kill objectives with **spawn zones** default to **no item drops** when enabled. You can switch to vanilla mob loot or configure a custom drop list (vanilla items or project custom items, with amount and chance). The datapack attaches a `DeathLootTable` on summon and emits loot table JSON as needed.
 
 ## Minecraft 1.21.11 notes
 

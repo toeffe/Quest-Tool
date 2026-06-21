@@ -94,6 +94,21 @@ export interface TargetNpc {
   coordinates?: Coordinates;
 }
 
+/** How quest-spawned mobs in a kill spawn zone behave on death. */
+export type ZoneDropMode = 'none' | 'vanilla' | 'custom';
+
+/** One item entry in a spawn zone custom drop list. */
+export interface ZoneDrop {
+  /** Vanilla item id (e.g. "minecraft:diamond"). */
+  target?: string;
+  /** Project custom item id. */
+  customItemId?: string;
+  /** Stack size per drop. Defaults to 1. */
+  amount?: number;
+  /** Drop chance 1–100 (%). Defaults to 100. */
+  chance?: number;
+}
+
 export interface Objective {
   /** For kill: mob id (e.g. "minecraft:zombie"). For gather/delivery: vanilla item id. */
   target?: string;
@@ -113,6 +128,10 @@ export interface Objective {
   zoneCap?: number;
   /** When true on gather/daily, remove required items from inventory on turn-in (delivery always does). */
   consumeOnTurnIn?: boolean;
+  /** Kill spawn zones only: what items drop when tagged mobs die. */
+  zoneDropMode?: ZoneDropMode;
+  /** Kill spawn zones only: custom drop list when zoneDropMode is 'custom'. */
+  zoneDrops?: ZoneDrop[];
 }
 
 export type RewardType =

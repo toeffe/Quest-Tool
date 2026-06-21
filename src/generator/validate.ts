@@ -39,6 +39,24 @@ function objectiveIssues(quest: Quest): string[] {
         if (quest.type === 'kill' && o.spawnZone && o.zoneCap != null && o.zoneCap < 1) {
           out.push(`${where} spawn cap must be at least 1.`);
         }
+        if (quest.type === 'kill' && o.spawnZone && o.zoneDropMode === 'custom') {
+          const drops = o.zoneDrops ?? [];
+          if (!drops.length) {
+            out.push(`${where} custom drops is enabled but no drops are configured.`);
+          }
+          drops.forEach((d, di) => {
+            const dropWhere = drops.length > 1 ? `${where} drop ${di + 1}` : `${where} drop`;
+            if (!d.target && !d.customItemId) {
+              out.push(`${dropWhere} is missing an item.`);
+            }
+            if (d.amount != null && d.amount < 1) {
+              out.push(`${dropWhere} amount must be at least 1.`);
+            }
+            if (d.chance != null && (d.chance < 1 || d.chance > 100)) {
+              out.push(`${dropWhere} chance must be between 1 and 100.`);
+            }
+          });
+        }
         break;
       case 'exploration':
         if (!o.location) out.push(`${where} is missing a target location.`);
@@ -60,6 +78,9 @@ function customItemIssues(project: Project): ValidationIssue[] {
   for (const quest of project.quests) {
     for (const o of quest.objectives) {
       if (o.customItemId) referenced.add(o.customItemId);
+      for (const d of o.zoneDrops ?? []) {
+        if (d.customItemId) referenced.add(d.customItemId);
+      }
     }
     for (const r of quest.rewards) {
       if (r.customItemId) referenced.add(r.customItemId);
@@ -128,6 +149,11 @@ export function validateProject(project: Project): ValidationIssue[] {
     for (const o of quest.objectives) {
       if (o.customItemId && !customItemIds.has(o.customItemId)) {
         add('error', 'An objective references a custom item that no longer exists.', quest);
+      }
+      for (const d of o.zoneDrops ?? []) {
+        if (d.customItemId && !customItemIds.has(d.customItemId)) {
+          add('error', 'A spawn zone drop references a custom item that no longer exists.', quest);
+        }
       }
     }
 

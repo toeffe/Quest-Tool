@@ -5,7 +5,7 @@ interface Props {
 const VIEWS = [
   {
     title: 'Quest Builder',
-    body: 'Edit one quest at a time through five steps: NPC, Quest, Rewards, Chain, then Generate.',
+    body: 'Edit one quest at a time through five steps: NPC, Quest, Rewards, Chain, then Generate. Kill quests with spawn zones can set drop behavior: no drops, vanilla mob loot, or a custom drop list (vanilla or custom items).',
   },
   {
     title: 'Story Flow',
