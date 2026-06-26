@@ -3,7 +3,7 @@ import {
   type JobAction,
   jobUsesPresets,
 } from '../types/job';
-import { namespaced } from './context';
+import { namespaced, statId } from './context';
 
 export const JOB_STAT_PRESET_LABELS: Record<string, string> = {
   ores: 'Common ores',
@@ -150,7 +150,7 @@ const CUSTOM_STATS: Record<Exclude<JobAction, 'custom' | 'mine' | 'woodcut' | 'f
 };
 
 function typedCriterion(action: JobAction, target: string): string {
-  const id = namespaced(target);
+  const id = statId(target);
   switch (action) {
     case 'mine':
     case 'woodcut':

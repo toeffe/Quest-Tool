@@ -303,19 +303,19 @@ function buildTryUnlockLines(ctx: CompileContext, qc: QuestContext): string[] {
   const quest = qc.quest;
   const lines: string[] = [
     `# Try unlock "${quest.name}"`,
-    `execute unless score @s ${qc.state} matches -1 run return`,
+    `execute unless score @s ${qc.state} matches -1 run return 0`,
   ];
 
   if (quest.chain.requires && ctx.byName.has(quest.chain.requires)) {
     const req = ctx.byName.get(quest.chain.requires)!;
-    lines.push(`execute unless score @s ${req.state} matches 3 run return`);
+    lines.push(`execute unless score @s ${req.state} matches 3 run return 0`);
   }
 
   const jobReq = quest.chain.requiresJob;
   if (jobReq && ctx.jobsById.has(jobReq.jobId)) {
     const jc = ctx.jobsById.get(jobReq.jobId)!;
     const minLevel = Math.max(1, jobReq.level);
-    lines.push(`execute unless score @s ${jc.level} matches ${minLevel}.. run return`);
+    lines.push(`execute unless score @s ${jc.level} matches ${minLevel}.. run return 0`);
   }
 
   lines.push(`scoreboard players set @s ${qc.state} 0`);

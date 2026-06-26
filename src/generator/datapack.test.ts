@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { type Project } from '../types/quest';
-import { createProject, createQuest, createCustomItem } from '../types/factory';
+import { createProject, createQuest, createCustomItem, createStarterJobs } from '../types/factory';
 import JSZip from 'jszip';
 import { buildDatapackFiles, buildRawCommands, buildDatapackZip } from './datapack';
 import { PROJECT_BACKUP_FILENAME } from '../state/projectStore';
@@ -63,6 +63,24 @@ describe('datapack structure', () => {
     const paths = Object.keys(files);
     expect(paths.some((p) => /function\/jobs\/0_.*\/tick\.mcfunction$/.test(p))).toBe(true);
     expect(paths.some((p) => /advancement\/jobs\/0_.*\/root\.json$/.test(p))).toBe(true);
+  });
+
+  it('starter jobs load with valid stat criteria for all 11 jobs', () => {
+    const project = createProject('Starter Jobs');
+    project.namespace = 'jobpack';
+    project.jobs = createStarterJobs();
+    const files = buildDatapackFiles(project);
+    const load = files['data/jobpack/function/load.mcfunction'];
+    expect(load).not.toContain('minecraft:minecraft:');
+    expect(load).toContain('minecraft.mined:minecraft.coal_ore');
+    expect(load).toContain('minecraft.custom:minecraft.fish_caught');
+    expect(load).toContain('minecraft.custom:minecraft.player_kills');
+    for (let i = 0; i < 11; i++) {
+      expect(load).toContain(`j${i}xp dummy`);
+      expect(load).toContain(`j${i}lvl dummy`);
+    }
+    const jobsTick = files['data/jobpack/function/jobs/tick.mcfunction'];
+    expect(jobsTick).toContain('function jobpack:jobs/bossbar_tick');
   });
 
   it('zoned kill quests use dummy killed scoreboard and emit advancement files', () => {

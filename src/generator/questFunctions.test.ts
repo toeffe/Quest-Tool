@@ -331,6 +331,7 @@ describe('quest chains', () => {
     expect(files['quests/0_pro_fisher/tick.mcfunction']).toContain('run scoreboard players set @s q0 -1');
     expect(files['quests/0_pro_fisher/try_unlock.mcfunction']).toContain(`j0lvl`);
     expect(files['quests/0_pro_fisher/try_unlock.mcfunction']).toContain('matches 5..');
+    expect(files['quests/0_pro_fisher/try_unlock.mcfunction']).toContain('run return 0');
   });
 
   it('turn-in grants job XP reward', () => {

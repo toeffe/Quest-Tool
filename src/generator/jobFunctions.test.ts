@@ -6,6 +6,7 @@ import {
   buildJobLoadLines,
   buildJobsTickFunction,
   buildJobResetLines,
+  buildCheckLevelLines,
 } from './jobFunctions';
 import { totalXpForLevel } from '../types/job';
 import { createCustomItem } from '../types/factory';
@@ -52,6 +53,7 @@ describe('jobFunctions', () => {
     expect(files['jobs/0_fishing/credit.mcfunction']).toContain('function j:jobs/0_fishing/check_level');
     expect(files['jobs/0_fishing/add_xp.mcfunction']).toContain('#j0grant');
     expect(files['jobs/0_fishing/init.mcfunction']).toContain('j0last');
+    expect(files['jobs/0_fishing/init.mcfunction']).toContain('j0lvl 0');
     expect(files['jobs/0_fishing/sync_advancements.mcfunction']).toContain('advancement grant');
     expect(files['jobs/0_fishing/level_up.mcfunction']).toContain('sync_advancements');
   });
@@ -104,6 +106,23 @@ describe('jobFunctions', () => {
     job.xpPerLevel = 100;
     expect(totalXpForLevel(job, 1)).toBe(100);
     expect(totalXpForLevel(job, 5)).toBe(500);
+  });
+
+  it('check_level uses precomputed thresh constants and matches ..0 at level 0', () => {
+    const project = createProject('Jobs');
+    project.jobs = [createJob('Mining', 'mine', { statPreset: 'ores', xpPerLevel: 100 })];
+    project.namespace = 'j';
+    const ctx = buildContext(project);
+    const jc = ctx.jobs[0];
+    const lines = buildCheckLevelLines(ctx, jc);
+    expect(lines[0]).toContain('matches ..0');
+    expect(lines[0]).toContain('#j0_thresh_1');
+    expect(lines[0]).toContain('j0xp');
+    expect(lines.some((l) => l.includes('#j0_thresh_2'))).toBe(true);
+    expect(lines.join('\n')).not.toContain('next_thresh');
+
+    const files = compileJob(ctx, jc);
+    expect(files['jobs/0_mining/check_level.mcfunction']).toContain('thresh_1');
   });
 
   it('distance jobs set distance_unit in load', () => {

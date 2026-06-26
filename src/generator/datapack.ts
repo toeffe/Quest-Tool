@@ -141,7 +141,7 @@ function readmeText(project: Project, ctx: CompileContext): string {
     `- Fishing, mining, combat, and other jobs level up automatically from player actions.`,
     `- Open Esc → Advancements → ${ctx.namespace} to see skill trees and levels.`,
     `- Milestone rewards (custom items, XP, etc.) are granted on level-up when configured on the Jobs tab.`,
-    `- While working on a job, a personal boss bar at the top shows your level, total XP, and progress to the next level (each player has their own).`,
+    `- While earning job XP, a personal boss bar briefly shows your level, total XP, and progress to the next level, then hides after a few seconds.`,
     `- Job progress is also shown in /function ${ctx.namespace}:debug.`,
     `- Use /function ${ctx.namespace}:reset to clear job XP and levels along with quest progress.`,
     ``,

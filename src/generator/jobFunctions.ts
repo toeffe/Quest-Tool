@@ -7,7 +7,7 @@ import {
   buildJobSyncAdvancementLines,
 } from './jobAdvancements';
 import { jobMilestoneRewardCommands, milestoneAnnouncement } from './jobMilestones';
-import { buildUpdateProgressBarLines, buildJobProgressBarMacro } from './jobBossBar';
+import { buildUpdateProgressBarLines, buildBossBarApplyLines, jobsUseProgressBar } from './jobBossBar';
 import { escapeSnbtString, tellraw } from './text';
 import { STR } from './strings';
 
@@ -15,6 +15,24 @@ const SYS = SYS_OBJECTIVE;
 
 function constName(jc: JobContext, suffix: string): string {
   return `${jc.constPrefix}_${suffix}`;
+}
+
+/** Level-up checks using precomputed total-XP thresholds (no shared runtime scratch holder). */
+export function buildCheckLevelLines(ctx: CompileContext, jc: JobContext): string[] {
+  const { job } = jc;
+  const ns = ctx.namespace;
+  const lines: string[] = [];
+  for (let lvl = 0; lvl < job.maxLevel; lvl++) {
+    const thresh = constName(jc, `thresh_${lvl + 1}`);
+    const levelTest =
+      lvl === 0
+        ? `execute if score @s ${jc.level} matches ..0`
+        : `execute if score @s ${jc.level} matches ${lvl}`;
+    lines.push(
+      `${levelTest} if score @s ${jc.xp} >= ${thresh} ${SYS} run function ${ns}:${jc.fnBase}/level_up`,
+    );
+  }
+  return lines;
 }
 
 /** Lines to register job scoreboard objectives and constants in load.mcfunction. */
@@ -37,7 +55,6 @@ export function buildJobLoadLines(_ctx: CompileContext, jc: JobContext): string[
     `scoreboard players set ${constName(jc, 'xp_per_action')} ${SYS} ${Math.max(1, job.xpPerAction)}`,
     `scoreboard players set ${constName(jc, 'xp_per_level')} ${SYS} ${Math.max(1, job.xpPerLevel)}`,
     `scoreboard players set ${constName(jc, 'max_level')} ${SYS} ${Math.max(1, job.maxLevel)}`,
-    `scoreboard players set ${constName(jc, 'next_thresh')} ${SYS} 0`,
   );
   if (jobIsDistance(job.action)) {
     const unit = Math.max(1, job.distanceUnit ?? 1000);
@@ -152,7 +169,6 @@ export function compileJob(ctx: CompileContext, jc: JobContext): Record<string, 
   const maxLvl = constName(jc, 'max_level');
   const xpPerLevel = constName(jc, 'xp_per_level');
   const xpPerAction = constName(jc, 'xp_per_action');
-  const nextThresh = constName(jc, 'next_thresh');
   const hasMilestones = (job.milestones ?? []).some((m) => m.rewards.length > 0);
 
   if (jc.multiStat) {
@@ -163,6 +179,7 @@ export function compileJob(ctx: CompileContext, jc: JobContext): Record<string, 
     [
       `# ${job.name} - sync stat baseline (no retroactive XP)`,
       ...buildInitStatLines(jc, ns),
+      `scoreboard players set @s ${jc.level} 0`,
       `scoreboard players set @s ${jc.init} 1`,
       `function ${ns}:${jc.fnBase}/sync_advancements`,
     ].join('\n') + '\n';
@@ -202,10 +219,7 @@ export function compileJob(ctx: CompileContext, jc: JobContext): Record<string, 
 
   const checkLevel: string[] = [
     `# ${job.name} - level up while XP meets next threshold`,
-    `execute if score @s ${jc.level} < ${maxLvl} ${SYS} run scoreboard players operation ${nextThresh} ${SYS} = @s ${jc.level}`,
-    `execute if score @s ${jc.level} < ${maxLvl} ${SYS} run scoreboard players add ${nextThresh} ${SYS} 1`,
-    `execute if score @s ${jc.level} < ${maxLvl} ${SYS} run scoreboard players operation ${nextThresh} ${SYS} *= ${xpPerLevel} ${SYS}`,
-    `execute if score @s ${jc.level} < ${maxLvl} ${SYS} if score @s ${jc.xp} >= ${nextThresh} ${SYS} run function ${ns}:${jc.fnBase}/level_up`,
+    ...buildCheckLevelLines(ctx, jc),
   ];
   files[`${jc.fnBase}/check_level.mcfunction`] = checkLevel.join('\n') + '\n';
 
@@ -232,9 +246,10 @@ export function compileJob(ctx: CompileContext, jc: JobContext): Record<string, 
   files[`${jc.fnBase}/level_up.mcfunction`] = levelUp.join('\n') + '\n';
 
   if (job.showProgressBar !== false) {
+    files[`${jc.fnBase}/bossbar_apply.mcfunction`] =
+      buildBossBarApplyLines(ctx, jc).join('\n') + '\n';
     files[`${jc.fnBase}/update_progress_bar.mcfunction`] =
       buildUpdateProgressBarLines(ctx, jc).join('\n') + '\n';
-    files[`${jc.fnBase}/prog_bar.mcfunction`] = buildJobProgressBarMacro(ctx, jc);
   }
 
   files[`${jc.fnBase}/add_xp.mcfunction`] =
@@ -258,6 +273,9 @@ export function buildJobsTickFunction(ctx: CompileContext): string {
   const lines = [`# Quest Tool MC - jobs tick`];
   for (const jc of ctx.jobs) {
     lines.push(`function ${ctx.namespace}:${jc.fnBase}/tick`);
+  }
+  if (jobsUseProgressBar(ctx)) {
+    lines.push(`function ${ctx.namespace}:jobs/bossbar_tick`);
   }
   return lines.join('\n') + '\n';
 }

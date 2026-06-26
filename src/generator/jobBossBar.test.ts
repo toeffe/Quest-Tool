@@ -4,10 +4,13 @@ import {
   buildJobBossBarSetupLines,
   buildJobBossBarSupportFiles,
   buildUpdateProgressBarLines,
+  buildBossBarExtendVisibilityLines,
+  buildBossBarTickLines,
   playerBossBarId,
   MAX_PLAYER_PROGRESS_BARS,
+  QT_BB_UNTIL_OBJECTIVE,
 } from './jobBossBar';
-import { compileJob } from './jobFunctions';
+import { compileJob, buildJobsTickFunction } from './jobFunctions';
 import { createProject, createStarterJobs } from '../types/factory';
 
 function ctxWithJobs() {
@@ -30,25 +33,53 @@ describe('jobBossBar', () => {
     const ctx = ctxWithJobs();
     const lines = buildJobBossBarSetupLines(ctx);
     expect(lines.some((l) => l.includes('scoreboard objectives add qt_pid'))).toBe(true);
+    expect(lines.some((l) => l.includes(`scoreboard objectives add ${QT_BB_UNTIL_OBJECTIVE}`))).toBe(
+      true,
+    );
     expect(lines.filter((l) => l.includes('bossbar add')).length).toBe(MAX_PLAYER_PROGRESS_BARS);
+    expect(lines.some((l) => l.includes('unless score #qt_next_pid'))).toBe(true);
   });
 
-  it('emits shared ensure_pid and macro hide functions', () => {
+  it('emits shared ensure_pid, hide, and tick functions', () => {
     const ctx = ctxWithJobs();
     const files = buildJobBossBarSupportFiles(ctx);
     expect(files['jobs/ensure_pid.mcfunction']).toContain('assign_pid');
-    expect(files['jobs/bossbar_hide.mcfunction']).toContain('job_prog_$(pid)');
+    expect(files['jobs/bossbar_hide_player.mcfunction']).toContain('job_prog_1');
+    expect(files['jobs/bossbar_tick.mcfunction']).toContain('bossbar_hide_player');
+    expect(files['jobs/bossbar_tick.mcfunction']).toContain(QT_BB_UNTIL_OBJECTIVE);
   });
 
-  it('generates per-player update_progress_bar and prog_bar macro', () => {
+  it('generates update_progress_bar with bossbar_apply subfunction', () => {
     const ctx = ctxWithJobs();
     const jc = ctx.jobs[0];
     const files = compileJob(ctx, jc);
     const body = files[`${jc.fnBase}/update_progress_bar.mcfunction`];
     expect(body).toContain('ensure_pid');
-    expect(body).toContain('prog_bar with storage');
-    expect(files[`${jc.fnBase}/prog_bar.mcfunction`]).toContain('job_prog_$(pid)');
-    expect(files[`${jc.fnBase}/prog_bar.mcfunction`]).toContain(jc.job.name);
+    expect(body).toContain('bossbar_apply');
+    expect(body).toContain(QT_BB_UNTIL_OBJECTIVE);
+    expect(files[`${jc.fnBase}/bossbar_apply.mcfunction`]).toContain('job_prog_1');
+    expect(files[`${jc.fnBase}/bossbar_apply.mcfunction`]).toContain(jc.job.name);
+  });
+
+  it('does not show progress bar on job init', () => {
+    const ctx = ctxWithJobs();
+    const jc = ctx.jobs[0];
+    const files = compileJob(ctx, jc);
+    expect(files[`${jc.fnBase}/init.mcfunction`]).not.toContain('update_progress_bar');
+    expect(files[`${jc.fnBase}/init.mcfunction`]).not.toContain('bossbar');
+  });
+
+  it('extends visibility deadline on update', () => {
+    const lines = buildBossBarExtendVisibilityLines();
+    expect(lines.some((l) => l.includes('#now'))).toBe(true);
+    expect(lines.some((l) => l.includes(QT_BB_UNTIL_OBJECTIVE))).toBe(true);
+  });
+
+  it('jobs tick dispatcher calls bossbar_tick', () => {
+    const ctx = ctxWithJobs();
+    const tick = buildJobsTickFunction(ctx);
+    expect(tick).toContain('function bb:jobs/bossbar_tick');
+    expect(buildBossBarTickLines(ctx).length).toBeGreaterThan(0);
   });
 
   it('buildUpdateProgressBarLines returns empty when disabled', () => {
