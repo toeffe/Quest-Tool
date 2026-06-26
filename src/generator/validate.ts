@@ -9,6 +9,8 @@ export interface ValidationIssue {
   message: string;
   questId?: string;
   questName?: string;
+  /** Field path for editor tab routing and focus (e.g. npc.name, objectives, chain.requires). */
+  field?: string;
 }
 
 function objectiveIssues(quest: Quest): string[] {
@@ -131,8 +133,8 @@ function customItemIssues(project: Project): ValidationIssue[] {
 /** Validate the whole project; returns errors (block export) and warnings. */
 export function validateProject(project: Project): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
-  const add = (level: IssueLevel, message: string, quest?: Quest) =>
-    issues.push({ level, message, questId: quest?.id, questName: quest?.name });
+  const add = (level: IssueLevel, message: string, quest?: Quest, field?: string) =>
+    issues.push({ level, message, questId: quest?.id, questName: quest?.name, field });
 
   if (project.quests.length === 0) {
     add('error', 'The project has no quests.');
@@ -148,15 +150,15 @@ export function validateProject(project: Project): ValidationIssue[] {
 
   for (const quest of project.quests) {
     const name = quest.name.trim();
-    if (!name) add('error', 'A quest has an empty name.', quest);
+    if (!name) add('error', 'A quest has an empty name.', quest, 'name');
     nameCounts.set(name, (nameCounts.get(name) ?? 0) + 1);
 
-    if (!quest.npc.name.trim()) add('error', 'The quest giver has no name.', quest);
+    if (!quest.npc.name.trim()) add('error', 'The quest giver has no name.', quest, 'npc.name');
 
     const npcTag = toIdentifier(quest.npc.tag);
     npcTagCounts.set(npcTag, (npcTagCounts.get(npcTag) ?? 0) + 1);
 
-    for (const msg of objectiveIssues(quest)) add('error', msg, quest);
+    for (const msg of objectiveIssues(quest)) add('error', msg, quest, 'objectives');
 
     for (const o of quest.objectives) {
       if (o.customItemId && !customItemIds.has(o.customItemId)) {
@@ -170,13 +172,13 @@ export function validateProject(project: Project): ValidationIssue[] {
     }
 
     if (quest.npc.spawnMode === 'fixed' && !quest.npc.coordinates) {
-      add('error', 'NPC spawn is set to fixed coordinates but none are provided.', quest);
+      add('error', 'NPC spawn is set to fixed coordinates but none are provided.', quest, 'npc.coordinates');
     }
 
     if (quest.type === 'talk' && quest.targetNpc) {
-      if (!quest.targetNpc.name.trim()) add('error', 'The target NPC has no name.', quest);
+      if (!quest.targetNpc.name.trim()) add('error', 'The target NPC has no name.', quest, 'targetNpc.name');
       if (quest.targetNpc.spawnMode === 'fixed' && !quest.targetNpc.coordinates) {
-        add('error', 'Target NPC uses fixed coordinates but none are provided.', quest);
+        add('error', 'Target NPC uses fixed coordinates but none are provided.', quest, 'targetNpc.coordinates');
       }
     }
 
@@ -184,16 +186,16 @@ export function validateProject(project: Project): ValidationIssue[] {
     if (quest.chain.requires) {
       const exists = project.quests.some((q) => q.name === quest.chain.requires);
       if (!exists) {
-        add('error', `Chain requires "${quest.chain.requires}", which is not a quest in this project.`, quest);
+        add('error', `Chain requires "${quest.chain.requires}", which is not a quest in this project.`, quest, 'chain.requires');
       }
       if (quest.chain.requires === quest.name) {
-        add('error', 'A quest cannot require itself.', quest);
+        add('error', 'A quest cannot require itself.', quest, 'chain.requires');
       }
     }
     if (quest.chain.unlocks) {
       const exists = project.quests.some((q) => q.name === quest.chain.unlocks);
       if (!exists) {
-        add('error', `Chain unlocks "${quest.chain.unlocks}", which is not a quest in this project.`, quest);
+        add('error', `Chain unlocks "${quest.chain.unlocks}", which is not a quest in this project.`, quest, 'chain.unlocks');
       }
     }
 
@@ -204,18 +206,18 @@ export function validateProject(project: Project): ValidationIssue[] {
         add(support.ok ? 'warning' : 'warning', `${support.note}`, quest);
       }
       if (reward.type === 'item' && !reward.value && !reward.customItemId) {
-        add('error', 'An item reward is missing its item.', quest);
+        add('error', 'An item reward is missing its item.', quest, 'rewards');
       }
       if (reward.customItemId && !customItemIds.has(reward.customItemId)) {
-        add('error', 'A reward references a custom item that no longer exists.', quest);
+        add('error', 'A reward references a custom item that no longer exists.', quest, 'rewards');
       }
       if (reward.type === 'command' && !reward.value) {
-        add('error', 'A command reward is missing its value.', quest);
+        add('error', 'A command reward is missing its value.', quest, 'rewards');
       }
     }
 
     if (quest.rewards.length === 0) {
-      add('warning', 'Quest has no rewards.', quest);
+      add('warning', 'Quest has no rewards.', quest, 'rewards');
     }
   }
 

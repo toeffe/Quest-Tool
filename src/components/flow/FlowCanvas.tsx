@@ -102,15 +102,12 @@ export function FlowCanvas({
   );
 
   const openStage = useCallback(
-    (questId: string, stage: FlowStage) => {
+    (questId: string, _stage: FlowStage) => {
       onSelect(questId);
-      setInspector({ kind: 'quest', questId, stage });
+      setInspector({ kind: 'quest', questId });
     },
     [onSelect],
   );
-
-  const selectedStage =
-    inspector?.kind === 'quest' ? inspector.stage : undefined;
 
   const nodes = useMemo<Node[]>(() => {
     const questNodes: Node[] = project.quests.map((quest) => ({
@@ -120,7 +117,7 @@ export function FlowCanvas({
       data: {
         quest,
         issues: issues.filter((i) => i.questId === quest.id),
-        selectedStage: selectedId === quest.id ? selectedStage : undefined,
+        selectedStage: undefined,
         isSelected: selectedId === quest.id,
         onOpenStage: openStage,
       },
@@ -139,7 +136,7 @@ export function FlowCanvas({
     };
 
     return [...questNodes, generateNode];
-  }, [project.quests, positions, issues, selectedId, selectedStage, openStage, inspector]);
+  }, [project.quests, positions, issues, selectedId, openStage, inspector]);
 
   const onNodesChange = useCallback((changes: NodeChange[]) => {
     setPositions((prev) => {
@@ -200,6 +197,7 @@ export function FlowCanvas({
               setInspector({ kind: 'generate' });
             } else {
               onSelect(node.id);
+              setInspector({ kind: 'quest', questId: node.id });
             }
           }}
           defaultEdgeOptions={{ markerEnd: { type: MarkerType.ArrowClosed } }}
@@ -227,12 +225,8 @@ export function FlowCanvas({
       <InspectorPanel
         target={inspector}
         project={project}
+        issues={issues}
         onChangeQuest={onChangeQuest}
-        onSelectStage={(stage) =>
-          setInspector((prev) =>
-            prev?.kind === 'quest' ? { ...prev, stage } : prev,
-          )
-        }
         onClose={() => setInspector(null)}
       />
     </div>
