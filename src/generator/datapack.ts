@@ -10,6 +10,8 @@ import {
   buildResetAllFunction,
 } from './load';
 import { compileQuest, buildKillZoneAdvancementFiles, buildZoneLootTableFiles } from './questFunctions';
+import { compileJob, buildJobsTickFunction, buildJobsSyncAllFunction, buildJobDebugLines } from './jobFunctions';
+import { buildJobAdvancementFiles } from './jobAdvancements';
 import { spawnFunctionLines } from './npc';
 import { installGuide } from './platform';
 import { tellraw, escapeSnbtString } from './text';
@@ -100,6 +102,9 @@ function debugFunction(ctx: CompileContext): string {
       `tellraw @s ["",{"text":"${STR.debugYourState}","color":"gray"},{"score":{"name":"@s","objective":"${qc.state}"},"color":"white"},{"text":"${STR.debugStateLegend}","color":"dark_gray"}]`,
     );
   }
+  if (ctx.jobs.length > 0) {
+    lines.push(...buildJobDebugLines(ctx));
+  }
   return lines.join('\n') + '\n';
 }
 
@@ -122,15 +127,29 @@ function readmeText(project: Project, ctx: CompileContext): string {
     `- Progress shows on your action bar. Complete the objective, then return to the giver.`,
     `- Click [ Turn In Quest ] to claim rewards. Chained quests unlock automatically.`,
     ``,
+    `Jobs (passive skills)`,
+    `====================`,
+    `- Fishing, mining, combat, and other jobs level up automatically from player actions.`,
+    `- Open Esc → Advancements → ${ctx.namespace} to see skill trees and levels.`,
+    `- Milestone rewards (custom items, XP, etc.) are granted on level-up when configured on the Jobs tab.`,
+    `- Job progress is also shown in /function ${ctx.namespace}:debug.`,
+    `- Use /function ${ctx.namespace}:reset to clear job XP and levels along with quest progress.`,
+    ``,
     `Admin commands`,
     `==============`,
     `- /function ${ctx.namespace}:setup_guide   - list NPC spawn commands`,
     `- /function ${ctx.namespace}:spawn_all     - spawn every NPC at your feet`,
     `- /function ${ctx.namespace}:debug         - check NPCs and your quest state`,
     `- /function ${ctx.namespace}:give_custom_items - give one of each custom item (testing)`,
+    ...(ctx.jobs.length > 0
+      ? [
+          `- /function ${ctx.namespace}:jobs/sync_all - refresh job advancement tabs for everyone online`,
+        ]
+      : []),
     `- /function ${ctx.namespace}:reset         - reset YOUR quest progress`,
     `- /execute as <player> run function ${ctx.namespace}:reset   - reset one player`,
     `- /function ${ctx.namespace}:reset_all     - reset everyone's quest progress`,
+    `  (${STR.resetJobsNote})`,
     ``,
     `Editor project backup`,
     `=====================`,
@@ -147,6 +166,12 @@ function readmeText(project: Project, ctx: CompileContext): string {
   );
   for (const qc of ctx.quests) {
     lines.push(`- ${qc.quest.name} (${qc.quest.type}) - giver: ${qc.quest.npc.name}`);
+  }
+  if ((project.jobs ?? []).length > 0) {
+    lines.push(``, `Jobs in this pack`, `================`);
+    for (const jc of ctx.jobs) {
+      lines.push(`- ${jc.job.name} (${jc.job.action}) - ${jc.job.xpPerAction} XP per action, max level ${jc.job.maxLevel}`);
+    }
   }
   if (project.platform !== 'paper') {
     lines.push(
@@ -196,6 +221,18 @@ export function buildDatapackFiles(project: Project): FileMap {
     files[`${fnRoot}/${qc.spawnFn}.mcfunction`] = spawnFunctionLines(qc).join('\n') + '\n';
     Object.assign(files, buildKillZoneAdvancementFiles(ctx, qc));
     Object.assign(files, buildZoneLootTableFiles(ctx, qc));
+  }
+
+  if (ctx.jobs.length > 0) {
+    files[`${fnRoot}/jobs/tick.mcfunction`] = buildJobsTickFunction(ctx);
+    files[`${fnRoot}/jobs/sync_all.mcfunction`] = buildJobsSyncAllFunction(ctx);
+    for (const jc of ctx.jobs) {
+      const jobFiles = compileJob(ctx, jc);
+      for (const [rel, content] of Object.entries(jobFiles)) {
+        files[`${fnRoot}/${rel}`] = content;
+      }
+      Object.assign(files, buildJobAdvancementFiles(ctx, jc));
+    }
   }
 
   if (needsEmptyLootTable(project.quests)) {

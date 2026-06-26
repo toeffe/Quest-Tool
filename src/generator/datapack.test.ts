@@ -52,6 +52,17 @@ describe('datapack structure', () => {
     expect(load).toContain('scoreboard objectives add q0 dummy');
     expect(load).toContain('scoreboard objectives add q0t trigger');
     expect(load).toContain('minecraft.killed:minecraft.zombie');
+    expect(load).toContain('minecraft.custom:minecraft.fish_caught');
+  });
+
+  it('emits jobs tick when project has jobs', () => {
+    const files = buildDatapackFiles(sampleProject());
+    expect(files['data/testpack/function/jobs/tick.mcfunction']).toBeDefined();
+    expect(files['data/testpack/function/jobs/sync_all.mcfunction']).toBeDefined();
+    expect(files['data/testpack/function/tick.mcfunction']).toContain('function testpack:jobs/tick');
+    const paths = Object.keys(files);
+    expect(paths.some((p) => /function\/jobs\/0_.*\/tick\.mcfunction$/.test(p))).toBe(true);
+    expect(paths.some((p) => /advancement\/jobs\/0_.*\/root\.json$/.test(p))).toBe(true);
   });
 
   it('zoned kill quests use dummy killed scoreboard and emit advancement files', () => {
@@ -131,6 +142,7 @@ describe('datapack structure', () => {
     expect(reset).toContain('scoreboard players set @s q0 0');
     expect(reset).toContain('scoreboard players set @s q0d 0');
     expect(reset).toContain('scoreboard players set @s q0k0 0');
+    expect(reset).toContain('advancement revoke @s from testpack:jobs/0_fishing/root');
     expect(resetAll).toContain('execute as @a run function testpack:reset');
   });
 

@@ -141,7 +141,8 @@ export type RewardType =
   | 'xp'
   | 'money'
   | 'permission'
-  | 'command';
+  | 'command'
+  | 'jobXp';
 
 export const REWARD_TYPE_LABELS: Record<RewardType, string> = {
   item: 'Item',
@@ -149,6 +150,7 @@ export const REWARD_TYPE_LABELS: Record<RewardType, string> = {
   money: 'Money',
   permission: 'Permission',
   command: 'Custom command',
+  jobXp: 'Job XP',
 };
 
 export interface Reward {
@@ -157,13 +159,23 @@ export interface Reward {
   value?: string;
   /** When set on item rewards, gives a project custom item instead of value. */
   customItemId?: string;
-  /** quantity for item / xp / money. */
+  /** Project job id for 'jobXp' rewards. */
+  jobId?: string;
+  /** quantity for item / xp / money / jobXp. */
   amount?: number;
+}
+
+/** Optional job level gate for quest availability. */
+export interface JobRequirement {
+  jobId: string;
+  level: number;
 }
 
 export interface QuestChain {
   /** Quest name that must be completed before this one becomes available. */
   requires?: string;
+  /** Job level that must be reached before this quest becomes available. */
+  requiresJob?: JobRequirement;
   /** Quest name that auto-starts when this one is completed. */
   unlocks?: string;
   /** Auto-start this quest as soon as its prerequisite is complete. */
@@ -189,6 +201,7 @@ export interface Quest {
 }
 
 import { type CustomItem } from './item';
+import { type Job } from './job';
 
 export interface Project {
   id: string;
@@ -197,6 +210,8 @@ export interface Project {
   namespace: string;
   platform: Platform;
   quests: Quest[];
+  /** Passive job / skill definitions (fishing, etc.). */
+  jobs?: Job[];
   /** Reusable custom item definitions for rewards and objectives. */
   customItems?: CustomItem[];
   /** Manual Story Flow node positions, keyed by quest id (plus the Generate node). */

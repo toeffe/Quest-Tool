@@ -1,6 +1,8 @@
 import { type Project, type Quest } from '../types/quest';
 import { type CustomItem } from '../types/item';
+import { type Job } from '../types/job';
 import { toIdentifier } from '../types/ids';
+import { resolveJobStatCriteria } from './jobStats';
 
 /**
  * Stable, short identifiers for a quest's scoreboard objectives and entity tags.
@@ -51,12 +53,43 @@ export interface QuestContext {
   spawnFn: string;
 }
 
+export interface JobContext {
+  job: Job;
+  index: number;
+  /** Dummy: tracked action total (sum of stat sources or single stat). */
+  stat: string;
+  /** Raw scoreboard objectives wired to Minecraft stat criteria. */
+  statObjectives: string[];
+  statCriteria: string[];
+  /** True when multiple stat objectives are summed into stat. */
+  multiStat: boolean;
+  /** Dummy: accumulated job XP. */
+  xp: string;
+  /** Dummy: current job level. */
+  level: string;
+  /** Dummy: last seen stat value for delta detection. */
+  last: string;
+  /** Dummy: 1 after first-time stat sync (avoids retroactive XP). */
+  init: string;
+  /** Folder under the namespace function root. */
+  fnBase: string;
+  /** Fake-player holder for #grant XP from quest rewards. */
+  grantHolder: string;
+  /** Fake-player prefix for per-job constants on qt_sys. */
+  constPrefix: string;
+  /** Fake-player holder for summing multi-stat objectives. */
+  sumHolder: string;
+}
+
 export interface CompileContext {
   project: Project;
   namespace: string;
   quests: QuestContext[];
+  jobs: JobContext[];
   /** Quick lookup from quest name to its context (for chains). */
   byName: Map<string, QuestContext>;
+  /** Quick lookup from job id to its context. */
+  jobsById: Map<string, JobContext>;
   /** Custom items keyed by internal id. */
   customItemsById: Map<string, CustomItem>;
 }
@@ -99,12 +132,41 @@ export function buildContext(project: Project): CompileContext {
   const byName = new Map<string, QuestContext>();
   for (const qc of quests) byName.set(qc.quest.name, qc);
 
+  const jobs: JobContext[] = (project.jobs ?? []).map((job, index) => {
+    const slug = toIdentifier(job.name, `job_${index}`);
+    const statCriteria = resolveJobStatCriteria(job);
+    const multiStat = statCriteria.length > 1;
+    const statObjectives =
+      statCriteria.length === 1
+        ? [`j${index}stat`]
+        : statCriteria.map((_, si) => `j${index}s${si}`);
+    return {
+      job,
+      index,
+      stat: `j${index}stat`,
+      statObjectives,
+      statCriteria,
+      multiStat,
+      xp: `j${index}xp`,
+      level: `j${index}lvl`,
+      last: `j${index}last`,
+      init: `j${index}init`,
+      fnBase: `jobs/${index}_${slug}`.slice(0, 60),
+      grantHolder: `#j${index}grant`,
+      constPrefix: `#j${index}`,
+      sumHolder: `#j${index}sum`,
+    };
+  });
+
+  const jobsById = new Map<string, JobContext>();
+  for (const jc of jobs) jobsById.set(jc.job.id, jc);
+
   const customItemsById = new Map<string, CustomItem>();
   for (const item of project.customItems ?? []) {
     customItemsById.set(item.id, item);
   }
 
-  return { project, namespace, quests, byName, customItemsById };
+  return { project, namespace, quests, jobs, byName, jobsById, customItemsById };
 }
 
 /** Convert an entity/item id like "minecraft:zombie" to the stat suffix "minecraft.zombie". */

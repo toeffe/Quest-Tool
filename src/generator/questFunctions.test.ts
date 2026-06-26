@@ -315,7 +315,35 @@ describe('quest chains', () => {
     expect(bFiles['quests/1_second/tick.mcfunction']).toContain('run scoreboard players set @s q1 -1');
 
     const aFiles = compileQuest(ctx, ctx.quests[0]);
-    // Completing A unlocks B (sets B's state to available).
-    expect(aFiles['quests/0_first/turnin.mcfunction']).toContain('scoreboard players set @s q1 0');
+    // Completing A unlocks B via try_unlock.
+    expect(aFiles['quests/0_first/turnin.mcfunction']).toContain('function c:quests/1_second/try_unlock');
+  });
+
+  it('locks a quest that requires a job level', () => {
+    const project = createProject('JobGate');
+    project.namespace = 'jg';
+    const job = project.jobs![0];
+    const quest = createQuest('Pro Fisher', 'talk');
+    quest.chain.requiresJob = { jobId: job.id, level: 5 };
+    project.quests = [quest];
+    const ctx = buildContext(project);
+    const files = compileQuest(ctx, ctx.quests[0]);
+    expect(files['quests/0_pro_fisher/tick.mcfunction']).toContain('run scoreboard players set @s q0 -1');
+    expect(files['quests/0_pro_fisher/try_unlock.mcfunction']).toContain(`j0lvl`);
+    expect(files['quests/0_pro_fisher/try_unlock.mcfunction']).toContain('matches 5..');
+  });
+
+  it('turn-in grants job XP reward', () => {
+    const project = createProject('JobReward');
+    project.namespace = 'jr';
+    const job = project.jobs![0];
+    const quest = createQuest('Bonus', 'kill');
+    quest.rewards = [{ type: 'jobXp', jobId: job.id, amount: 25 }];
+    project.quests = [quest];
+    const ctx = buildContext(project);
+    const files = compileQuest(ctx, ctx.quests[0]);
+    const turnin = files['quests/0_bonus/turnin.mcfunction'];
+    expect(turnin).toContain('scoreboard players set #j0grant qt_sys 25');
+    expect(turnin).toContain('function jr:jobs/0_fishing/add_xp');
   });
 });

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { type Project, type Quest } from '../types/quest';
 import { type CustomItem, type CustomItemKind } from '../types/item';
+import { type Job } from '../types/job';
 import { createQuest } from '../types/factory';
 import {
   addQuest,
@@ -13,6 +14,10 @@ import {
   createAndAddCustomItem,
   deleteCustomItem,
   duplicateCustomItem,
+  updateJob,
+  deleteJob,
+  duplicateJob,
+  createAndAddJob,
 } from '../state/projectStore';
 
 interface ProjectStore {
@@ -29,6 +34,10 @@ interface ProjectStore {
   updateCustomItem: (item: CustomItem) => void;
   deleteCustomItem: (id: string) => void;
   duplicateCustomItem: (id: string) => void;
+  addJob: () => Job;
+  updateJob: (job: Job) => void;
+  deleteJob: (id: string) => void;
+  duplicateJob: (id: string) => void;
 }
 
 export const useProjectStore = create<ProjectStore>((set, get) => ({
@@ -107,6 +116,28 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   duplicateCustomItem: (id) => {
     const { project } = get();
     set({ project: duplicateCustomItem(project, id) });
+  },
+
+  addJob: () => {
+    const { project } = get();
+    const { project: next, job } = createAndAddJob(project);
+    set({ project: next });
+    return job;
+  },
+
+  updateJob: (job) => {
+    const { project } = get();
+    set({ project: updateJob(project, job) });
+  },
+
+  deleteJob: (id) => {
+    const { project } = get();
+    set({ project: deleteJob(project, id) });
+  },
+
+  duplicateJob: (id) => {
+    const { project } = get();
+    set({ project: duplicateJob(project, id) });
   },
 }));
 

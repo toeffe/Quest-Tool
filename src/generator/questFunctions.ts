@@ -15,7 +15,7 @@ import {
   zoneDropLootTablePath,
 } from './lootTables';
 import { type ZoneDropMode } from '../types/quest';
-import { NOW_HOLDER, SYS_OBJECTIVE } from './load';
+import { NOW_HOLDER, SYS_OBJECTIVE } from './sys';
 import { escapeSnbtString, tellraw, type TextPart } from './text';
 import { STR } from './strings';
 
@@ -290,6 +290,45 @@ function doneActionbar(qc: QuestContext, total: number): string {
   );
 }
 
+/** Whether a quest starts in locked state (-1). */
+function questStartsLocked(ctx: CompileContext, quest: Quest): boolean {
+  const questLocked = !!(quest.chain.requires && ctx.byName.has(quest.chain.requires));
+  const jobReq = quest.chain.requiresJob;
+  const jobLocked = !!(jobReq && ctx.jobsById.has(jobReq.jobId));
+  return questLocked || jobLocked;
+}
+
+/** try_unlock.mcfunction lines: set state 0 when all gates pass. */
+function buildTryUnlockLines(ctx: CompileContext, qc: QuestContext): string[] {
+  const quest = qc.quest;
+  const lines: string[] = [
+    `# Try unlock "${quest.name}"`,
+    `execute unless score @s ${qc.state} matches -1 run return`,
+  ];
+
+  if (quest.chain.requires && ctx.byName.has(quest.chain.requires)) {
+    const req = ctx.byName.get(quest.chain.requires)!;
+    lines.push(`execute unless score @s ${req.state} matches 3 run return`);
+  }
+
+  const jobReq = quest.chain.requiresJob;
+  if (jobReq && ctx.jobsById.has(jobReq.jobId)) {
+    const jc = ctx.jobsById.get(jobReq.jobId)!;
+    const minLevel = Math.max(1, jobReq.level);
+    lines.push(`execute unless score @s ${jc.level} matches ${minLevel}.. run return`);
+  }
+
+  lines.push(`scoreboard players set @s ${qc.state} 0`);
+  lines.push(
+    tellraw('@s', [
+      { text: STR.newQuestAvailable, color: 'aqua' },
+      { text: quest.name, color: 'white', bold: true },
+      { text: STR.seeNpc(quest.npc.name), color: 'gray' },
+    ]),
+  );
+  return lines;
+}
+
 /** Quests that should be unlocked when this quest completes (requires-graph + explicit unlocks). */
 function unlockTargets(ctx: CompileContext, qc: QuestContext): QuestContext[] {
   const names = new Set<string>();
@@ -312,7 +351,7 @@ function completionBody(ctx: CompileContext, qc: QuestContext): string[] {
   }
   lines.push('# Grant rewards');
   for (const reward of quest.rewards) {
-    lines.push(...rewardCommands(ctx.project.platform, reward, ctx.customItemsById));
+    lines.push(...rewardCommands(ctx, reward));
   }
 
   lines.push(tellraw('@s', npcSay(quest.npc.name, quest.npc.dialogue.completion, 'green')));
@@ -340,7 +379,9 @@ function completionBody(ctx: CompileContext, qc: QuestContext): string[] {
 
   for (const next of unlockTargets(ctx, qc)) {
     lines.push(`# Chain: unlock "${next.quest.name}"`);
-    if (next.quest.chain.autoStart) {
+    const canAutoStart =
+      next.quest.chain.autoStart && !next.quest.chain.requiresJob;
+    if (canAutoStart) {
       lines.push(`scoreboard players set @s ${next.state} 1`);
       lines.push(`scoreboard players set @s ${next.near} 0`);
       lines.push(`scoreboard players set @s ${next.done} 0`);
@@ -377,14 +418,7 @@ function completionBody(ctx: CompileContext, qc: QuestContext): string[] {
         ]),
       );
     } else {
-      lines.push(`scoreboard players set @s ${next.state} 0`);
-      lines.push(
-        tellraw('@s', [
-          { text: STR.newQuestAvailable, color: 'aqua' },
-          { text: next.quest.name, color: 'white', bold: true },
-          { text: STR.seeNpc(next.quest.npc.name), color: 'gray' },
-        ]),
-      );
+      lines.push(`function ${ctx.namespace}:${next.fnBase}/try_unlock`);
     }
   }
   return lines;
@@ -399,20 +433,30 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
   const files: Record<string, string> = {};
   const isInstantTalk = quest.type === 'talk' && !quest.targetNpc;
 
-  const requiresValid =
-    !!quest.chain.requires && ctx.byName.has(quest.chain.requires);
-  const initState = requiresValid ? -1 : 0;
+  const initState = questStartsLocked(ctx, quest) ? -1 : 0;
+
+  if (questStartsLocked(ctx, quest)) {
+    files[`${qc.fnBase}/try_unlock.mcfunction`] =
+      buildTryUnlockLines(ctx, qc).join('\n') + '\n';
+  }
 
   // ---- tick.mcfunction (dispatcher per quest) ----
   const tick: string[] = [
     `# ${quest.name} (${quest.type}) - tick`,
     `scoreboard players enable @a ${qc.trigger}`,
     `execute as @a unless score @s ${qc.state} matches ${RANGE_ALL} run scoreboard players set @s ${qc.state} ${initState}`,
+  ];
+  if (questStartsLocked(ctx, quest)) {
+    tick.push(
+      `execute as @a[scores={${qc.state}=-1}] run function ${ns}:${qc.fnBase}/try_unlock`,
+    );
+  }
+  tick.push(
     `execute as @a at @s unless entity @e[tag=${qc.giverTag},distance=..4] run scoreboard players set @s ${qc.near} 0`,
     `# AVAILABLE: offer + accept near giver`,
     `execute as ${giver(qc)} at @s as @a[distance=..4,scores={${qc.state}=0}] at @s run function ${ns}:${qc.fnBase}/offer`,
     `execute as ${giver(qc)} at @s as @a[distance=..6,scores={${qc.state}=0,${qc.trigger}=1..}] at @s run function ${ns}:${qc.fnBase}/accept`,
-  ];
+  );
 
   if (!isInstantTalk) {
     tick.push(`# ACTIVE: progress tracking`);

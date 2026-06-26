@@ -622,6 +622,158 @@ textarea {
   font-weight: 700;
 }
 
+.adv-chain-preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.adv-chain-node {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.adv-chain-pill {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  font-size: 13px;
+}
+
+.adv-chain-pill .muted {
+  font-size: 11px;
+}
+
+.adv-chain-pill.adv-chain-milestone {
+  border-color: var(--gold);
+}
+
+.adv-chain-arrow {
+  color: var(--text-dim);
+  font-weight: 700;
+}
+
+.adv-tab-preview-wrap {
+  overflow: hidden;
+}
+
+.adv-tab-preview {
+  position: relative;
+  border: 2px solid #8b8b8b;
+  border-radius: 2px;
+  min-height: 140px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.adv-tab-preview-title {
+  position: relative;
+  z-index: 1;
+  padding: 10px 14px 0;
+  font-weight: 700;
+  font-size: 15px;
+  color: #404040;
+  text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.adv-tab-preview-tree {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 18px 16px 20px;
+  overflow-x: auto;
+}
+
+.adv-tab-preview-node {
+  width: 32px;
+  height: 32px;
+  border: 2px solid #2a2a2a;
+  background: #c6c6c6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.adv-tab-preview-node.root {
+  background: #8b8b8b;
+}
+
+.adv-tab-preview-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.adv-tab-preview-branch {
+  display: flex;
+  align-items: center;
+}
+
+.adv-tab-preview-connector {
+  width: 24px;
+  height: 2px;
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+.adv-tab-preview-more {
+  margin-left: 8px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.adv-bg-husbandry {
+  background-color: #5c7a3a;
+  background-image:
+    linear-gradient(45deg, rgba(0, 0, 0, 0.06) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(0, 0, 0, 0.06) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(0, 0, 0, 0.06) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(0, 0, 0, 0.06) 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
+
+.adv-bg-adventure {
+  background-color: #8a7d62;
+  background-image:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%);
+  background-size: 16px 16px;
+}
+
+.adv-bg-stone {
+  background-color: #7a7a7a;
+  background-image:
+    linear-gradient(45deg, rgba(0, 0, 0, 0.08) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(0, 0, 0, 0.08) 25%, transparent 25%);
+  background-size: 16px 16px;
+}
+
+.adv-bg-nether {
+  background-color: #6b2f2f;
+  background-image:
+    linear-gradient(45deg, rgba(0, 0, 0, 0.12) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(0, 0, 0, 0.12) 25%, transparent 25%);
+  background-size: 16px 16px;
+}
+
+.adv-bg-end {
+  background-color: #1f1630;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(120, 80, 180, 0.35) 0 2px, transparent 3px),
+    radial-gradient(circle at 70% 60%, rgba(80, 200, 200, 0.25) 0 2px, transparent 3px);
+  background-size: 24px 24px;
+}
+
 .help-views {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

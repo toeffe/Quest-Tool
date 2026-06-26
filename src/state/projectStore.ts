@@ -1,6 +1,7 @@
 import { type Project, type Quest } from '../types/quest';
 import { type CustomItem } from '../types/item';
-import { createProject, createCustomItem, PROJECT_SCHEMA_VERSION } from '../types/factory';
+import { type Job } from '../types/job';
+import { createProject, createCustomItem, createJob, mergeStarterJobs, PROJECT_SCHEMA_VERSION } from '../types/factory';
 import { uid } from '../types/ids';
 
 import JSZip from 'jszip';
@@ -41,6 +42,9 @@ function migrate(project: Project): Project {
   if (!Array.isArray(next.customItems)) {
     next.customItems = [];
   }
+  if (!Array.isArray(next.jobs)) {
+    next.jobs = [];
+  }
   const fromVersion = project.version ?? 0;
   // Backfill fields added after the initial schema (e.g. NPC entity type).
   for (const quest of next.quests) {
@@ -55,6 +59,17 @@ function migrate(project: Project): Project {
         }
       }
     }
+  }
+  if (fromVersion < 6) {
+    const jobs = [...(next.jobs ?? [])];
+    if (
+      jobs.length === 1 &&
+      jobs[0].action === 'fish' &&
+      !jobs[0].starterKey
+    ) {
+      jobs[0] = { ...jobs[0], starterKey: 'starter_fishing' };
+    }
+    next.jobs = mergeStarterJobs(jobs);
   }
   return next;
 }
@@ -187,7 +202,16 @@ export function deleteCustomItem(project: Project, itemId: string): Project {
       r.customItemId === itemId ? { ...r, customItemId: undefined, type: r.type } : r,
     ),
   }));
-  return { ...project, customItems: items, quests };
+  const jobs = (project.jobs ?? []).map((job) => ({
+    ...job,
+    milestones: (job.milestones ?? []).map((m) => ({
+      ...m,
+      rewards: m.rewards.map((r) =>
+        r.customItemId === itemId ? { ...r, customItemId: undefined, type: r.type } : r,
+      ),
+    })),
+  }));
+  return { ...project, customItems: items, quests, jobs };
 }
 
 export function duplicateCustomItem(project: Project, itemId: string): Project {
@@ -212,4 +236,55 @@ export function createAndAddCustomItem(
   const n = (project.customItems ?? []).length + 1;
   const item = createCustomItem(kind, `Item ${n}`);
   return { project: addCustomItem(project, item), item };
+}
+
+// ---- Job operations ----
+
+export function addJob(project: Project, job: Job): Project {
+  const jobs = project.jobs ?? [];
+  return { ...project, jobs: [...jobs, job] };
+}
+
+export function updateJob(project: Project, job: Job): Project {
+  const jobs = project.jobs ?? [];
+  return {
+    ...project,
+    jobs: jobs.map((j) => (j.id === job.id ? job : j)),
+  };
+}
+
+export function deleteJob(project: Project, jobId: string): Project {
+  const jobs = (project.jobs ?? []).filter((j) => j.id !== jobId);
+  const quests = project.quests.map((q) => ({
+    ...q,
+    chain: {
+      ...q.chain,
+      requiresJob: q.chain.requiresJob?.jobId === jobId ? undefined : q.chain.requiresJob,
+    },
+    rewards: q.rewards.map((r) =>
+      r.type === 'jobXp' && r.jobId === jobId ? { ...r, jobId: undefined } : r,
+    ),
+  }));
+  return { ...project, jobs, quests };
+}
+
+export function duplicateJob(project: Project, jobId: string): Project {
+  const original = (project.jobs ?? []).find((j) => j.id === jobId);
+  if (!original) return project;
+  const copy: Job = {
+    ...structuredClone(original),
+    id: uid(),
+    name: `${original.name} (copy)`,
+    starterKey: undefined,
+  };
+  const jobs = [...(project.jobs ?? [])];
+  const index = jobs.findIndex((j) => j.id === jobId);
+  jobs.splice(index + 1, 0, copy);
+  return { ...project, jobs };
+}
+
+export function createAndAddJob(project: Project): { project: Project; job: Job } {
+  const n = (project.jobs ?? []).length + 1;
+  const job = createJob(`Job ${n}`);
+  return { project: addJob(project, job), job };
 }

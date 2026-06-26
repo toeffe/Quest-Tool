@@ -11,6 +11,8 @@ import { CommandPalette } from './components/layout/CommandPalette';
 import { QuestEditor } from './components/editor/QuestEditor';
 import { ExportPanel } from './components/export/ExportPanel';
 import { ItemsPage } from './components/ItemsPage';
+import { JobsPage } from './components/JobsPage';
+import { AdvancementsPage } from './components/AdvancementsPage';
 import { HelpPanel } from './components/HelpPanel';
 import { type Theme, getInitialTheme, applyTheme } from './state/theme';
 
@@ -36,6 +38,9 @@ export default function App() {
   const addCustomItem = useProjectStore((s) => s.addCustomItem);
   const deleteCustomItem = useProjectStore((s) => s.deleteCustomItem);
   const duplicateCustomItem = useProjectStore((s) => s.duplicateCustomItem);
+  const addJob = useProjectStore((s) => s.addJob);
+  const deleteJob = useProjectStore((s) => s.deleteJob);
+  const duplicateJob = useProjectStore((s) => s.duplicateJob);
 
   const activeView = useUIStore((s) => s.activeView);
   const selectedQuestId = useUIStore((s) => s.selectedQuestId);
@@ -120,6 +125,31 @@ export default function App() {
                   onDuplicate={duplicateCustomItem}
                   onDelete={deleteCustomItem}
                 />
+              </div>
+            </div>
+          )}
+
+          {activeView === 'jobs' && (
+            <div className="content">
+              <div className="content-inner">
+                <JobsPage
+                  project={project}
+                  issues={issues}
+                  onChange={setProject}
+                  onAdd={() => {
+                    addJob();
+                  }}
+                  onDuplicate={duplicateJob}
+                  onDelete={deleteJob}
+                />
+              </div>
+            </div>
+          )}
+
+          {activeView === 'advancements' && (
+            <div className="content">
+              <div className="content-inner">
+                <AdvancementsPage project={project} />
               </div>
             </div>
           )}

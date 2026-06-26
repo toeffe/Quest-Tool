@@ -8,6 +8,8 @@ const VIEWS: { id: ActiveView; label: string }[] = [
   { id: 'editor', label: 'Editor' },
   { id: 'flow', label: 'Story flow' },
   { id: 'items', label: 'Custom items' },
+  { id: 'jobs', label: 'Jobs' },
+  { id: 'advancements', label: 'Advancements' },
   { id: 'commands', label: 'Commands' },
   { id: 'export', label: 'Export' },
 ];

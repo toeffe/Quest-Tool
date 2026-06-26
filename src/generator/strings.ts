@@ -53,4 +53,13 @@ export const STR = {
     `${questName} questgiver MANGLER - kør spawn-funktionen`,
   debugYourState: '  din status: ',
   debugStateLegend: ' (0 ledig, 1 aktiv, 2 klar, 3 færdig, 4 cooldown, -1 låst)',
+  debugJobsTitle: '=== Jobs ===',
+
+  jobXpGained: (jobName: string) => `${jobName}`,
+  jobLevelUpPrefix: '[Jobs] ',
+  jobLevelUpSuffix: ' niveau ',
+  jobQuestUnlocked: (questName: string) => `Ny quest låst op: ${questName}`,
+  jobMilestonePrefix: '[Jobs] Milestone: ',
+  jobMilestoneSuffix: (level: number) => ` ${level} — reward granted!`,
+  resetJobsNote: 'Job-fremgang (XP og niveau) nulstilles også.',
 } as const;

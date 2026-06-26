@@ -166,4 +166,60 @@ describe('validation', () => {
     const issues = validateProject(project);
     expect(hasBlockingErrors(issues)).toBe(false);
   });
+
+  it('flags job XP reward with missing job', () => {
+    const project = createProject('Jobs');
+    project.jobs = [];
+    const quest = createQuest('Q', 'kill');
+    quest.rewards = [{ type: 'jobXp', jobId: 'missing', amount: 10 }];
+    project.quests = [quest];
+    const issues = validateProject(project);
+    expect(issues.some((i) => /job XP reward references a job/.test(i.message))).toBe(true);
+  });
+
+  it('flags chain requiresJob with missing job', () => {
+    const project = createProject('Jobs');
+    project.jobs = [];
+    const quest = createQuest('Q', 'kill');
+    quest.chain.requiresJob = { jobId: 'missing', level: 3 };
+    project.quests = [quest];
+    const issues = validateProject(project);
+    expect(issues.some((i) => /requires a job that no longer exists/.test(i.message))).toBe(true);
+  });
+
+  it('flags mining job without single target', () => {
+    const project = createProject('Jobs');
+    project.jobs = [
+      {
+        id: 'm1',
+        name: 'Mining',
+        action: 'mine',
+        statPreset: 'single',
+        xpPerAction: 5,
+        xpPerLevel: 100,
+        maxLevel: 50,
+        showActionBar: false,
+      },
+    ];
+    const issues = validateProject(project);
+    expect(issues.some((i) => /single target id/.test(i.message))).toBe(true);
+  });
+
+  it('flags milestone with missing custom item', () => {
+    const project = createProject('Jobs');
+    project.jobs = [
+      {
+        id: 'j1',
+        name: 'Fishing',
+        action: 'fish',
+        xpPerAction: 10,
+        xpPerLevel: 100,
+        maxLevel: 50,
+        showActionBar: false,
+        milestones: [{ level: 5, rewards: [{ type: 'item', customItemId: 'gone', amount: 1 }] }],
+      },
+    ];
+    const issues = validateProject(project);
+    expect(issues.some((i) => /milestone references a custom item/.test(i.message))).toBe(true);
+  });
 });

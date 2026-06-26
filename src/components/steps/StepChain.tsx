@@ -1,5 +1,5 @@
 import { type Project, type Quest } from '../../types/quest';
-import { Field, Select } from '../ui/Field';
+import { Field, Select, NumberInput } from '../ui/Field';
 
 interface Props {
   quest: Quest;
@@ -9,11 +9,27 @@ interface Props {
 
 export function StepChain({ quest, project, onChange }: Props) {
   const others = project.quests.filter((q) => q.id !== quest.id);
+  const jobs = project.jobs ?? [];
   const noneOption = { value: '', label: '— None —' };
   const questOptions = [noneOption, ...others.map((q) => ({ value: q.name, label: q.name }))];
+  const jobOptions = [noneOption, ...jobs.map((j) => ({ value: j.id, label: j.name }))];
 
   const setChain = (patch: Partial<Quest['chain']>) =>
     onChange({ ...quest, chain: { ...quest.chain, ...patch } });
+
+  const setJobRequirement = (jobId: string) => {
+    if (!jobId) {
+      setChain({ requiresJob: undefined });
+      return;
+    }
+    const existing = quest.chain.requiresJob;
+    setChain({
+      requiresJob: {
+        jobId,
+        level: existing?.jobId === jobId ? existing.level : 1,
+      },
+    });
+  };
 
   return (
     <div>
@@ -31,6 +47,32 @@ export function StepChain({ quest, project, onChange }: Props) {
           options={questOptions}
           onChange={(requires) => setChain({ requires: requires || undefined })}
         />
+      </div>
+
+      <div className="card">
+        <h3>Job requirement</h3>
+        <Select
+          label="Requires job level"
+          hint="Quest stays locked until the player reaches the required job level."
+          value={quest.chain.requiresJob?.jobId ?? ''}
+          options={jobOptions}
+          onChange={setJobRequirement}
+        />
+        {quest.chain.requiresJob && (
+          <NumberInput
+            label="Minimum level"
+            value={quest.chain.requiresJob.level}
+            min={1}
+            onChange={(level) =>
+              setChain({
+                requiresJob: { ...quest.chain.requiresJob!, level },
+              })
+            }
+          />
+        )}
+        {jobs.length === 0 && (
+          <p className="hint">Add a job in the Jobs tab to gate quests by skill level.</p>
+        )}
       </div>
 
       <div className="card">

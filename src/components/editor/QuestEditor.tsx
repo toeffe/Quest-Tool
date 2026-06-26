@@ -65,6 +65,7 @@ export function QuestEditor({ quest, project, issues, onChange, compact }: Props
             quest={quest}
             platform={project.platform}
             customItems={project.customItems ?? []}
+            jobs={project.jobs ?? []}
             onChange={onChange}
           />
         )}

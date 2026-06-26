@@ -24,6 +24,16 @@ const VIEWS = [
       'Define trophy collectibles, food, tools, and more. Use them as quest rewards, gather/delivery targets, ' +
       'or spawn-zone mob drops. Items use component syntax — no custom textures unless you add a resource pack.',
   },
+  {
+    title: 'Jobs',
+    body:
+      'Passive skills (fishing, mining, combat, and more) level up from player actions. Configure balanced XP curves, stat presets, and milestone rewards that grant custom items on level-up.',
+  },
+  {
+    title: 'Advancements',
+    body:
+      'Preview the in-game skill trees exported with your datapack. Players open Esc → Advancements → your namespace tab to track job levels.',
+  },
 ];
 
 const STEPS = ['NPC', 'Quest', 'Rewards', 'Chain', 'Generate'];

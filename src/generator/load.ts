@@ -1,10 +1,10 @@
 import { type CompileContext, questObjectives, statId } from './context';
+import { buildJobLoadLines, buildJobResetLines } from './jobFunctions';
+import { NOW_HOLDER, SYS_OBJECTIVE } from './sys';
 import { STR } from './strings';
 import { escapeSnbtString } from './text';
 
-/** System objective + score holder used for the global gametime read (daily cooldowns). */
-export const SYS_OBJECTIVE = 'qt_sys';
-export const NOW_HOLDER = '#now';
+export { NOW_HOLDER, SYS_OBJECTIVE } from './sys';
 
 /**
  * The load function: declares every scoreboard objective the pack needs and
@@ -59,6 +59,16 @@ export function buildLoadFunction(ctx: CompileContext): string {
     }
   }
 
+  for (const jc of ctx.jobs) {
+    lines.push(...buildJobLoadLines(ctx, jc));
+  }
+
+  for (const jc of ctx.jobs) {
+    lines.push(
+      `execute as @a run function ${ctx.namespace}:${jc.fnBase}/sync_advancements`,
+    );
+  }
+
   lines.push(`tellraw @a {"text":"${escapeSnbtString(STR.packLoaded(ctx.project.name))}","color":"green"}`);
   return lines.join('\n') + '\n';
 }
@@ -75,13 +85,19 @@ export function buildTickFunction(ctx: CompileContext): string {
   for (const qc of ctx.quests) {
     lines.push(`function ${ctx.namespace}:${qc.fnBase}/tick`);
   }
+  if (ctx.jobs.length > 0) {
+    lines.push(`function ${ctx.namespace}:jobs/tick`);
+  }
   return lines.join('\n') + '\n';
 }
 
-/** A quest's starting state: locked (-1) if it requires another quest, else available (0). */
+/** A quest's starting state: locked (-1) if it requires another quest or job level, else available (0). */
 function initialState(ctx: CompileContext, qc: CompileContext['quests'][number]): number {
   const requires = qc.quest.chain.requires;
-  return requires && ctx.byName.has(requires) ? -1 : 0;
+  const questLocked = !!(requires && ctx.byName.has(requires));
+  const jobReq = qc.quest.chain.requiresJob;
+  const jobLocked = !!(jobReq && ctx.jobsById.has(jobReq.jobId));
+  return questLocked || jobLocked ? -1 : 0;
 }
 
 /**
@@ -127,6 +143,9 @@ export function buildResetFunction(ctx: CompileContext): string {
       }
     }
     if (qc.quest.type === 'daily') lines.push(`scoreboard players set @s ${qc.state}cd 0`);
+  }
+  for (const jc of ctx.jobs) {
+    lines.push(...buildJobResetLines(ctx, jc));
   }
   lines.push(
     `tellraw @s {"text":"${STR.resetSelf}","color":"yellow"}`,

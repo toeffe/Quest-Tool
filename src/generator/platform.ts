@@ -1,5 +1,6 @@
 import { type Platform, type Reward } from '../types/quest';
-import { type CustomItem } from '../types/item';
+import { type CompileContext } from './context';
+import { SYS_OBJECTIVE } from './sys';
 import { actionbar, tellraw, type TextPart } from './text';
 import { namespaced } from './context';
 import { buildGiveCommand } from './items';
@@ -19,12 +20,10 @@ import { STR } from './strings';
  * accepts target selectors; the bundled README documents this.
  */
 
-export function rewardCommands(
-  platform: Platform,
-  reward: Reward,
-  customItemsById?: Map<string, CustomItem>,
-): string[] {
+export function rewardCommands(ctx: CompileContext, reward: Reward): string[] {
   const out: string[] = [];
+  const platform = ctx.project.platform;
+  const customItemsById = ctx.customItemsById;
   switch (reward.type) {
     case 'item': {
       if (reward.customItemId && customItemsById) {
@@ -71,6 +70,15 @@ export function rewardCommands(
         out.push(reward.value.replace(/\{player\}/g, '@s').replace(/^\//, ''));
       }
       break;
+    case 'jobXp': {
+      const amount = reward.amount ?? 0;
+      const jc = reward.jobId ? ctx.jobsById.get(reward.jobId) : undefined;
+      if (jc && amount > 0) {
+        out.push(`scoreboard players set ${jc.grantHolder} ${SYS_OBJECTIVE} ${amount}`);
+        out.push(`function ${ctx.namespace}:${jc.fnBase}/add_xp`);
+      }
+      break;
+    }
   }
   return out;
 }

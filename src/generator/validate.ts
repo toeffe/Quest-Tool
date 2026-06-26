@@ -1,4 +1,5 @@
 import { type Project, type Quest } from '../types/quest';
+import { TYPED_JOB_ACTIONS } from '../types/job';
 import { isRewardSupported } from './platform';
 import { toIdentifier } from '../types/ids';
 
@@ -9,6 +10,8 @@ export interface ValidationIssue {
   message: string;
   questId?: string;
   questName?: string;
+  jobId?: string;
+  jobName?: string;
   /** Field path for editor tab routing and focus (e.g. npc.name, objectives, chain.requires). */
   field?: string;
 }
@@ -130,6 +133,195 @@ function customItemIssues(project: Project): ValidationIssue[] {
   return issues;
 }
 
+function jobIssues(project: Project): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const jobs = project.jobs ?? [];
+  const jobIds = new Set(jobs.map((j) => j.id));
+  const nameCounts = new Map<string, number>();
+
+  for (const job of jobs) {
+    const name = job.name.trim();
+    if (!name) {
+      issues.push({
+        level: 'error',
+        message: 'A job has an empty name.',
+        jobId: job.id,
+        jobName: job.name,
+      });
+    }
+    nameCounts.set(name, (nameCounts.get(name) ?? 0) + 1);
+    if (job.xpPerAction < 1) {
+      issues.push({
+        level: 'error',
+        message: `Job "${job.name}" XP per action must be at least 1.`,
+        jobId: job.id,
+        jobName: job.name,
+      });
+    }
+    if (job.xpPerLevel < 1) {
+      issues.push({
+        level: 'error',
+        message: `Job "${job.name}" XP per level must be at least 1.`,
+        jobId: job.id,
+        jobName: job.name,
+      });
+    }
+    if (job.maxLevel < 1) {
+      issues.push({
+        level: 'error',
+        message: `Job "${job.name}" max level must be at least 1.`,
+        jobId: job.id,
+        jobName: job.name,
+      });
+    }
+    if (job.advancementIcon && !job.advancementIcon.includes(':')) {
+      issues.push({
+        level: 'warning',
+        message: `Job "${job.name}" advancement icon should be a namespaced id (e.g. minecraft:fishing_rod).`,
+        jobId: job.id,
+        jobName: job.name,
+      });
+    }
+    if (job.advancementBackground && !job.advancementBackground.includes(':')) {
+      issues.push({
+        level: 'warning',
+        message: `Job "${job.name}" advancement background should be a resource id (e.g. minecraft:gui/advancements/backgrounds/husbandry).`,
+        jobId: job.id,
+        jobName: job.name,
+      });
+    }
+    if (job.action === 'custom' && !job.customCriterion?.trim()) {
+      issues.push({
+        level: 'error',
+        message: `Job "${job.name}" needs a custom scoreboard criterion.`,
+        jobId: job.id,
+        jobName: job.name,
+        field: 'jobs.customCriterion',
+      });
+    }
+    if (TYPED_JOB_ACTIONS.includes(job.action)) {
+      const preset = job.statPreset ?? 'single';
+      if (preset === 'single' && !job.statTarget?.trim()) {
+        issues.push({
+          level: 'error',
+          message: `Job "${job.name}" needs a single target id (or choose a preset).`,
+          jobId: job.id,
+          jobName: job.name,
+          field: 'jobs.statTarget',
+        });
+      }
+    }
+    const milestoneLevels = new Set<number>();
+    for (const milestone of job.milestones ?? []) {
+      if (milestone.level < 1 || milestone.level > job.maxLevel) {
+        issues.push({
+          level: 'error',
+          message: `Job "${job.name}" milestone level ${milestone.level} must be between 1 and ${job.maxLevel}.`,
+          jobId: job.id,
+          jobName: job.name,
+          field: 'jobs.milestones',
+        });
+      }
+      if (milestoneLevels.has(milestone.level)) {
+        issues.push({
+          level: 'error',
+          message: `Job "${job.name}" has duplicate milestone at level ${milestone.level}.`,
+          jobId: job.id,
+          jobName: job.name,
+          field: 'jobs.milestones',
+        });
+      }
+      milestoneLevels.add(milestone.level);
+      for (const reward of milestone.rewards) {
+        if (reward.type === 'item' && !reward.value && !reward.customItemId) {
+          issues.push({
+            level: 'error',
+            message: `Job "${job.name}" milestone Lv.${milestone.level} has an empty item reward.`,
+            jobId: job.id,
+            jobName: job.name,
+            field: 'jobs.milestones',
+          });
+        }
+      }
+    }
+  }
+
+  const customItemIds = new Set((project.customItems ?? []).map((i) => i.id));
+  for (const job of jobs) {
+    for (const milestone of job.milestones ?? []) {
+      for (const reward of milestone.rewards) {
+        if (reward.customItemId && !customItemIds.has(reward.customItemId)) {
+          issues.push({
+            level: 'error',
+            message: `Job "${job.name}" milestone references a custom item that no longer exists.`,
+            jobId: job.id,
+            jobName: job.name,
+            field: 'jobs.milestones',
+          });
+        }
+      }
+    }
+  }
+
+  for (const [name, count] of nameCounts) {
+    if (count > 1) {
+      issues.push({
+        level: 'error',
+        message: `Duplicate job name: "${name}" (used ${count} times).`,
+      });
+    }
+  }
+
+  for (const quest of project.quests) {
+    const jobReq = quest.chain.requiresJob;
+    if (jobReq) {
+      if (!jobIds.has(jobReq.jobId)) {
+        issues.push({
+          level: 'error',
+          message: 'Chain requires a job that no longer exists.',
+          questId: quest.id,
+          questName: quest.name,
+          field: 'chain.requiresJob',
+        });
+      }
+      if (jobReq.level < 1) {
+        issues.push({
+          level: 'error',
+          message: 'Job level requirement must be at least 1.',
+          questId: quest.id,
+          questName: quest.name,
+          field: 'chain.requiresJob',
+        });
+      }
+    }
+
+    for (const reward of quest.rewards) {
+      if (reward.type === 'jobXp') {
+        if (!reward.jobId || !jobIds.has(reward.jobId)) {
+          issues.push({
+            level: 'error',
+            message: 'A job XP reward references a job that no longer exists.',
+            questId: quest.id,
+            questName: quest.name,
+            field: 'rewards',
+          });
+        }
+        if (!reward.amount || reward.amount < 1) {
+          issues.push({
+            level: 'error',
+            message: 'A job XP reward must grant at least 1 XP.',
+            questId: quest.id,
+            questName: quest.name,
+            field: 'rewards',
+          });
+        }
+      }
+    }
+  }
+
+  return issues;
+}
+
 /** Validate the whole project; returns errors (block export) and warnings. */
 export function validateProject(project: Project): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
@@ -142,6 +334,7 @@ export function validateProject(project: Project): ValidationIssue[] {
   }
 
   issues.push(...customItemIssues(project));
+  issues.push(...jobIssues(project));
 
   const customItemIds = new Set((project.customItems ?? []).map((i) => i.id));
 

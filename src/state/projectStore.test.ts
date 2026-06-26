@@ -49,6 +49,33 @@ describe('projectStore migration', () => {
     expect(project.version).toBe(PROJECT_SCHEMA_VERSION);
     expect(project.quests[0].objectives[0].zoneDropMode).toBe('vanilla');
   });
+
+  it('appends starter jobs when upgrading from v5 with only fishing', () => {
+    const legacy = {
+      id: 'legacy-id',
+      name: 'Legacy',
+      namespace: 'legacy',
+      platform: 'vanilla',
+      quests: [createQuest('Q', 'kill')],
+      jobs: [
+        {
+          id: 'fish-1',
+          name: 'Fishing',
+          action: 'fish',
+          xpPerAction: 10,
+          xpPerLevel: 100,
+          maxLevel: 50,
+          showActionBar: true,
+        },
+      ],
+      version: 5,
+    };
+    const project = importProjectJson(JSON.stringify(legacy));
+    expect(project.version).toBe(PROJECT_SCHEMA_VERSION);
+    expect(project.jobs!.length).toBe(11);
+    expect(project.jobs!.find((j) => j.starterKey === 'starter_fishing')?.name).toBe('Fishing');
+    expect(project.jobs!.find((j) => j.starterKey === 'starter_mining')).toBeDefined();
+  });
 });
 
 describe('custom item CRUD', () => {

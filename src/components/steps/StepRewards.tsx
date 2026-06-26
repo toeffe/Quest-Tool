@@ -6,6 +6,7 @@ import {
   REWARD_TYPE_LABELS,
 } from '../../types/quest';
 import { type CustomItem } from '../../types/item';
+import { type Job } from '../../types/job';
 import { isRewardSupported } from '../../generator/platform';
 import { PillSelect } from '../ui/Field';
 
@@ -13,6 +14,7 @@ interface Props {
   quest: Quest;
   platform: Platform;
   customItems: CustomItem[];
+  jobs: Job[];
   onChange: (quest: Quest) => void;
 }
 
@@ -30,6 +32,8 @@ function defaultReward(type: RewardType): Reward {
       return { type, value: 'quest.reward.example' };
     case 'command':
       return { type, value: 'say {player} finished the quest!' };
+    case 'jobXp':
+      return { type, amount: 50 };
   }
 }
 
@@ -52,7 +56,7 @@ function itemSource(reward: Reward): ItemSource {
   return reward.customItemId ? 'custom' : 'vanilla';
 }
 
-export function StepRewards({ quest, platform, customItems, onChange }: Props) {
+export function StepRewards({ quest, platform, customItems, jobs, onChange }: Props) {
   const rewards = quest.rewards;
   const setRewards = (next: Reward[]) => onChange({ ...quest, rewards: next });
 
@@ -99,8 +103,13 @@ export function StepRewards({ quest, platform, customItems, onChange }: Props) {
 
         {rewards.map((reward, i) => {
           const support = isRewardSupported(platform, reward);
-          const showAmount = reward.type === 'item' || reward.type === 'xp' || reward.type === 'money';
+          const showAmount =
+            reward.type === 'item' ||
+            reward.type === 'xp' ||
+            reward.type === 'money' ||
+            reward.type === 'jobXp';
           const isItem = reward.type === 'item';
+          const isJobXp = reward.type === 'jobXp';
           const source = itemSource(reward);
           return (
             <div key={i} className="card" style={{ background: 'var(--bg)', marginBottom: 12 }}>
@@ -111,7 +120,11 @@ export function StepRewards({ quest, platform, customItems, onChange }: Props) {
                     value={reward.type}
                     onChange={(e) => {
                       const type = e.target.value as RewardType;
-                      setRewards(rewards.map((r, idx) => (idx === i ? defaultReward(type) : r)));
+                      const next = defaultReward(type);
+                      if (type === 'jobXp' && jobs[0]) {
+                        (next as Reward).jobId = jobs[0].id;
+                      }
+                      setRewards(rewards.map((r, idx) => (idx === i ? next : r)));
                     }}
                   >
                     {REWARD_TYPES.map((t) => (
@@ -172,6 +185,29 @@ export function StepRewards({ quest, platform, customItems, onChange }: Props) {
                   </div>
                 )}
 
+                {isJobXp && (
+                  <div className="field" style={{ flex: 2 }}>
+                    <label>Job</label>
+                    {jobs.length === 0 ? (
+                      <div className="hint" style={{ marginTop: 8 }}>
+                        No jobs yet. Open the Jobs tab to create one.
+                      </div>
+                    ) : (
+                      <select
+                        value={reward.jobId ?? ''}
+                        onChange={(e) => update(i, { jobId: e.target.value })}
+                      >
+                        {!reward.jobId && <option value="">Select a job…</option>}
+                        {jobs.map((job) => (
+                          <option key={job.id} value={job.id}>
+                            {job.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                )}
+
                 {(reward.type === 'permission' || reward.type === 'command') && (
                   <div className="field" style={{ flex: 2 }}>
                     <label>{reward.type === 'command' ? 'Command' : 'Value'}</label>
@@ -212,6 +248,11 @@ export function StepRewards({ quest, platform, customItems, onChange }: Props) {
               {isItem && source === 'custom' && (
                 <div className="hint">
                   Gives the item with its custom name, lore, and components from the Items tab.
+                </div>
+              )}
+              {isJobXp && (
+                <div className="hint">
+                  Grants bonus job XP on quest completion (in addition to passive XP from actions).
                 </div>
               )}
               {support.note && (

@@ -6,6 +6,8 @@ const VIEW_LABELS: Record<ActiveView, string> = {
   editor: 'Open Editor',
   flow: 'Open Story Flow',
   items: 'Open Custom Items',
+  jobs: 'Open Jobs',
+  advancements: 'Open Advancements',
   commands: 'Open Commands',
   export: 'Open Export',
 };
@@ -61,6 +63,21 @@ export function CommandPalette() {
       }
     }
 
+    for (const job of project.jobs ?? []) {
+      const name = job.name || 'Untitled job';
+      if (!q || name.toLowerCase().includes(q) || 'job'.includes(q)) {
+        items.push({
+          id: `job-${job.id}`,
+          label: `Edit job: ${name}`,
+          group: 'Jobs',
+          run: () => {
+            setActiveView('jobs');
+            setOpen(false);
+          },
+        });
+      }
+    }
+
     if (!q || 'settings'.includes(q) || 'import'.includes(q)) {
       items.push({
         id: 'settings',
@@ -86,7 +103,7 @@ export function CommandPalette() {
     }
 
     return items;
-  }, [query, project.quests, setActiveView, setOpen, setSelectedQuestId, setSettingsOpen]);
+  }, [query, project.quests, project.jobs, setActiveView, setOpen, setSelectedQuestId, setSettingsOpen]);
 
   if (!open) return null;
 

@@ -1,5 +1,6 @@
 import { type Project } from '../types/quest';
 import { buildContext } from './context';
+import { STR } from './strings';
 
 export interface CommandEntry {
   command: string;
@@ -58,19 +59,19 @@ export function buildCommandReference(project: Project): CommandGroup[] {
     },
     {
       title: 'Progress & Admin',
-      description: 'Reset quest progress and completions. Requires operator/cheats.',
+      description: `Reset quest progress and job XP/levels. Requires operator/cheats. ${STR.resetJobsNote}`,
       commands: [
         {
           command: `/function ${ns}:reset`,
-          description: 'Reset your own quest progress and completions.',
+          description: 'Reset your own quest progress, job XP, and job levels.',
         },
         {
           command: `/execute as <player> run function ${ns}:reset`,
-          description: "Reset a specific player's quest progress (replace <player>).",
+          description: "Reset a specific player's quest and job progress (replace <player>).",
         },
         {
           command: `/function ${ns}:reset_all`,
-          description: 'Reset quest progress for everyone currently online.',
+          description: 'Reset quest and job progress for everyone currently online.',
         },
       ],
     },
@@ -79,9 +80,34 @@ export function buildCommandReference(project: Project): CommandGroup[] {
       commands: [
         {
           command: `/function ${ns}:debug`,
-          description: 'Verify that NPCs exist and view your current quest state values.',
+          description:
+            'Verify that NPCs exist, view quest state values, and see your job levels and XP.',
         },
       ],
     },
+    ...(ctx.jobs.length > 0
+      ? [
+          {
+            title: 'Jobs',
+            description:
+              'Jobs run automatically every tick. Track levels under Esc → Advancements → your pack namespace tab.',
+            commands: [
+              {
+                command: `/function ${ns}:jobs/sync_all`,
+                description:
+                  'Re-grant job advancement nodes for all online players (fixes missing tabs after export).',
+              },
+              ...ctx.jobs.map((jc) => ({
+                command: `/function ${ns}:${jc.fnBase}/sync_advancements`,
+                description: `Sync "${jc.job.name}" advancement tree to current levels.`,
+              })),
+              ...ctx.jobs.map((jc) => ({
+                command: `(passive) ${jc.job.name}`,
+                description: `${jc.job.xpPerAction} XP per fish caught, max level ${jc.job.maxLevel}`,
+              })),
+            ],
+          },
+        ]
+      : []),
   ];
 }
