@@ -11,6 +11,7 @@ import {
 } from './load';
 import { compileQuest, buildKillZoneAdvancementFiles, buildZoneLootTableFiles } from './questFunctions';
 import { compileJob, buildJobsTickFunction, buildJobsSyncAllFunction, buildJobDebugLines } from './jobFunctions';
+import { buildJobBossBarSupportFiles } from './jobBossBar';
 import { buildJobAdvancementFiles } from './jobAdvancements';
 import { spawnFunctionLines } from './npc';
 import { installGuide } from './platform';
@@ -26,6 +27,14 @@ import { STR } from './strings';
 
 /** A flat map of file paths (inside the ZIP) to their text contents. */
 export type FileMap = Record<string, string>;
+
+function mapJobBossBarFiles(fnRoot: string, relFiles: Record<string, string>): FileMap {
+  const out: FileMap = {};
+  for (const [rel, content] of Object.entries(relFiles)) {
+    out[`${fnRoot}/${rel}`] = content;
+  }
+  return out;
+}
 
 function setupGuideFunction(ctx: CompileContext): string {
   const lines = [
@@ -132,6 +141,7 @@ function readmeText(project: Project, ctx: CompileContext): string {
     `- Fishing, mining, combat, and other jobs level up automatically from player actions.`,
     `- Open Esc → Advancements → ${ctx.namespace} to see skill trees and levels.`,
     `- Milestone rewards (custom items, XP, etc.) are granted on level-up when configured on the Jobs tab.`,
+    `- While working on a job, a personal boss bar at the top shows your level, total XP, and progress to the next level (each player has their own).`,
     `- Job progress is also shown in /function ${ctx.namespace}:debug.`,
     `- Use /function ${ctx.namespace}:reset to clear job XP and levels along with quest progress.`,
     ``,
@@ -226,6 +236,7 @@ export function buildDatapackFiles(project: Project): FileMap {
   if (ctx.jobs.length > 0) {
     files[`${fnRoot}/jobs/tick.mcfunction`] = buildJobsTickFunction(ctx);
     files[`${fnRoot}/jobs/sync_all.mcfunction`] = buildJobsSyncAllFunction(ctx);
+    Object.assign(files, mapJobBossBarFiles(fnRoot, buildJobBossBarSupportFiles(ctx)));
     for (const jc of ctx.jobs) {
       const jobFiles = compileJob(ctx, jc);
       for (const [rel, content] of Object.entries(jobFiles)) {

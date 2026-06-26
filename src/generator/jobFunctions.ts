@@ -7,6 +7,7 @@ import {
   buildJobSyncAdvancementLines,
 } from './jobAdvancements';
 import { jobMilestoneRewardCommands, milestoneAnnouncement } from './jobMilestones';
+import { buildUpdateProgressBarLines, buildJobProgressBarMacro } from './jobBossBar';
 import { escapeSnbtString, tellraw } from './text';
 import { STR } from './strings';
 
@@ -191,6 +192,9 @@ export function compileJob(ctx: CompileContext, jc: JobContext): Record<string, 
     );
   }
   credit.push(`function ${ns}:${jc.fnBase}/check_level`);
+  if (job.showProgressBar !== false) {
+    credit.push(`function ${ns}:${jc.fnBase}/update_progress_bar`);
+  }
   files[`${jc.fnBase}/credit.mcfunction`] = credit.join('\n') + '\n';
 
   files[`${jc.fnBase}/sync_advancements.mcfunction`] =
@@ -222,7 +226,16 @@ export function compileJob(ctx: CompileContext, jc: JobContext): Record<string, 
     `function ${ns}:${jc.fnBase}/sync_advancements`,
     `function ${ns}:${jc.fnBase}/check_level`,
   );
+  if (job.showProgressBar !== false) {
+    levelUp.push(`function ${ns}:${jc.fnBase}/update_progress_bar`);
+  }
   files[`${jc.fnBase}/level_up.mcfunction`] = levelUp.join('\n') + '\n';
+
+  if (job.showProgressBar !== false) {
+    files[`${jc.fnBase}/update_progress_bar.mcfunction`] =
+      buildUpdateProgressBarLines(ctx, jc).join('\n') + '\n';
+    files[`${jc.fnBase}/prog_bar.mcfunction`] = buildJobProgressBarMacro(ctx, jc);
+  }
 
   files[`${jc.fnBase}/add_xp.mcfunction`] =
     [
@@ -230,6 +243,9 @@ export function compileJob(ctx: CompileContext, jc: JobContext): Record<string, 
       `scoreboard players operation @s ${jc.xp} += ${jc.grantHolder} ${SYS}`,
       `function ${ns}:${jc.fnBase}/check_level`,
       `function ${ns}:${jc.fnBase}/sync_advancements`,
+      ...(job.showProgressBar !== false
+        ? [`function ${ns}:${jc.fnBase}/update_progress_bar`]
+        : []),
     ].join('\n') + '\n';
 
   Object.assign(files, buildMilestoneFiles(ctx, jc));

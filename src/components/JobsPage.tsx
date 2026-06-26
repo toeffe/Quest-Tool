@@ -264,6 +264,17 @@ export function JobsPage({ project, issues = [], onChange, onAdd, onDuplicate, o
                     Brief action bar message when XP is earned
                   </label>
                 </Field>
+                <Field label="Progress display">
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input
+                      type="checkbox"
+                      style={{ width: 'auto' }}
+                      checked={selected.showProgressBar !== false}
+                      onChange={(e) => updateJob({ showProgressBar: e.target.checked })}
+                    />
+                    Personal boss bar at top (level, XP, progress — one per player)
+                  </label>
+                </Field>
               </div>
 
               <JobMilestonesEditor

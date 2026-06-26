@@ -67,6 +67,7 @@ export function createJob(
     xpPerLevel: balanced.xpPerLevel,
     maxLevel: balanced.maxLevel,
     showActionBar: true,
+    showProgressBar: true,
     distanceUnit: balanced.distanceUnit,
     ...overrides,
   };
@@ -89,6 +90,7 @@ export function createStarterJobs(): Job[] {
       xpPerLevel: balanced.xpPerLevel,
       maxLevel: balanced.maxLevel,
       showActionBar: true,
+      showProgressBar: true,
       distanceUnit: balanced.distanceUnit,
       milestones: emptyMilestoneSlots(balanced.maxLevel),
     };

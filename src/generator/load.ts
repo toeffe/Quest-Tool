@@ -1,5 +1,6 @@
 import { type CompileContext, questObjectives, statId } from './context';
 import { buildJobLoadLines, buildJobResetLines } from './jobFunctions';
+import { buildJobBossBarSetupLines, buildHideJobBossBarLines, jobsUseProgressBar } from './jobBossBar';
 import { NOW_HOLDER, SYS_OBJECTIVE } from './sys';
 import { STR } from './strings';
 import { escapeSnbtString } from './text';
@@ -61,6 +62,12 @@ export function buildLoadFunction(ctx: CompileContext): string {
 
   for (const jc of ctx.jobs) {
     lines.push(...buildJobLoadLines(ctx, jc));
+  }
+
+  lines.push(...buildJobBossBarSetupLines(ctx));
+
+  if (jobsUseProgressBar(ctx)) {
+    lines.push(`execute as @a run function ${ctx.namespace}:jobs/ensure_pid`);
   }
 
   for (const jc of ctx.jobs) {
@@ -147,6 +154,7 @@ export function buildResetFunction(ctx: CompileContext): string {
   for (const jc of ctx.jobs) {
     lines.push(...buildJobResetLines(ctx, jc));
   }
+  lines.push(...buildHideJobBossBarLines(ctx));
   lines.push(
     `tellraw @s {"text":"${STR.resetSelf}","color":"yellow"}`,
   );

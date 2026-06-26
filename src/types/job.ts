@@ -88,6 +88,8 @@ export interface Job {
   maxLevel: number;
   /** Show a brief action bar message when XP is gained. */
   showActionBar: boolean;
+  /** Show a boss bar at the top with level, XP, and progress to the next level. */
+  showProgressBar?: boolean;
   /** Preset id for typed actions (ores, logs, crops, …) or 'single'. */
   statPreset?: string;
   /** Single block/mob/item id when statPreset is 'single'. */
