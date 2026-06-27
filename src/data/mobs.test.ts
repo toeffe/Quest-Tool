@@ -15,7 +15,7 @@ describe('mob list', () => {
   });
 
   it('builds friendly labels', () => {
-    expect(mobLabel('minecraft:cave_spider')).toBe('Cave Spider');
+    expect(mobLabel('minecraft:cave_spider', 'en')).toBe('Cave Spider');
     expect(MOB_OPTIONS[0]).toHaveProperty('value');
     expect(MOB_OPTIONS[0]).toHaveProperty('label');
   });

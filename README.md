@@ -1,5 +1,7 @@
 # Quest Tool MC
 
+> **Language:** English · [Dansk](README.da.md)
+
 A web-based quest creator for **Minecraft Java Edition 1.21.11**. Design RPG-style
 quests, passive job skills, and quest chains in your browser, then export a
 ready-to-install **datapack** — no commands, datapacks, or coding knowledge required.
@@ -42,6 +44,7 @@ storage; nothing is sent to a server.
 
 ### App UX
 
+- **Danish and English UI** — switch app language in Settings; choose a separate **datapack language** for in-game strings and new-quest defaults
 - Auto-save to browser localStorage
 - Import from JSON or a previously downloaded datapack ZIP (**Settings** gear icon)
 - Light/dark theme
@@ -51,7 +54,7 @@ storage; nothing is sent to a server.
 
 The app has seven views in the top bar: **Editor**, **Story flow**, **Custom items**, **Jobs**, **Advancements**, **Commands**, and **Export**.
 
-1. Open **Settings** (gear icon) to set your project name, datapack namespace, and target platform.
+1. Open **Settings** (gear icon) to set your project name, datapack namespace, target platform, **app language**, and **datapack language**.
 2. Use the **Editor** to create and edit quests. Select a quest in the sidebar; switch tabs for Objectives, NPC, Rewards, and Chain. A validation bar at the bottom shows issues for the current quest.
 3. Optionally define **Custom items** and tune **Jobs** (new projects already include 11 starter jobs).
 4. Use **Story flow** to see all quests as a graph and connect chain links visually.
@@ -121,7 +124,16 @@ generator/               Pure functions: Project → datapack files / ZIP
 
 The **generator** (`src/generator/`) is pure and heavily unit-tested — prefer adding game logic there rather than in UI components. Schema migrations live in `src/state/projectStore.ts` (`PROJECT_SCHEMA_VERSION = 6`). Validation rules are in `src/generator/validate.ts`; the UI runs them continuously via `src/hooks/useValidation.ts` (300 ms debounce).
 
-There is no separate end-to-end test suite; generator unit tests are the main safety net.
+### Testing
+
+| Layer | Command / doc |
+|-------|----------------|
+| Unit tests (generator, store, flow) | `npm test` — also runs in [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) before build |
+| Manual in-game QA | [docs/INGAME_QA.md](docs/INGAME_QA.md) ([dansk](docs/INGAME_QA.da.md)) — checklist using `/function <ns>:setup_guide` and `/function <ns>:debug` |
+| QA datapack fixture | Export → **Download test datapack**, or `npm run ingame:fixture` |
+| Future runtime automation | Design in [scripts/ingame/README.md](scripts/ingame/README.md) ([dansk](scripts/ingame/README.da.md)) |
+
+There is no automated Minecraft runtime test in CI yet; generator unit tests plus the manual checklist are the safety net.
 
 ## Deploying to GitHub Pages
 

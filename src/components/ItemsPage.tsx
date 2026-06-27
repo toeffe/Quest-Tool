@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { type Project } from '../types/quest';
 import {
   type CustomItem,
   type CustomItemKind,
-  CUSTOM_ITEM_KIND_LABELS,
   type ItemRarity,
 } from '../types/item';
 import { createCustomItem } from '../types/factory';
 import { toIdentifier } from '../types/ids';
+import { useCustomItemKindLabels } from '../i18n/useLabels';
 import {
   TextInput,
   TextArea,
@@ -27,18 +28,6 @@ interface Props {
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
 }
-
-const KIND_OPTIONS = (Object.keys(CUSTOM_ITEM_KIND_LABELS) as CustomItemKind[]).map((k) => ({
-  value: k,
-  label: CUSTOM_ITEM_KIND_LABELS[k],
-}));
-
-const RARITY_OPTIONS: { value: ItemRarity; label: string }[] = [
-  { value: 'common', label: 'Common' },
-  { value: 'uncommon', label: 'Uncommon' },
-  { value: 'rare', label: 'Rare' },
-  { value: 'epic', label: 'Epic' },
-];
 
 function applyKindDefaults(item: CustomItem, kind: CustomItemKind): CustomItem {
   const fresh = createCustomItem(kind, item.name);
@@ -60,8 +49,30 @@ function loreToText(lore: string[]): string {
 }
 
 export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: Props) {
+  const { t } = useTranslation('items');
+  const { t: tc } = useTranslation('common');
+  const kindLabels = useCustomItemKindLabels();
   const items = project.customItems ?? [];
   const [selectedId, setSelectedId] = useState<string>(() => items[0]?.id ?? '');
+
+  const kindOptions = useMemo(
+    () =>
+      (Object.keys(kindLabels) as CustomItemKind[]).map((value) => ({
+        value,
+        label: kindLabels[value],
+      })),
+    [kindLabels],
+  );
+
+  const rarityOptions = useMemo(
+    (): { value: ItemRarity; label: string }[] => [
+      { value: 'common', label: t('rarity.common') },
+      { value: 'uncommon', label: t('rarity.uncommon') },
+      { value: 'rare', label: t('rarity.rare') },
+      { value: 'epic', label: t('rarity.epic') },
+    ],
+    [t],
+  );
 
   const selected = useMemo(
     () => items.find((i) => i.id === selectedId) ?? items[0],
@@ -92,26 +103,21 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
 
   return (
     <div className="items-page">
-      <h1 className="step-title">Custom Items</h1>
-      <p className="step-sub">
-        Define reusable items with custom names, lore, and behavior. Use them as quest rewards or
-        gather/delivery targets. Items use Minecraft item components (no custom textures in v1).
-      </p>
+      <h1 className="step-title">{t('title')}</h1>
+      <p className="step-sub">{t('subtitle')}</p>
 
       <div className="items-layout">
         <aside className="items-list card">
           <div className="row-between" style={{ marginBottom: 12 }}>
-            <h3 style={{ margin: 0 }}>Items ({items.length})</h3>
+            <h3 style={{ margin: 0 }}>{t('list.title', { count: items.length })}</h3>
             <div className="row-actions">
-              <button className="btn small" onClick={() => onAdd('general')} title="Add general item">
-                + Add
+              <button className="btn small" onClick={() => onAdd('general')} title={t('list.addTitle')}>
+                {tc('actions.add')}
               </button>
             </div>
           </div>
 
-          {items.length === 0 && (
-            <p className="muted">No custom items yet. Create one to use in quests.</p>
-          )}
+          {items.length === 0 && <p className="muted">{t('list.empty')}</p>}
 
           {items.map((item) => (
             <div
@@ -120,29 +126,29 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
               onClick={() => setSelectedId(item.id)}
             >
               <div>
-                <div className="name">{item.name || 'Untitled item'}</div>
-                <div className="type">{CUSTOM_ITEM_KIND_LABELS[item.kind]}</div>
+                <div className="name">{item.name || t('list.untitled')}</div>
+                <div className="type">{kindLabels[item.kind]}</div>
               </div>
               <div className="row-actions">
                 <button
                   className="icon-btn"
-                  title="Duplicate"
+                  title={t('list.copy')}
                   onClick={(e) => {
                     e.stopPropagation();
                     onDuplicate(item.id);
                   }}
                 >
-                  Copy
+                  {t('list.copy')}
                 </button>
                 <button
                   className="icon-btn"
-                  title="Delete"
+                  title={t('list.delete')}
                   onClick={(e) => {
                     e.stopPropagation();
                     onDelete(item.id);
                   }}
                 >
-                  Del
+                  {t('list.delete')}
                 </button>
               </div>
             </div>
@@ -150,37 +156,31 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
 
           <div style={{ marginTop: 14, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             <button className="btn small ghost" onClick={() => onAdd('collectible')}>
-              + Collectible
+              {t('list.addCollectible')}
             </button>
             <button className="btn small ghost" onClick={() => onAdd('food')}>
-              + Food
+              {t('list.addFood')}
             </button>
             <button className="btn small ghost" onClick={() => onAdd('tool')}>
-              + Tool
+              {t('list.addTool')}
             </button>
           </div>
         </aside>
 
         <div className="items-editor">
-          {!selected && (
-            <div className="card muted">Select an item from the list or create a new one.</div>
-          )}
+          {!selected && <div className="card muted">{t('list.selectEmpty')}</div>}
 
           {selected && (
             <>
               <div className="card" style={{ marginBottom: 16 }}>
-                <Field label="Item kind" hint="Collectibles are trophy-style rewards with sensible defaults.">
-                  <PillSelect
-                    value={selected.kind}
-                    options={KIND_OPTIONS}
-                    onChange={setKind}
-                  />
+                <Field label={t('editor.itemKind')} hint={t('editor.itemKindHint')}>
+                  <PillSelect value={selected.kind} options={kindOptions} onChange={setKind} />
                 </Field>
 
                 <div className="grid-2">
                   <TextInput
-                    label="Editor name"
-                    hint="Internal label in this tool only."
+                    label={t('editor.editorName')}
+                    hint={t('editor.editorNameHint')}
                     value={selected.name}
                     onChange={(name) =>
                       updateItem({
@@ -191,49 +191,49 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
                     }
                   />
                   <TextInput
-                    label="Identity tag"
-                    hint="Stored in custom_data; used to match items in quests."
+                    label={t('editor.identityTag')}
+                    hint={t('editor.identityTagHint')}
                     value={selected.tag}
                     onChange={(tag) => updateItem({ tag: toIdentifier(tag, 'item') })}
                   />
                 </div>
 
                 <DataListInput
-                  label="Base item"
-                  hint="Vanilla item this is based on (appearance matches this unless you add a resource pack)."
+                  label={t('editor.baseItem')}
+                  hint={t('editor.baseItemHint')}
                   value={selected.baseItem}
                   onChange={(baseItem) => updateItem({ baseItem })}
                   options={BASE_ITEM_OPTIONS}
                   listId="base-item-list"
-                  placeholder="minecraft:paper"
+                  placeholder={t('editor.baseItemPlaceholder')}
                 />
 
                 <TextInput
-                  label="Display name"
-                  hint="Shown to the player in-game."
+                  label={t('editor.displayName')}
+                  hint={t('editor.displayNameHint')}
                   value={selected.displayName}
                   onChange={(displayName) => updateItem({ displayName })}
                 />
 
                 <TextArea
-                  label="Lore"
+                  label={t('editor.lore')}
                   hint={
                     selected.kind === 'collectible'
-                      ? 'One line per row. e.g. "Awarded for completing the dragon quest."'
-                      : 'One line per row.'
+                      ? t('editor.loreCollectibleHint')
+                      : t('editor.loreHint')
                   }
                   value={loreToText(selected.lore)}
                   onChange={(text) => updateItem({ lore: loreFromText(text) })}
-                  placeholder="Line one&#10;Line two"
+                  placeholder={t('editor.lorePlaceholder')}
                 />
               </div>
 
               {showFood && (
                 <div className="card" style={{ marginBottom: 16 }}>
-                  <h3 style={{ marginTop: 0 }}>Food & consumable</h3>
+                  <h3 style={{ marginTop: 0 }}>{t('food.title')}</h3>
                   <div className="grid-2">
                     <NumberInput
-                      label="Nutrition"
+                      label={t('food.nutrition')}
                       min={0}
                       value={selected.food?.nutrition ?? 0}
                       onChange={(nutrition) =>
@@ -247,7 +247,7 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
                       }
                     />
                     <NumberInput
-                      label="Saturation"
+                      label={t('food.saturation')}
                       min={0}
                       value={selected.food?.saturation ?? 0}
                       onChange={(saturation) =>
@@ -261,12 +261,12 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
                       }
                     />
                   </div>
-                  <Field label="Can always eat">
+                  <Field label={t('food.canAlwaysEat')}>
                     <PillSelect
                       value={selected.food?.canAlwaysEat ? 'yes' : 'no'}
                       options={[
-                        { value: 'no', label: 'No' },
-                        { value: 'yes', label: 'Yes' },
+                        { value: 'no', label: tc('actions.no') },
+                        { value: 'yes', label: tc('actions.yes') },
                       ]}
                       onChange={(v) =>
                         updateItem({
@@ -280,8 +280,8 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
                     />
                   </Field>
                   <NumberInput
-                    label="Consume time (seconds)"
-                    hint="How long eating takes."
+                    label={t('food.consumeTime')}
+                    hint={t('food.consumeTimeHint')}
                     min={0}
                     value={selected.consumable?.consumeSeconds ?? 1.6}
                     onChange={(consumeSeconds) =>
@@ -296,17 +296,17 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
                   {(selected.consumable?.effects ?? []).map((effect, i) => (
                     <div key={i} className="list-row" style={{ marginBottom: 8 }}>
                       <TextInput
-                        label="Effect id"
+                        label={t('food.effectId')}
                         value={effect.effectId}
                         onChange={(effectId) => {
                           const effects = [...(selected.consumable?.effects ?? [])];
                           effects[i] = { ...effects[i], effectId };
                           updateItem({ consumable: { ...selected.consumable!, effects } });
                         }}
-                        placeholder="minecraft:regeneration"
+                        placeholder={t('food.effectPlaceholder')}
                       />
                       <NumberInput
-                        label="Amplifier"
+                        label={t('food.amplifier')}
                         min={0}
                         value={effect.amplifier}
                         onChange={(amplifier) => {
@@ -316,7 +316,7 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
                         }}
                       />
                       <NumberInput
-                        label="Duration (ticks)"
+                        label={t('food.duration')}
                         min={1}
                         value={effect.duration}
                         onChange={(duration) => {
@@ -337,7 +337,7 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
                           });
                         }}
                       >
-                        Remove
+                        {tc('actions.remove')}
                       </button>
                     </div>
                   ))}
@@ -356,17 +356,17 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
                       })
                     }
                   >
-                    + Add effect
+                    {t('food.addEffect')}
                   </button>
                 </div>
               )}
 
               {showTool && (
                 <div className="card" style={{ marginBottom: 16 }}>
-                  <h3 style={{ marginTop: 0 }}>Tool</h3>
+                  <h3 style={{ marginTop: 0 }}>{t('tool.title')}</h3>
                   <div className="grid-2">
                     <NumberInput
-                      label="Default mining speed"
+                      label={t('tool.defaultMiningSpeed')}
                       min={0}
                       value={selected.tool?.defaultMiningSpeed ?? 1}
                       onChange={(defaultMiningSpeed) =>
@@ -380,7 +380,7 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
                       }
                     />
                     <NumberInput
-                      label="Damage per block"
+                      label={t('tool.damagePerBlock')}
                       min={0}
                       value={selected.tool?.damagePerBlock ?? 1}
                       onChange={(damagePerBlock) =>
@@ -397,18 +397,18 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
                   {(selected.tool?.rules ?? []).map((rule, i) => (
                     <div key={i} className="list-row" style={{ marginBottom: 8 }}>
                       <TextInput
-                        label="Blocks"
-                        hint="Block id or tag"
+                        label={t('tool.blocks')}
+                        hint={t('tool.blocksHint')}
                         value={rule.blocks}
                         onChange={(blocks) => {
                           const rules = [...(selected.tool?.rules ?? [])];
                           rules[i] = { ...rules[i], blocks };
                           updateItem({ tool: { ...selected.tool!, rules } });
                         }}
-                        placeholder="minecraft:sand"
+                        placeholder={t('tool.blocksPlaceholder')}
                       />
                       <NumberInput
-                        label="Speed"
+                        label={t('tool.speed')}
                         min={0}
                         value={rule.speed}
                         onChange={(speed) => {
@@ -430,7 +430,7 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
                           });
                         }}
                       >
-                        Remove
+                        {tc('actions.remove')}
                       </button>
                     </div>
                   ))}
@@ -449,42 +449,42 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
                       })
                     }
                   >
-                    + Add block rule
+                    {t('tool.addBlockRule')}
                   </button>
                 </div>
               )}
 
               <div className="card" style={{ marginBottom: 16 }}>
-                <h3 style={{ marginTop: 0 }}>Advanced</h3>
-                <Field label="Enchantment glint">
+                <h3 style={{ marginTop: 0 }}>{t('advanced.title')}</h3>
+                <Field label={t('advanced.glint')}>
                   <PillSelect
                     value={selected.glint ? 'yes' : 'no'}
                     options={[
-                      { value: 'no', label: 'Off' },
-                      { value: 'yes', label: 'On' },
+                      { value: 'no', label: tc('actions.off') },
+                      { value: 'yes', label: tc('actions.on') },
                     ]}
                     onChange={(v) => updateItem({ glint: v === 'yes' })}
                   />
                 </Field>
                 <Select
-                  label="Rarity"
+                  label={t('advanced.rarity')}
                   value={selected.rarity ?? 'common'}
-                  options={RARITY_OPTIONS}
+                  options={rarityOptions}
                   onChange={(rarity) => updateItem({ rarity })}
                 />
                 <NumberInput
-                  label="Max stack size"
-                  hint="Leave at 64 for default, or set 1 for unique items."
+                  label={t('advanced.maxStackSize')}
+                  hint={t('advanced.maxStackSizeHint')}
                   min={1}
                   value={selected.maxStackSize ?? 64}
                   onChange={(maxStackSize) => updateItem({ maxStackSize })}
                 />
-                <Field label="Unbreakable">
+                <Field label={t('advanced.unbreakable')}>
                   <PillSelect
                     value={selected.unbreakable ? 'yes' : 'no'}
                     options={[
-                      { value: 'no', label: 'No' },
-                      { value: 'yes', label: 'Yes' },
+                      { value: 'no', label: tc('actions.no') },
+                      { value: 'yes', label: tc('actions.yes') },
                     ]}
                     onChange={(v) => updateItem({ unbreakable: v === 'yes' })}
                   />
@@ -492,13 +492,12 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
               </div>
 
               <div className="card">
-                <h3 style={{ marginTop: 0 }}>Generated command preview</h3>
+                <h3 style={{ marginTop: 0 }}>{t('preview.title')}</h3>
                 <pre className="command-preview" style={{ overflow: 'auto', fontSize: 12 }}>
                   /{previewCommand}
                 </pre>
                 <div className="hint">
-                  After exporting, run /function {project.namespace}:give_custom_items to receive one
-                  of each custom item for testing.
+                  {t('preview.hint', { namespace: project.namespace })}
                 </div>
               </div>
             </>

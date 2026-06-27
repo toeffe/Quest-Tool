@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { type Project } from '../types/quest';
 import {
   type Job,
   type JobAction,
-  JOB_ACTION_LABELS,
   jobUsesPresets,
   jobIsDistance,
   totalXpForLevel,
@@ -14,12 +14,9 @@ import {
   defaultJobAdvancementBackground,
   JOB_ADVANCEMENT_BACKGROUNDS,
 } from '../generator/jobAdvancements';
-import {
-  ACTION_PRESETS,
-  JOB_STAT_PRESET_LABELS,
-  defaultPresetForAction,
-} from '../generator/jobStats';
+import { ACTION_PRESETS, defaultPresetForAction } from '../generator/jobStats';
 import { type ValidationIssue } from '../generator/validate';
+import { useJobActionLabels, useJobStatPresetLabels } from '../i18n/useLabels';
 import { ValidationBar } from './editor/ValidationBar';
 import { JobMilestonesEditor } from './JobMilestonesEditor';
 import { TextInput, NumberInput, Field, TextArea, Select } from './ui/Field';
@@ -33,26 +30,40 @@ interface Props {
   onDelete: (id: string) => void;
 }
 
-const ACTION_OPTIONS: { value: JobAction; label: string }[] = (
-  Object.keys(JOB_ACTION_LABELS) as JobAction[]
-).map((value) => ({ value, label: JOB_ACTION_LABELS[value] }));
-
-function xpPerActionLabel(action: JobAction): string {
-  if (jobIsDistance(action)) return 'XP per distance unit';
-  return 'XP per action';
-}
-
-function xpPerActionHint(action: JobAction): string {
-  if (jobIsDistance(action)) {
-    return 'Centimeters per unit is set below (default 1000 cm = 10 blocks).';
-  }
-  return 'How much job XP is granted each time the tracked action occurs.';
-}
+const BG_LABEL_KEY: Record<string, string> = {
+  'minecraft:gui/advancements/backgrounds/husbandry': 'husbandry',
+  'minecraft:gui/advancements/backgrounds/adventure': 'adventure',
+  'minecraft:gui/advancements/backgrounds/stone': 'stone',
+  'minecraft:gui/advancements/backgrounds/nether': 'nether',
+  'minecraft:gui/advancements/backgrounds/end': 'end',
+};
 
 export function JobsPage({ project, issues = [], onChange, onAdd, onDuplicate, onDelete }: Props) {
+  const { t } = useTranslation('jobs');
+  const { t: tc } = useTranslation('common');
+  const jobActionLabels = useJobActionLabels();
+  const statPresetLabels = useJobStatPresetLabels();
   const jobs = project.jobs ?? [];
   const customItems = project.customItems ?? [];
   const [selectedId, setSelectedId] = useState<string>(() => jobs[0]?.id ?? '');
+
+  const actionOptions = useMemo(
+    () =>
+      (Object.keys(jobActionLabels) as JobAction[]).map((value) => ({
+        value,
+        label: jobActionLabels[value],
+      })),
+    [jobActionLabels],
+  );
+
+  const bgOptions = useMemo(
+    () =>
+      JOB_ADVANCEMENT_BACKGROUNDS.map((b) => ({
+        value: b.value,
+        label: t(`advancementBackgrounds.${BG_LABEL_KEY[b.value] ?? 'stone'}`),
+      })),
+    [t],
+  );
 
   const selected = useMemo(
     () => jobs.find((j) => j.id === selectedId) ?? jobs[0],
@@ -102,31 +113,32 @@ export function JobsPage({ project, issues = [], onChange, onAdd, onDuplicate, o
   const presetOptions = selected
     ? (ACTION_PRESETS[selected.action] ?? []).map((p) => ({
         value: p,
-        label: JOB_STAT_PRESET_LABELS[p] ?? p,
+        label: statPresetLabels[p] ?? p,
       }))
     : [];
 
+  const xpPerActionLabel = jobIsDistance(selected?.action ?? 'mine')
+    ? t('settings.xpPerDistance')
+    : t('settings.xpPerAction');
+  const xpPerActionHint = jobIsDistance(selected?.action ?? 'mine')
+    ? t('settings.xpPerDistanceHint')
+    : t('settings.xpPerActionHint');
+
   return (
     <div className="items-page">
-      <h1 className="step-title">Jobs</h1>
-      <p className="step-sub">
-        Passive skills that level up as players perform actions — fishing, mining, combat, and more.
-        Job progress ships in the same datapack as your quests. Configure milestone rewards to grant
-        custom items at key levels.
-      </p>
+      <h1 className="step-title">{t('title')}</h1>
+      <p className="step-sub">{t('subtitle')}</p>
 
       <div className="items-layout">
         <aside className="items-list card">
           <div className="row-between" style={{ marginBottom: 12 }}>
-            <h3 style={{ margin: 0 }}>Jobs ({jobs.length})</h3>
-            <button className="btn small" onClick={onAdd} title="Add job">
-              + Add
+            <h3 style={{ margin: 0 }}>{t('list.title', { count: jobs.length })}</h3>
+            <button className="btn small" onClick={onAdd} title={t('list.addTitle')}>
+              {tc('actions.add')}
             </button>
           </div>
 
-          {jobs.length === 0 && (
-            <p className="muted">No jobs yet. Add one to enable passive skill progression.</p>
-          )}
+          {jobs.length === 0 && <p className="muted">{t('list.empty')}</p>}
 
           {jobs.map((job) => (
             <div
@@ -137,9 +149,9 @@ export function JobsPage({ project, issues = [], onChange, onAdd, onDuplicate, o
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && setSelectedId(job.id)}
             >
-              <div className="quest-item-name">{job.name || 'Untitled job'}</div>
+              <div className="quest-item-name">{job.name || t('list.untitled')}</div>
               <div className="quest-item-meta muted">
-                {JOB_ACTION_LABELS[job.action]} · max Lv.{job.maxLevel}
+                {t('list.meta', { action: jobActionLabels[job.action], maxLevel: job.maxLevel })}
               </div>
             </div>
           ))}
@@ -150,18 +162,18 @@ export function JobsPage({ project, issues = [], onChange, onAdd, onDuplicate, o
             <>
               <div className="card">
                 <div className="row-between" style={{ marginBottom: 14 }}>
-                  <h3 style={{ margin: 0 }}>{selected.name || 'Job settings'}</h3>
+                  <h3 style={{ margin: 0 }}>{selected.name || t('settings.jobSettings')}</h3>
                   <div className="row-actions">
                     <button
                       type="button"
                       className="btn small"
                       onClick={() => updateJob(applyBalancedDefaults(selected))}
-                      title="Reset XP curve to balanced defaults for this action"
+                      title={t('settings.balancedDefaultsTitle')}
                     >
-                      Balanced defaults
+                      {t('settings.balancedDefaults')}
                     </button>
                     <button type="button" className="btn small" onClick={() => onDuplicate(selected.id)}>
-                      Duplicate
+                      {tc('actions.duplicate')}
                     </button>
                     <button
                       type="button"
@@ -172,30 +184,30 @@ export function JobsPage({ project, issues = [], onChange, onAdd, onDuplicate, o
                         setSelectedId(remaining[0]?.id ?? '');
                       }}
                     >
-                      Delete
+                      {tc('actions.delete')}
                     </button>
                   </div>
                 </div>
 
                 <TextInput
-                  label="Job name"
-                  hint="Shown in level-up messages and quest requirements."
+                  label={t('settings.jobName')}
+                  hint={t('settings.jobNameHint')}
                   value={selected.name}
                   onChange={(name) => updateJob({ name })}
                 />
 
                 <Select
-                  label="Action type"
-                  hint="What player activity this job tracks."
+                  label={t('settings.actionType')}
+                  hint={t('settings.actionTypeHint')}
                   value={selected.action}
-                  options={ACTION_OPTIONS}
+                  options={actionOptions}
                   onChange={setAction}
                 />
 
                 {jobUsesPresets(selected.action) && presetOptions.length > 0 && (
                   <Select
-                    label="Target preset"
-                    hint="Which blocks, mobs, or items count toward this job."
+                    label={t('settings.targetPreset')}
+                    hint={t('settings.targetPresetHint')}
                     value={selected.statPreset ?? defaultPresetForAction(selected.action)}
                     options={presetOptions}
                     onChange={(statPreset) => updateJob({ statPreset })}
@@ -204,8 +216,8 @@ export function JobsPage({ project, issues = [], onChange, onAdd, onDuplicate, o
 
                 {selected.statPreset === 'single' && (
                   <TextInput
-                    label="Single target id"
-                    hint="e.g. minecraft:coal_ore, minecraft:zombie, minecraft:bread"
+                    label={t('settings.singleTarget')}
+                    hint={t('settings.singleTargetHint')}
                     value={selected.statTarget ?? ''}
                     onChange={(statTarget) => updateJob({ statTarget })}
                   />
@@ -213,8 +225,8 @@ export function JobsPage({ project, issues = [], onChange, onAdd, onDuplicate, o
 
                 {selected.action === 'custom' && (
                   <TextInput
-                    label="Custom scoreboard criterion"
-                    hint="e.g. minecraft.custom:minecraft.jump"
+                    label={t('settings.customCriterion')}
+                    hint={t('settings.customCriterionHint')}
                     value={selected.customCriterion ?? ''}
                     onChange={(customCriterion) => updateJob({ customCriterion })}
                   />
@@ -222,8 +234,8 @@ export function JobsPage({ project, issues = [], onChange, onAdd, onDuplicate, o
 
                 {jobIsDistance(selected.action) && (
                   <NumberInput
-                    label="Centimeters per XP unit"
-                    hint="Default 1000 (10 blocks walked/sprinted per XP tick)."
+                    label={t('settings.cmPerXpUnit')}
+                    hint={t('settings.cmPerXpUnitHint')}
                     value={selected.distanceUnit ?? 1000}
                     min={100}
                     onChange={(distanceUnit) => updateJob({ distanceUnit })}
@@ -231,29 +243,29 @@ export function JobsPage({ project, issues = [], onChange, onAdd, onDuplicate, o
                 )}
 
                 <NumberInput
-                  label={xpPerActionLabel(selected.action)}
-                  hint={xpPerActionHint(selected.action)}
+                  label={xpPerActionLabel}
+                  hint={xpPerActionHint}
                   value={selected.xpPerAction}
                   min={1}
                   onChange={(xpPerAction) => updateJob({ xpPerAction })}
                 />
 
                 <NumberInput
-                  label="XP per level"
-                  hint="Flat curve: total XP to reach level L = XP per level × L."
+                  label={t('settings.xpPerLevel')}
+                  hint={t('settings.xpPerLevelHint')}
                   value={selected.xpPerLevel}
                   min={1}
                   onChange={(xpPerLevel) => updateJob({ xpPerLevel })}
                 />
 
                 <NumberInput
-                  label="Max level"
+                  label={t('settings.maxLevel')}
                   value={selected.maxLevel}
                   min={1}
                   onChange={(maxLevel) => updateJob({ maxLevel })}
                 />
 
-                <Field label="Show XP gain on action bar">
+                <Field label={t('settings.showActionBar')}>
                   <label className="muted" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     <input
                       type="checkbox"
@@ -261,10 +273,10 @@ export function JobsPage({ project, issues = [], onChange, onAdd, onDuplicate, o
                       checked={selected.showActionBar}
                       onChange={(e) => updateJob({ showActionBar: e.target.checked })}
                     />
-                    Brief action bar message when XP is earned
+                    {t('settings.showActionBarHint')}
                   </label>
                 </Field>
-                <Field label="Progress display">
+                <Field label={t('settings.progressDisplay')}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <input
                       type="checkbox"
@@ -272,7 +284,7 @@ export function JobsPage({ project, issues = [], onChange, onAdd, onDuplicate, o
                       checked={selected.showProgressBar !== false}
                       onChange={(e) => updateJob({ showProgressBar: e.target.checked })}
                     />
-                    Personal boss bar at top (level, XP, progress — one per player)
+                    {t('settings.progressDisplayHint')}
                   </label>
                 </Field>
               </div>
@@ -284,63 +296,62 @@ export function JobsPage({ project, issues = [], onChange, onAdd, onDuplicate, o
               />
 
               <div className="card">
-                <h3>Advancements</h3>
+                <h3>{t('advancements.title')}</h3>
                 <p className="hint" style={{ marginTop: 0 }}>
-                  Players see job tabs under Esc → Advancements after joining the world (or /reload).
+                  {t('advancements.hint')}
                 </p>
                 <TextInput
-                  label="Advancement icon"
-                  hint="Vanilla item id shown on the advancement tree."
+                  label={t('advancements.icon')}
+                  hint={t('advancements.iconHint')}
                   value={selected.advancementIcon ?? defaultJobAdvancementIcon(selected.action)}
                   onChange={(advancementIcon) => updateJob({ advancementIcon })}
                 />
                 <Select
-                  label="Tab background"
-                  hint="Texture behind the in-game advancement tree (Minecraft 1.21.11 format)."
+                  label={t('advancements.background')}
+                  hint={t('advancements.backgroundHint')}
                   value={
                     selected.advancementBackground ??
                     defaultJobAdvancementBackground(selected.action)
                   }
-                  options={JOB_ADVANCEMENT_BACKGROUNDS.map((b) => ({
-                    value: b.value,
-                    label: b.label,
-                  }))}
+                  options={bgOptions}
                   onChange={(advancementBackground) => updateJob({ advancementBackground })}
                 />
                 <TextArea
-                  label="Root description"
-                  hint="Shown on the root advancement node for this job."
+                  label={t('advancements.rootDescription')}
+                  hint={t('advancements.rootDescriptionHint')}
                   value={selected.advancementDescription ?? ''}
                   onChange={(advancementDescription) =>
                     updateJob({ advancementDescription: advancementDescription || undefined })
                   }
                 />
                 <TextInput
-                  label="Level title template"
-                  hint='Use {name} and {n} for job name and level. Default: "{name} — Level {n}"'
+                  label={t('advancements.levelTitle')}
+                  hint={t('advancements.levelTitleHint')}
                   value={selected.levelTitle ?? ''}
-                  placeholder={`${selected.name} — Level {n}`}
+                  placeholder={t('advancements.levelTitlePlaceholder')}
                   onChange={(levelTitle) => updateJob({ levelTitle: levelTitle || undefined })}
                 />
               </div>
 
               <div className="card">
-                <h3>Preview</h3>
+                <h3>{t('preview.title')}</h3>
                 <p className="muted" style={{ marginTop: 0 }}>
-                  Each action grants <strong>{selected.xpPerAction}</strong> XP.
-                  Level 2 requires <strong>{level2Xp}</strong> total XP (~
-                  {actionsToReachLevel(selected, 2)} actions).
-                  Level 5 requires <strong>{level5Xp}</strong> total XP (~
-                  {actionsToReachLevel(selected, 5)} actions).
+                  {t('preview.xpPerAction', { xp: selected.xpPerAction })}{' '}
+                  {t('preview.level2', {
+                    xp: level2Xp,
+                    actions: actionsToReachLevel(selected, 2),
+                  })}{' '}
+                  {t('preview.level5', {
+                    xp: level5Xp,
+                    actions: actionsToReachLevel(selected, 5),
+                  })}
                 </p>
-                <p className="hint">
-                  Actions performed before installing the datapack do not grant retroactive XP.
-                </p>
+                <p className="hint">{t('preview.noRetroactive')}</p>
               </div>
             </>
           ) : (
             <div className="card">
-              <p className="muted">Select a job from the list or click + Add to create one.</p>
+              <p className="muted">{t('list.selectEmpty')}</p>
             </div>
           )}
         </div>

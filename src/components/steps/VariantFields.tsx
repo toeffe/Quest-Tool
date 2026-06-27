@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { variantFieldsFor } from '../../data/mobVariants';
 import { Select } from '../ui/Field';
 
@@ -7,11 +8,6 @@ interface Props {
   onChange: (variants: Record<string, string>) => void;
 }
 
-const AGE_OPTIONS = [
-  { value: 'adult', label: 'Adult' },
-  { value: 'baby', label: 'Baby' },
-];
-
 /** Adult vs baby appearance for villagers (uses permanent baby Age NBT). */
 export function BabySelect({
   value,
@@ -20,11 +16,16 @@ export function BabySelect({
   value?: boolean;
   onChange: (baby: boolean) => void;
 }) {
+  const { t } = useTranslation('common');
+  const ageOptions = [
+    { value: 'adult', label: t('variants.adult') },
+    { value: 'baby', label: t('variants.baby') },
+  ];
   return (
     <Select
-      label="Age (appearance)"
+      label={t('variants.ageAppearance')}
       value={value ? 'baby' : 'adult'}
-      options={AGE_OPTIONS}
+      options={ageOptions}
       onChange={(v) => onChange(v === 'baby')}
     />
   );

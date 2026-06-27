@@ -4,7 +4,7 @@ import { buildCommandReference } from './commands';
 
 describe('command reference', () => {
   it('uses the project namespace and lists core admin commands', () => {
-    const project = createProject('Ref');
+    const project = createProject('Ref', 'en');
     project.namespace = 'mypack';
     project.quests = [createQuest('Hunt', 'kill')];
     const groups = buildCommandReference(project);
@@ -18,7 +18,7 @@ describe('command reference', () => {
   });
 
   it('includes a per-quest spawn command for each quest', () => {
-    const project = createProject('Ref');
+    const project = createProject('Ref', 'en');
     project.namespace = 'p';
     project.quests = [createQuest('Alpha', 'kill'), createQuest('Beta', 'gather')];
     const groups = buildCommandReference(project);

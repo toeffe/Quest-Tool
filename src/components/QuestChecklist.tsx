@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { type Project, type Quest } from '../types/quest';
 import { validateProject } from '../generator/validate';
 
@@ -13,6 +14,8 @@ interface Props {
  * export time.
  */
 export function QuestChecklist({ project, quest }: Props) {
+  const { t } = useTranslation('editor');
+  const { t: tc } = useTranslation('common');
   const issues = useMemo(
     () => validateProject(project).filter((i) => i.questId === quest.id),
     [project, quest.id],
@@ -24,17 +27,17 @@ export function QuestChecklist({ project, quest }: Props) {
   return (
     <div className="checklist">
       <div className="row-between" style={{ marginBottom: errors.length || warnings.length ? 10 : 0 }}>
-        <strong className="checklist-title">This quest</strong>
+        <strong className="checklist-title">{t('checklist.title')}</strong>
         {errors.length === 0 ? (
-          <span className="badge ok">Ready</span>
+          <span className="badge ok">{tc('actions.ready')}</span>
         ) : (
-          <span className="badge error">{errors.length} to fix</span>
+          <span className="badge error">{t('checklist.needsFixes', { count: errors.length })}</span>
         )}
       </div>
 
       {issues.length === 0 && (
         <div className="muted" style={{ fontSize: 13 }}>
-          No problems. This quest is ready to generate.
+          {t('checklist.noProblems')}
         </div>
       )}
 

@@ -1,0 +1,205 @@
+export const editorEn = {
+  tabs: {
+    objectives: 'Quest & objectives',
+    npc: 'NPC',
+    rewards: 'Rewards',
+    chain: 'Story chain',
+  },
+
+  quest: {
+    title: 'Quest Definition',
+    subtitle: 'Pick what the player must do and describe the objective.',
+    type: 'Type',
+    questType: 'Quest type',
+    questTypeHint: 'This decides how progress is tracked in-game.',
+    questName: 'Quest name',
+    questNameHint: 'Must be unique within the project.',
+    category: 'Category',
+    categoryHint: 'A label for organizing quests (e.g. Main, Side, Daily).',
+    description: 'Description',
+    descriptionHint: "A short summary of the quest's story or purpose.",
+    objectives: 'Objectives',
+    objective: 'Objective',
+    objectiveN: 'Objective {{n}}',
+    addObjective: '+ Add objective',
+    multiObjectiveHint:
+      'The player must complete every objective below before turning the quest in.',
+    turnInHint:
+      'Each item objective has an On turn-in option below — choose whether required items are removed from the player\'s inventory when they claim the reward. Delivery quests always remove items.',
+    objectiveText: 'Objective text',
+    objectiveTextHint: 'Shown to the player on the action bar and in chat.',
+    mobCreature: 'Mob / creature',
+    mobCreatureHint: 'Pick any Minecraft mob, or type a custom/modded entity id.',
+    mobPlaceholder: 'minecraft:zombie',
+    amountToKill: 'Amount to kill',
+    itemId: 'Item id',
+    itemIdHint: 'e.g. minecraft:wheat, minecraft:diamond',
+    amountRequired: 'Amount required',
+    onTurnIn: 'On turn-in',
+    onTurnInDeliveryHint:
+      'Delivery quests always remove the required items when the player turns in.',
+    onTurnInGatherHint:
+      'Remove required items from inventory when the player claims the reward (stops item overflow).',
+    removeItemsAlways: 'Remove items (always)',
+    discoveryRadius: 'Discovery radius (blocks)',
+    discoveryRadiusHint: 'How close the player must get to the location.',
+    talkHint:
+      'Talk quests complete by speaking to an NPC. Add a separate target NPC below if the player must visit someone other than the quest giver.',
+    cooldown: 'Cooldown (seconds)',
+    cooldownHint: 'Time before the quest can be taken again. 86400 = 24 hours.',
+    targetNpcTitle: 'Target NPC (optional)',
+    requireTargetNpc: 'Require visiting a separate NPC?',
+    requireTargetNpcHint:
+      'When enabled, the player must reach this NPC, then return to the giver.',
+    talkToGiver: 'No - talk to the giver',
+    visitTarget: 'Yes - visit a target NPC',
+    targetName: 'Target name',
+    targetTag: 'Target tag',
+    targetEntityType: 'Target entity type',
+    targetEntityHint: 'Any Minecraft mob, or a custom/modded entity id.',
+    targetDialogue: 'Target dialogue',
+    targetDialogueHint: 'Shown when the player reaches this NPC.',
+    villagerPlaceholder: 'minecraft:villager',
+  },
+
+  npc: {
+    title: 'Quest Giver (NPC)',
+    subtitle:
+      'Design the villager who offers this quest. They greet players nearby, hand out the quest, and accept the turn-in.',
+    identity: 'Identity',
+    npcName: 'NPC name',
+    npcNameHint: 'Shown floating above the villager and in dialogue.',
+    uniqueTag: 'Unique tag',
+    uniqueTagHint: 'Auto-generated id used to find this NPC. Keep it unique per NPC.',
+    entityType: 'Entity type',
+    entityTypeHint:
+      'Any Minecraft mob can be a quest giver (villager, piglin, zombie, etc.). You can also type a custom/modded entity id.',
+    profession: 'Profession (appearance)',
+    biomeVariant: 'Biome variant (appearance)',
+    dialogue: 'Dialogue',
+    greeting: 'Greeting',
+    greetingHint: 'First line shown when a player walks up before starting the quest.',
+    offer: 'Offer',
+    offerHint: 'The pitch shown just above the clickable [Accept Quest] button.',
+    inProgress: 'In-progress',
+    inProgressHint: 'Shown when a player returns while the quest is still unfinished.',
+    completion: 'Completion',
+    completionHint: 'Shown when the quest is turned in and rewards are granted.',
+    spawnLocation: 'Spawn location',
+  },
+
+  rewards: {
+    title: 'Rewards',
+    subtitle: 'What the player receives on completion. Add as many as you like.',
+    rewardList: 'Reward list',
+    addReward: '+ Add reward',
+    empty: 'No rewards yet. Click "Add reward" to create one.',
+    type: 'Type',
+    job: 'Job',
+    noJobs: 'No jobs yet. Open the Jobs tab to create one.',
+    command: 'Command',
+    value: 'Value',
+    amount: 'Amount',
+    commandPlaceholder: 'Use {player} as a placeholder for the rewarded player.',
+    vanillaItemHint:
+      "Use an exact Minecraft item id (e.g. minecraft:diamond). A typo means the item silently won't be given in-game.",
+    customItemHint:
+      'Gives the item with its custom name, lore, and components from the Items tab.',
+    jobXpHint:
+      'Grants bonus job XP on quest completion (in addition to passive XP from actions).',
+    placeholders: {
+      item: 'minecraft:diamond',
+      permission: 'group.vip or some.permission.node',
+      command: 'effect give {player} minecraft:speed 30 1',
+    },
+  },
+
+  chain: {
+    title: 'Quest Chain',
+    subtitleCanvas:
+      'Story order is set on the canvas. Use this tab for job gates and follow-up behavior.',
+    subtitleEditor:
+      'Link quests into storylines. Prefer Story Flow drag-and-connect; use the fields below if needed.',
+    storyOrder: 'Story order',
+    topologyHint:
+      'Drag from the right port on a quest card to another\'s left port. To unlink: click the arrow between quests, or use the Unlink buttons below.',
+    requires: 'Requires',
+    unlocks: 'Unlocks',
+    missingQuest: '(missing quest)',
+    jobRequirement: 'Job requirement',
+    requiresJobLevel: 'Requires job level',
+    requiresJobLevelHint:
+      'Quest stays locked until the player reaches the required job level.',
+    minimumLevel: 'Minimum level',
+    noJobsHint: 'Add a job in the Jobs tab to gate quests by skill level.',
+    followUp: 'Follow-up behavior',
+    autoStart: 'Auto-start when unlocked',
+    autoStartHint:
+      'If enabled, the unlocked quest starts automatically once this one is complete (no need to accept from the giver).',
+    autoStartCheckbox: 'Auto-start the next quest',
+    autoStartNoUnlockHint:
+      'Link this quest to a follow-up on Story Flow to use auto-start.',
+    announcement: 'Announcement',
+    announceCompletion: 'Announce completion to everyone',
+    announceHint:
+      'Broadcasts a server-wide message in chat when a player completes this quest.',
+    announceCheckbox: 'Broadcast a completion announcement',
+    manualEdit: 'Manual link (dropdowns)',
+    requiresQuestFirst: 'Requires this quest first',
+    requiresQuestFirstHint:
+      'This quest stays locked until the selected quest is completed.',
+    completingUnlocks: 'Completing this unlocks',
+    completingUnlocksHint:
+      'When this quest is finished, the selected quest becomes available.',
+  },
+
+  spawnZone: {
+    killEnable: 'Spawn mobs in a zone?',
+    killEnableHint:
+      'When enabled, tagged mobs spawn in the area below and only those kills count.',
+    gatherEnable: 'Spawn animals/mobs in a zone?',
+    gatherEnableHint:
+      'Spawn tagged mobs so players can farm drops. Item progress still uses inventory count.',
+    killNo: 'No - any kill counts',
+    gatherNo: 'No - players find items themselves',
+    yes: 'Yes - spawn zone',
+    mobToSpawn: 'Mob / creature to spawn',
+    mobToSpawnHint: 'Animals or mobs that drop the items players need to collect.',
+    zoneCenter: 'Zone center',
+    zoneCenterHint: 'World coordinates for the center of the spawn area.',
+    spawnRadius: 'Spawn radius (blocks)',
+    spawnRadiusHint: 'Mobs spawn within this distance of the zone center.',
+    liveMobCap: 'Live mob cap',
+    liveMobCapKillHint:
+      'Max mobs alive in the zone at once. New ones spawn after kills.',
+    liveMobCapGatherHint:
+      'Max mobs alive in the zone at once. New ones spawn as mobs are removed.',
+    dropBehavior: 'Drop behavior',
+    dropBehaviorHint:
+      'What items drop when players kill quest-spawned mobs in this zone.',
+    dropNone: 'No drops',
+    dropVanilla: 'Vanilla drops',
+    dropCustom: 'Custom drops',
+    dropList: 'Drop list',
+    addDrop: '+ Add drop',
+    addDropEmpty: 'Add at least one item drop.',
+    chancePercent: 'Chance %',
+    cowPlaceholder: 'minecraft:cow',
+    fleshPlaceholder: 'minecraft:rotten_flesh',
+  },
+
+  preview: {
+    title: 'In-game preview',
+    actionBarHint: 'The action bar updates live as the player makes progress.',
+    dialogueHint:
+      'This is roughly how the dialogue appears in chat. The button uses /trigger (no cheats needed).',
+    npcFallback: 'NPC',
+    ellipsis: '...',
+  },
+
+  checklist: {
+    title: 'This quest',
+    needsFixes: '{{count}} to fix',
+    noProblems: 'No problems. This quest is ready to generate.',
+  },
+} as const;

@@ -13,7 +13,7 @@ import { createCustomItem } from '../types/factory';
 
 describe('jobFunctions', () => {
   it('registers fishing stat and dummy objectives in load', () => {
-    const project = createProject('Jobs');
+    const project = createProject('Jobs', 'en');
     project.jobs = [createJob('Fishing', 'fish')];
     project.namespace = 'j';
     const ctx = buildContext(project);
@@ -27,7 +27,7 @@ describe('jobFunctions', () => {
   });
 
   it('registers multiple mined objectives for mining preset', () => {
-    const project = createProject('Jobs');
+    const project = createProject('Jobs', 'en');
     project.jobs = [createJob('Mining', 'mine', { statPreset: 'ores' })];
     project.namespace = 'j';
     const ctx = buildContext(project);
@@ -41,7 +41,7 @@ describe('jobFunctions', () => {
   });
 
   it('emits tick, credit, check_level, add_xp, and init functions', () => {
-    const project = createProject('Jobs');
+    const project = createProject('Jobs', 'en');
     project.jobs = [createJob('Fishing', 'fish')];
     project.namespace = 'j';
     const ctx = buildContext(project);
@@ -59,7 +59,7 @@ describe('jobFunctions', () => {
   });
 
   it('emits milestone grant functions when configured', () => {
-    const project = createProject('Jobs');
+    const project = createProject('Jobs', 'en');
     const item = createCustomItem('collectible', 'Trophy');
     project.customItems = [item];
     project.jobs = [
@@ -81,7 +81,7 @@ describe('jobFunctions', () => {
   });
 
   it('reset revokes job advancements', () => {
-    const project = createProject('Jobs');
+    const project = createProject('Jobs', 'en');
     project.jobs = [createJob('Fishing', 'fish')];
     project.namespace = 'j';
     const ctx = buildContext(project);
@@ -93,7 +93,7 @@ describe('jobFunctions', () => {
   });
 
   it('builds jobs tick dispatcher for starter pack', () => {
-    const project = createProject('Jobs');
+    const project = createProject('Jobs', 'en');
     project.namespace = 'j';
     const ctx = buildContext(project);
     const tick = buildJobsTickFunction(ctx);
@@ -109,7 +109,7 @@ describe('jobFunctions', () => {
   });
 
   it('check_level uses precomputed thresh constants and matches ..0 at level 0', () => {
-    const project = createProject('Jobs');
+    const project = createProject('Jobs', 'en');
     project.jobs = [createJob('Mining', 'mine', { statPreset: 'ores', xpPerLevel: 100 })];
     project.namespace = 'j';
     const ctx = buildContext(project);
@@ -126,7 +126,7 @@ describe('jobFunctions', () => {
   });
 
   it('distance jobs set distance_unit in load', () => {
-    const project = createProject('Jobs');
+    const project = createProject('Jobs', 'en');
     project.jobs = [createJob('Walk', 'walk')];
     project.namespace = 'j';
     const ctx = buildContext(project);

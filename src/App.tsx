@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useProjectStore } from './store/useProjectStore';
 import { useUIStore } from './store/uiStore';
+import { getSavedView, saveView } from './store/viewStorage';
 import { useAutosave } from './hooks/useAutosave';
 import { useValidation } from './hooks/useValidation';
 import { useKeyboard } from './hooks/useKeyboard';
@@ -43,6 +44,7 @@ export default function App() {
   const duplicateJob = useProjectStore((s) => s.duplicateJob);
 
   const activeView = useUIStore((s) => s.activeView);
+  const setActiveView = useUIStore((s) => s.setActiveView);
   const selectedQuestId = useUIStore((s) => s.selectedQuestId);
   const setSelectedQuestId = useUIStore((s) => s.setSelectedQuestId);
   const settingsOpen = useUIStore((s) => s.settingsOpen);
@@ -54,6 +56,16 @@ export default function App() {
 
   useAutosave();
   useKeyboard();
+
+  // Restore last active view (default: Story Flow).
+  useEffect(() => {
+    const saved = getSavedView();
+    if (saved) setActiveView(saved);
+  }, [setActiveView]);
+
+  useEffect(() => {
+    saveView(activeView);
+  }, [activeView]);
 
   // Initialize selected quest on first load.
   useEffect(() => {
@@ -89,6 +101,7 @@ export default function App() {
               project={project}
               issues={issues}
               onChange={updateQuest}
+              onChangeProject={setProject}
             />
           )}
 
@@ -105,6 +118,7 @@ export default function App() {
             <Suspense fallback={<ViewFallback />}>
               <FlowCanvas
                 project={project}
+                issues={issues}
                 onChangeQuest={updateQuest}
                 onChangeProject={setProject}
                 selectedId={selectedQuest?.id ?? ''}

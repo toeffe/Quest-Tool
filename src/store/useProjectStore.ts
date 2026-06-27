@@ -23,7 +23,7 @@ import {
 interface ProjectStore {
   project: Project;
   setProject: (project: Project) => void;
-  setProjectMeta: (patch: Partial<Pick<Project, 'name' | 'namespace' | 'platform'>>) => void;
+  setProjectMeta: (patch: Partial<Pick<Project, 'name' | 'namespace' | 'platform' | 'locale'>>) => void;
   addQuest: () => Quest;
   updateQuest: (quest: Quest) => void;
   duplicateQuest: (id: string) => void;
@@ -50,7 +50,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
   addQuest: () => {
     const { project } = get();
-    const quest = createQuest(`Quest ${project.quests.length + 1}`);
+    const quest = createQuest(`Quest ${project.quests.length + 1}`, 'kill', project.locale ?? 'da');
     set({ project: addQuest(project, quest) });
     return quest;
   },

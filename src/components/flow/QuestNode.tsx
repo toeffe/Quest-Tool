@@ -1,147 +1,98 @@
+import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
-import { type Quest, QUEST_TYPE_LABELS } from '../../types/quest';
+import { type Quest } from '../../types/quest';
 import { type ValidationIssue } from '../../generator/validate';
-
-export type FlowStage = 'npc' | 'quest' | 'rewards' | 'chain';
+import { useQuestTypeLabels } from '../../i18n/useLabels';
+import { type PlaythroughStep } from './questPlaythrough';
+import { isStoryLocked, prerequisiteResolved } from './questPlaythrough';
+import { PlaythroughTimeline } from './PlaythroughTimeline';
+import { type Project } from '../../types/quest';
 
 export interface QuestNodeData {
   quest: Quest;
+  project: Project;
   issues: ValidationIssue[];
-  selectedStage?: FlowStage;
+  selectedStepId?: string;
   isSelected: boolean;
-  onOpenStage: (questId: string, stage: FlowStage) => void;
+  isStoryEntry?: boolean;
+  onOpenStep: (questId: string, step: PlaythroughStep) => void;
   [key: string]: unknown;
 }
 
 export type QuestFlowNode = Node<QuestNodeData, 'quest'>;
 
-const STAGE_LABELS: Record<FlowStage, string> = {
-  npc: 'NPC',
-  quest: 'Quest',
-  rewards: 'Rewards',
-  chain: 'Chain',
-};
-
-/** Best-effort mapping of a validation message to the stage that owns it. */
-function classifyIssue(message: string): FlowStage {
-  const m = message.toLowerCase();
-  if (m.includes('reward')) return 'rewards';
-  if (m.includes('chain') || m.includes('require') || m.includes('unlock')) return 'chain';
-  if (m.includes('giver') || m.includes('npc')) return 'npc';
-  return 'quest';
-}
-
-type StageHealth = 'ok' | 'warning' | 'error';
-
-function stageHealth(issues: ValidationIssue[], stage: FlowStage): StageHealth {
-  let health: StageHealth = 'ok';
-  for (const issue of issues) {
-    if (classifyIssue(issue.message) !== stage) continue;
-    if (issue.level === 'error') return 'error';
-    health = 'warning';
-  }
-  return health;
-}
-
-function shortId(id: string | undefined): string {
-  if (!id) return '?';
-  return id.replace(/^minecraft:/, '');
-}
-
-function oneObjectiveSummary(quest: Quest, o: Quest['objectives'][number]): string {
-  switch (quest.type) {
-    case 'kill': {
-      const base = `Kill ${o.amount ?? 0} ${shortId(o.target)}`;
-      if (o.spawnZone && o.location) {
-        const cap = o.zoneCap ?? Math.min(Math.max(1, o.amount ?? 1), 5);
-        return `${base} @ (${o.location.x}, ${o.location.y}, ${o.location.z}) r=${o.radius ?? 5} cap=${cap}`;
-      }
-      return base;
-    }
-    case 'gather':
-      return `Gather ${o.amount ?? 0} ${shortId(o.target)}`;
-    case 'delivery':
-      return `Deliver ${o.amount ?? 0} ${shortId(o.target)}`;
-    case 'exploration':
-      return o.location ? `Explore (${o.location.x}, ${o.location.y}, ${o.location.z})` : 'Explore a location';
-    case 'talk':
-      return quest.targetNpc ? `Talk to ${quest.targetNpc.name}` : 'Talk to the giver';
-    case 'daily':
-      return `Daily: ${o.amount ?? 0} ${shortId(o.target)}`;
-    default:
-      return o.description ?? '';
-  }
-}
-
-function objectiveSummary(quest: Quest): string {
-  const first = quest.objectives[0] ?? {};
-  const base = oneObjectiveSummary(quest, first);
-  const extra = quest.objectives.length - 1;
-  return extra > 0 ? `${base} +${extra} more` : base;
-}
-
-function chainSummary(quest: Quest): string {
-  const parts: string[] = [];
-  if (quest.chain.requires) parts.push(`needs ${quest.chain.requires}`);
-  if (quest.chain.unlocks) parts.push(`unlocks ${quest.chain.unlocks}`);
-  return parts.length ? parts.join(' / ') : 'Standalone';
-}
-
-function stageSummary(quest: Quest, stage: FlowStage): string {
-  switch (stage) {
-    case 'npc':
-      return quest.npc.name || 'Unnamed giver';
-    case 'quest':
-      return objectiveSummary(quest);
-    case 'rewards':
-      return quest.rewards.length === 0
-        ? 'No rewards'
-        : `${quest.rewards.length} reward${quest.rewards.length === 1 ? '' : 's'}`;
-    case 'chain':
-      return chainSummary(quest);
-  }
-}
-
-const STAGES: FlowStage[] = ['npc', 'quest', 'rewards', 'chain'];
-
-export function QuestNode({ data }: NodeProps<QuestFlowNode>) {
-  const { quest, issues, selectedStage, isSelected, onOpenStage } = data;
+export const QuestNode = memo(function QuestNode({ data }: NodeProps<QuestFlowNode>) {
+  const { t } = useTranslation('flow');
+  const questTypeLabels = useQuestTypeLabels();
+  const { quest, project, issues, selectedStepId, isSelected, isStoryEntry, onOpenStep } = data;
   const hasError = issues.some((i) => i.level === 'error');
   const hasWarning = issues.some((i) => i.level === 'warning');
   const nodeState = hasError ? 'error' : hasWarning ? 'warning' : 'ok';
+  const showStart = Boolean(isStoryEntry);
+  const showLocked = isStoryLocked(quest);
+  const showBrokenPrereq = Boolean(quest.chain.requires) && !prerequisiteResolved(quest, project);
 
   return (
-    <div className={`flow-node ${isSelected ? 'selected' : ''} ${nodeState}`}>
-      <Handle type="target" position={Position.Left} className="flow-handle" />
+    <div
+      className={`flow-node-shell flow-node-type-${quest.type} ${isSelected ? 'selected' : ''} ${nodeState}`}
+    >
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="flow-handle flow-handle-in"
+        title={t('questNode.handleInTitle')}
+        isConnectable
+      />
 
+      <div className="flow-node">
       <div className="flow-node-header">
-        <span className="flow-node-title">{quest.name || 'Untitled quest'}</span>
-        <span className="flow-node-type">{QUEST_TYPE_LABELS[quest.type]}</span>
+        <div className="flow-node-header-main">
+          <span className="flow-node-title">{quest.name || t('questNode.untitled')}</span>
+          <div className="flow-node-badges">
+            {showStart && (
+              <span className="flow-node-badge start" title={t('questNode.startTitle')}>
+                {t('questNode.startBadge')}
+              </span>
+            )}
+            {showLocked && !showBrokenPrereq && (
+              <span
+                className="flow-node-badge locked"
+                title={
+                  quest.chain.requires
+                    ? t('questNode.lockedRequires', { name: quest.chain.requires })
+                    : t('questNode.lockedPrereq')
+                }
+              >
+                {t('questNode.lockedBadge')}
+              </span>
+            )}
+            {showBrokenPrereq && (
+              <span className="flow-node-badge broken" title={t('questNode.orphanTitle')}>
+                {t('questNode.orphanBadge')}
+              </span>
+            )}
+          </div>
+        </div>
+        <span className="flow-node-type">{questTypeLabels[quest.type]}</span>
       </div>
 
-      <div className="flow-node-stages">
-        {STAGES.map((stage) => {
-          const health = stageHealth(issues, stage);
-          const active = selectedStage === stage && isSelected;
-          return (
-            <button
-              key={stage}
-              className={`flow-stage ${active ? 'active' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenStage(quest.id, stage);
-              }}
-              title={stageSummary(quest, stage)}
-            >
-              <span className={`flow-stage-dot ${health}`} />
-              <span className="flow-stage-label">{STAGE_LABELS[stage]}</span>
-              <span className="flow-stage-summary">{stageSummary(quest, stage)}</span>
-            </button>
-          );
-        })}
+      <PlaythroughTimeline
+        quest={quest}
+        project={project}
+        issues={issues}
+        selectedStepId={selectedStepId}
+        onOpenStep={onOpenStep}
+      />
       </div>
 
-      <Handle type="source" position={Position.Right} className="flow-handle" />
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="flow-handle flow-handle-out"
+        title={t('questNode.handleOutTitle')}
+        isConnectable
+      />
     </div>
   );
-}
+});

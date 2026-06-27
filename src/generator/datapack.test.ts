@@ -7,7 +7,7 @@ import { PROJECT_BACKUP_FILENAME } from '../state/projectStore';
 import { DATAPACK_FORMAT } from './packFormat';
 
 function sampleProject(): Project {
-  const project = createProject('Test Pack');
+  const project = createProject('Test Pack', 'en');
   project.namespace = 'testpack';
   project.platform = 'paper';
   project.quests = [createQuest('Slay Zombies', 'kill')];
@@ -66,7 +66,7 @@ describe('datapack structure', () => {
   });
 
   it('starter jobs load with valid stat criteria for all 11 jobs', () => {
-    const project = createProject('Starter Jobs');
+    const project = createProject('Starter Jobs', 'en');
     project.namespace = 'jobpack';
     project.jobs = createStarterJobs();
     const files = buildDatapackFiles(project);
@@ -186,7 +186,7 @@ describe('datapack structure', () => {
   });
 
   it('reset re-locks quests that require a prerequisite', () => {
-    const project = createProject('Chain');
+    const project = createProject('Chain', 'en');
     project.namespace = 'chain';
     const a = createQuest('First', 'kill');
     const b = createQuest('Second', 'kill');

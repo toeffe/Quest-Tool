@@ -9,7 +9,6 @@ import {
 import { jobMilestoneRewardCommands, milestoneAnnouncement } from './jobMilestones';
 import { buildUpdateProgressBarLines, buildBossBarApplyLines, jobsUseProgressBar } from './jobBossBar';
 import { escapeSnbtString, tellraw } from './text';
-import { STR } from './strings';
 
 const SYS = SYS_OBJECTIVE;
 
@@ -152,7 +151,7 @@ function buildMilestoneFiles(ctx: CompileContext, jc: JobContext): Record<string
   for (const m of milestones) {
     const grant: string[] = [
       `# ${jc.job.name} - milestone level ${m.level}`,
-      milestoneAnnouncement(jc.job.name, m.level),
+      milestoneAnnouncement(ctx.str, jc.job.name, m.level),
       ...jobMilestoneRewardCommands(ctx, m.rewards),
     ];
     files[`${jc.fnBase}/grant_milestone_${m.level}.mcfunction`] = grant.join('\n') + '\n';
@@ -163,6 +162,7 @@ function buildMilestoneFiles(ctx: CompileContext, jc: JobContext): Record<string
 
 /** Build all mcfunction files for one job. */
 export function compileJob(ctx: CompileContext, jc: JobContext): Record<string, string> {
+  const STR = ctx.str;
   const ns = ctx.namespace;
   const { job } = jc;
   const files: Record<string, string> = {};
@@ -289,6 +289,7 @@ export function buildJobsSyncAllFunction(ctx: CompileContext): string {
 
 /** Debug lines for job levels (appended to debug.mcfunction). */
 export function buildJobDebugLines(ctx: CompileContext): string[] {
+  const STR = ctx.str;
   const lines: string[] = [
     tellraw('@s', [{ text: STR.debugJobsTitle, color: 'gold', bold: true }]),
   ];

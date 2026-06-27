@@ -1,10 +1,15 @@
-import { QUEST_TYPE_LABELS } from '../../types/quest';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useQuestTypeLabels } from '../../i18n/useLabels';
 import { useProjectStore } from '../../store/useProjectStore';
 import { useUIStore } from '../../store/uiStore';
 import { useValidation } from '../../hooks/useValidation';
 
 export function Sidebar() {
+  const { t } = useTranslation('common');
+  const questTypeLabels = useQuestTypeLabels();
   const project = useProjectStore((s) => s.project);
+  const reorderQuests = useProjectStore((s) => s.reorderQuests);
   const selectedQuestId = useUIStore((s) => s.selectedQuestId);
   const setSelectedQuestId = useUIStore((s) => s.setSelectedQuestId);
   const setActiveView = useUIStore((s) => s.setActiveView);
@@ -12,6 +17,9 @@ export function Sidebar() {
   const duplicateQuest = useProjectStore((s) => s.duplicateQuest);
   const deleteQuest = useProjectStore((s) => s.deleteQuest);
   const issues = useValidation();
+
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dropBeforeId, setDropBeforeId] = useState<string | null>(null);
 
   function questErrors(id: string) {
     return issues.filter((i) => i.questId === id && i.level === 'error').length;
@@ -23,20 +31,32 @@ export function Sidebar() {
   function handleAdd() {
     const quest = addQuest();
     setSelectedQuestId(quest.id);
-    setActiveView('editor');
+    setActiveView('flow');
   }
 
   function handleSelect(id: string) {
     setSelectedQuestId(id);
-    setActiveView('editor');
+    setActiveView('flow');
+  }
+
+  function reorder(draggedId: string, beforeId: string | null) {
+    const ids = project.quests.map((q) => q.id);
+    const from = ids.indexOf(draggedId);
+    if (from < 0) return;
+    const next = [...ids];
+    next.splice(from, 1);
+    const insertAt = beforeId ? next.indexOf(beforeId) : next.length;
+    if (insertAt < 0) return;
+    next.splice(insertAt, 0, draggedId);
+    reorderQuests(next);
   }
 
   return (
     <aside className="quest-sidebar">
       <div className="quest-sidebar-head">
-        <span className="quest-sidebar-title">Quests</span>
-        <button type="button" className="btn small primary" onClick={handleAdd} title="New quest">
-          + New
+        <span className="quest-sidebar-title">{t('sidebar.title')}</span>
+        <button type="button" className="btn small primary" onClick={handleAdd} title={t('sidebar.newQuestTitle')}>
+          {t('actions.new')}
         </button>
       </div>
 
@@ -45,25 +65,60 @@ export function Sidebar() {
           const selected = q.id === selectedQuestId;
           const errs = questErrors(q.id);
           const warns = questWarnings(q.id);
+          const isDragging = dragId === q.id;
+          const showDropLine = dropBeforeId === q.id && dragId !== q.id;
           return (
             <div
               key={q.id}
-              className={`quest-sidebar-item ${selected ? 'active' : ''}`}
+              className={`quest-sidebar-item ${selected ? 'active' : ''} ${isDragging ? 'dragging' : ''}`}
               onClick={() => handleSelect(q.id)}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handleSelect(q.id)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (dragId && dragId !== q.id) setDropBeforeId(q.id);
+              }}
+              onDragLeave={() => {
+                if (dropBeforeId === q.id) setDropBeforeId(null);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (dragId) reorder(dragId, q.id);
+                setDragId(null);
+                setDropBeforeId(null);
+              }}
             >
+              {showDropLine && <div className="quest-sidebar-drop-line" aria-hidden />}
+              <span
+                className="quest-sidebar-grip"
+                draggable
+                title={t('sidebar.dragToReorder')}
+                onDragStart={(e) => {
+                  e.stopPropagation();
+                  setDragId(q.id);
+                  e.dataTransfer.effectAllowed = 'move';
+                }}
+                onDragEnd={() => {
+                  setDragId(null);
+                  setDropBeforeId(null);
+                }}
+                onClick={(e) => e.stopPropagation()}
+                aria-hidden
+              >
+                ⋮⋮
+              </span>
               <div className="quest-sidebar-item-main">
-                <span className="quest-sidebar-item-name">{q.name || 'Untitled quest'}</span>
-                <span className="quest-sidebar-item-type">{QUEST_TYPE_LABELS[q.type]}</span>
+                <span className="quest-sidebar-item-name">{q.name || t('sidebar.untitledQuest')}</span>
+                <span className="quest-sidebar-item-type">{questTypeLabels[q.type]}</span>
               </div>
               <div className="quest-sidebar-item-badges">
                 {errs > 0 && (
-                  <span className="validation-dot error" title={`${errs} error(s)`} />
+                  <span className="validation-dot error" title={t('sidebar.errorCountTitle', { count: errs })} />
                 )}
                 {errs === 0 && warns > 0 && (
-                  <span className="validation-dot warning" title={`${warns} warning(s)`} />
+                  <span className="validation-dot warning" title={t('sidebar.warningCountTitle', { count: warns })} />
                 )}
               </div>
               {selected && (
@@ -81,7 +136,7 @@ export function Sidebar() {
                       }
                     }}
                   >
-                    Duplicate
+                    {t('actions.duplicate')}
                   </button>
                   <button
                     type="button"
@@ -93,11 +148,11 @@ export function Sidebar() {
                         const remaining = project.quests.filter((x) => x.id !== q.id);
                         setSelectedQuestId(remaining[0]?.id ?? null);
                       } else {
-                        alert('A project needs at least one quest.');
+                        alert(t('sidebar.minQuestAlert'));
                       }
                     }}
                   >
-                    Delete
+                    {t('actions.delete')}
                   </button>
                 </div>
               )}

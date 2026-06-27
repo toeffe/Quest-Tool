@@ -4,26 +4,21 @@ import { SYS_OBJECTIVE } from './sys';
 import { actionbar, tellraw, type TextPart } from './text';
 import { namespaced } from './context';
 import { buildGiveCommand } from './items';
-import { STR } from './strings';
+import i18n from '../i18n';
+import { type AppLocale } from '../i18n/types';
+import { getAppLocale } from '../i18n';
 
 /**
  * Per-platform handling of rewards that depend on external systems
  * (economy money, permission nodes). Generation picks the right strategy from
  * the project platform so the user never has to think about command variants.
- *
- * Money always updates an internal `money` scoreboard so it works everywhere.
- * On Paper we additionally emit a plugin economy command. Permissions are
- * plugin-only on Paper, with a clear chat fallback message elsewhere.
- *
- * Note: plugin commands (eco / lp) are run from a function (permission level 2)
- * and use the @s selector. This requires an economy/permissions plugin that
- * accepts target selectors; the bundled README documents this.
  */
 
 export function rewardCommands(ctx: CompileContext, reward: Reward): string[] {
   const out: string[] = [];
   const platform = ctx.project.platform;
   const customItemsById = ctx.customItemsById;
+  const STR = ctx.str;
   switch (reward.type) {
     case 'item': {
       if (reward.customItemId && customItemsById) {
@@ -55,18 +50,12 @@ export function rewardCommands(ctx: CompileContext, reward: Reward): string[] {
         out.push(`execute as @s run lp user @s permission set ${node} true`);
         out.push(reward_message(STR.permissionGranted(node), 'light_purple'));
       } else {
-        out.push(
-          reward_message(
-            STR.permissionUnlocked(node),
-            'light_purple',
-          ),
-        );
+        out.push(reward_message(STR.permissionUnlocked(node), 'light_purple'));
       }
       break;
     }
     case 'command':
       if (reward.value) {
-        // Replace {player} placeholder with the @s selector for the rewarded player.
         out.push(reward.value.replace(/\{player\}/g, '@s').replace(/^\//, ''));
       }
       break;
@@ -88,21 +77,21 @@ function reward_message(text: string, color: TextPart['color']): string {
 }
 
 /** Whether a reward type is fully supported on a platform (else a warning). */
-export function isRewardSupported(platform: Platform, reward: Reward): {
+export function isRewardSupported(
+  platform: Platform,
+  reward: Reward,
+  locale?: AppLocale,
+): {
   ok: boolean;
   note?: string;
 } {
+  const lng = locale ?? getAppLocale();
+  const t = (key: string) => i18n.t(key, { ns: 'validation', lng });
   if (reward.type === 'money' && platform !== 'paper') {
-    return {
-      ok: true,
-      note: 'Money uses an internal scoreboard on Vanilla/LAN (no real economy plugin).',
-    };
+    return { ok: true, note: t('moneyVanillaNote') };
   }
   if (reward.type === 'permission' && platform !== 'paper') {
-    return {
-      ok: false,
-      note: 'Permission rewards require a permissions plugin (Paper). A chat message is shown instead.',
-    };
+    return { ok: false, note: t('permissionNote') };
   }
   return { ok: true };
 }
@@ -117,42 +106,47 @@ export interface InstallGuide {
   steps: string[];
 }
 
-export function installGuide(platform: Platform, namespace: string): InstallGuide {
+export function installGuide(
+  platform: Platform,
+  namespace: string,
+  locale: AppLocale = 'da',
+): InstallGuide {
+  const t = i18n.getFixedT(locale, 'platform');
   const common = [
-    `Spawn your NPCs: run "/function ${namespace}:setup_guide" to see the spawn commands, or run "/function ${namespace}:spawn_all" while standing where you want player-located NPCs.`,
-    `Verify everything with "/function ${namespace}:debug".`,
+    t('installGuide.common.spawnNpcs', { namespace }),
+    t('installGuide.common.verify', { namespace }),
   ];
   switch (platform) {
     case 'paper':
       return {
-        title: 'Install on a PaperMC server',
+        title: t('installGuide.paper.title'),
         steps: [
-          'Stop the server (or be ready to run /reload).',
-          'Copy the datapack ZIP into <world>/datapacks/ on the server.',
-          'Start the server, or run /reload in the console/in-game.',
-          'Optional: install Vault + an economy plugin and LuckPerms for money/permission rewards.',
+          t('installGuide.paper.step1'),
+          t('installGuide.paper.step2'),
+          t('installGuide.paper.step3'),
+          t('installGuide.paper.step4'),
           ...common,
         ],
       };
     case 'vanilla':
       return {
-        title: 'Install on a Vanilla server',
+        title: t('installGuide.vanilla.title'),
         steps: [
-          'Stop the server (or be ready to run /reload).',
-          'Copy the datapack ZIP into <world>/datapacks/.',
-          'Start the server, or run /reload.',
-          'Money is tracked with an internal scoreboard; permission rewards show a chat message only.',
+          t('installGuide.vanilla.step1'),
+          t('installGuide.vanilla.step2'),
+          t('installGuide.vanilla.step3'),
+          t('installGuide.vanilla.step4'),
           ...common,
         ],
       };
     case 'lan':
       return {
-        title: 'Install for a single-player world (Open to LAN)',
+        title: t('installGuide.lan.title'),
         steps: [
-          'Find your world save folder (Singleplayer > Edit > Open World Folder).',
-          'Copy the datapack ZIP into the saves/<world>/datapacks/ folder.',
-          'Load the world and run /reload (enable cheats once to reload; players do not need cheats to play quests).',
-          'Use Open to LAN to play with friends.',
+          t('installGuide.lan.step1'),
+          t('installGuide.lan.step2'),
+          t('installGuide.lan.step3'),
+          t('installGuide.lan.step4'),
           ...common,
         ],
       };

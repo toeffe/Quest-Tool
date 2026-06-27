@@ -1,8 +1,10 @@
 import { type Project, type Quest } from '../types/quest';
 import { type CustomItem } from '../types/item';
 import { type Job } from '../types/job';
+import { type AppLocale } from '../i18n/types';
 import { toIdentifier } from '../types/ids';
 import { resolveJobStatCriteria } from './jobStats';
+import { getDatapackStrings, type DatapackStrings } from './strings';
 
 /**
  * Stable, short identifiers for a quest's scoreboard objectives and entity tags.
@@ -83,6 +85,8 @@ export interface JobContext {
 
 export interface CompileContext {
   project: Project;
+  locale: AppLocale;
+  str: DatapackStrings;
   namespace: string;
   quests: QuestContext[];
   jobs: JobContext[];
@@ -92,6 +96,10 @@ export interface CompileContext {
   jobsById: Map<string, JobContext>;
   /** Custom items keyed by internal id. */
   customItemsById: Map<string, CustomItem>;
+}
+
+export function projectLocale(project: Project): AppLocale {
+  return project.locale === 'en' ? 'en' : 'da';
 }
 
 /** A quest always compiles with at least one objective. */
@@ -166,7 +174,18 @@ export function buildContext(project: Project): CompileContext {
     customItemsById.set(item.id, item);
   }
 
-  return { project, namespace, quests, jobs, byName, jobsById, customItemsById };
+  const locale = projectLocale(project);
+  return {
+    project,
+    locale,
+    str: getDatapackStrings(locale),
+    namespace,
+    quests,
+    jobs,
+    byName,
+    jobsById,
+    customItemsById,
+  };
 }
 
 /** Convert an entity/item id like "minecraft:zombie" to the stat suffix "minecraft.zombie". */

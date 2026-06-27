@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   type Objective,
   type ZoneDrop,
@@ -6,7 +7,7 @@ import {
 import { type CustomItem } from '../../types/item';
 import { NumberInput, PillSelect, Field, DataListInput } from '../ui/Field';
 import { CoordsRow } from './StepNPC';
-import { MOB_OPTIONS } from '../../data/mobs';
+import { useMobOptions } from '../../data/mobs';
 
 type ItemSource = 'vanilla' | 'custom';
 
@@ -30,27 +31,26 @@ interface Props {
 }
 
 export function SpawnZoneFields({ variant, obj, customItems, onChange }: Props) {
+  const { t } = useTranslation('editor');
+  const { t: tc } = useTranslation('common');
+  const mobOptions = useMobOptions();
   const isKill = variant === 'kill';
   const defaultDropMode: ZoneDropMode = isKill ? 'none' : 'vanilla';
 
   return (
     <>
       <Field
-        label={isKill ? 'Spawn mobs in a zone?' : 'Spawn animals/mobs in a zone?'}
-        hint={
-          isKill
-            ? 'When enabled, tagged mobs spawn in the area below and only those kills count.'
-            : 'Spawn tagged mobs so players can farm drops. Item progress still uses inventory count.'
-        }
+        label={isKill ? t('spawnZone.killEnable') : t('spawnZone.gatherEnable')}
+        hint={isKill ? t('spawnZone.killEnableHint') : t('spawnZone.gatherEnableHint')}
       >
         <PillSelect
           value={obj.spawnZone ? 'yes' : 'no'}
           options={[
             {
               value: 'no',
-              label: isKill ? 'No - any kill counts' : 'No - players find items themselves',
+              label: isKill ? t('spawnZone.killNo') : t('spawnZone.gatherNo'),
             },
-            { value: 'yes', label: 'Yes - spawn zone' },
+            { value: 'yes', label: t('spawnZone.yes') },
           ]}
           onChange={(v) =>
             onChange({
@@ -71,49 +71,42 @@ export function SpawnZoneFields({ variant, obj, customItems, onChange }: Props) 
         <>
           {!isKill && (
             <DataListInput
-              label="Mob / creature to spawn"
-              hint="Animals or mobs that drop the items players need to collect."
+              label={t('spawnZone.mobToSpawn')}
+              hint={t('spawnZone.mobToSpawnHint')}
               value={obj.zoneMob ?? ''}
               onChange={(zoneMob) => onChange({ zoneMob })}
-              options={MOB_OPTIONS}
+              options={mobOptions}
               listId="mc-zone-mob-list"
-              placeholder="minecraft:cow"
+              placeholder={t('spawnZone.cowPlaceholder')}
             />
           )}
-          <Field label="Zone center" hint="World coordinates for the center of the spawn area.">
+          <Field label={t('spawnZone.zoneCenter')} hint={t('spawnZone.zoneCenterHint')}>
             <CoordsRow
               value={obj.location ?? { x: 100, y: 64, z: 100 }}
               onChange={(location) => onChange({ location })}
             />
           </Field>
           <NumberInput
-            label="Spawn radius (blocks)"
-            hint="Mobs spawn within this distance of the zone center."
+            label={t('spawnZone.spawnRadius')}
+            hint={t('spawnZone.spawnRadiusHint')}
             min={1}
             value={obj.radius ?? 5}
             onChange={(radius) => onChange({ radius })}
           />
           <NumberInput
-            label="Live mob cap"
-            hint={
-              isKill
-                ? 'Max mobs alive in the zone at once. New ones spawn after kills.'
-                : 'Max mobs alive in the zone at once. New ones spawn as mobs are removed.'
-            }
+            label={t('spawnZone.liveMobCap')}
+            hint={isKill ? t('spawnZone.liveMobCapKillHint') : t('spawnZone.liveMobCapGatherHint')}
             min={1}
             value={obj.zoneCap ?? defaultZoneCap(obj.amount ?? 1)}
             onChange={(zoneCap) => onChange({ zoneCap })}
           />
-          <Field
-            label="Drop behavior"
-            hint="What items drop when players kill quest-spawned mobs in this zone."
-          >
+          <Field label={t('spawnZone.dropBehavior')} hint={t('spawnZone.dropBehaviorHint')}>
             <PillSelect
               value={obj.zoneDropMode ?? defaultDropMode}
               options={[
-                { value: 'none', label: 'No drops' },
-                { value: 'vanilla', label: 'Vanilla drops' },
-                { value: 'custom', label: 'Custom drops' },
+                { value: 'none', label: t('spawnZone.dropNone') },
+                { value: 'vanilla', label: t('spawnZone.dropVanilla') },
+                { value: 'custom', label: t('spawnZone.dropCustom') },
               ]}
               onChange={(mode) => {
                 const zoneDropMode = mode as ZoneDropMode;
@@ -132,7 +125,7 @@ export function SpawnZoneFields({ variant, obj, customItems, onChange }: Props) 
           {obj.zoneDropMode === 'custom' && (
             <div>
               <div className="row-between" style={{ marginBottom: 10 }}>
-                <label style={{ fontWeight: 600, fontSize: 13 }}>Drop list</label>
+                <label style={{ fontWeight: 600, fontSize: 13 }}>{t('spawnZone.dropList')}</label>
                 <button
                   className="btn small"
                   type="button"
@@ -142,12 +135,12 @@ export function SpawnZoneFields({ variant, obj, customItems, onChange }: Props) 
                     })
                   }
                 >
-                  + Add drop
+                  {t('spawnZone.addDrop')}
                 </button>
               </div>
               {(obj.zoneDrops ?? []).length === 0 && (
                 <p className="muted" style={{ fontSize: 13 }}>
-                  Add at least one item drop.
+                  {t('spawnZone.addDropEmpty')}
                 </p>
               )}
               {(obj.zoneDrops ?? []).map((drop, di) => {
@@ -170,12 +163,12 @@ export function SpawnZoneFields({ variant, obj, customItems, onChange }: Props) 
                   >
                     <div className="list-row">
                       <div className="field" style={{ flex: 2 }}>
-                        <label>Item source</label>
+                        <label>{tc('itemSource.label')}</label>
                         <PillSelect
                           value={source}
                           options={[
-                            { value: 'vanilla', label: 'Vanilla item' },
-                            { value: 'custom', label: 'Custom item' },
+                            { value: 'vanilla', label: tc('itemSource.vanilla') },
+                            { value: 'custom', label: tc('itemSource.custom') },
                           ]}
                           onChange={(v) => {
                             if (v === 'custom') {
@@ -195,21 +188,21 @@ export function SpawnZoneFields({ variant, obj, customItems, onChange }: Props) 
                       </div>
                       {source === 'vanilla' ? (
                         <div className="field" style={{ flex: 2 }}>
-                          <label>Item id</label>
+                          <label>{t('quest.itemId')}</label>
                           <input
                             value={drop.target ?? ''}
-                            placeholder="minecraft:rotten_flesh"
+                            placeholder={t('spawnZone.fleshPlaceholder')}
                             onChange={(e) => updateDrop({ target: e.target.value })}
                           />
                         </div>
                       ) : customItems.length === 0 ? (
                         <div className="field" style={{ flex: 2 }}>
-                          <label>Custom item</label>
-                          <div className="hint">No custom items yet. Open the Custom Items tab.</div>
+                          <label>{tc('itemSource.custom')}</label>
+                          <div className="hint">{tc('itemSource.noCustomItemsShort')}</div>
                         </div>
                       ) : (
                         <div className="field" style={{ flex: 2 }}>
-                          <label>Custom item</label>
+                          <label>{tc('itemSource.custom')}</label>
                           <select
                             value={drop.customItemId ?? ''}
                             onChange={(e) =>
@@ -219,7 +212,7 @@ export function SpawnZoneFields({ variant, obj, customItems, onChange }: Props) 
                               })
                             }
                           >
-                            {!drop.customItemId && <option value="">Select an item…</option>}
+                            {!drop.customItemId && <option value="">{tc('actions.selectItem')}</option>}
                             {customItems.map((item) => (
                               <option key={item.id} value={item.id}>
                                 {item.name} ({item.displayName})
@@ -229,7 +222,7 @@ export function SpawnZoneFields({ variant, obj, customItems, onChange }: Props) 
                         </div>
                       )}
                       <div className="field" style={{ maxWidth: 100 }}>
-                        <label>Amount</label>
+                        <label>{t('rewards.amount')}</label>
                         <input
                           type="number"
                           min={1}
@@ -238,7 +231,7 @@ export function SpawnZoneFields({ variant, obj, customItems, onChange }: Props) 
                         />
                       </div>
                       <div className="field" style={{ maxWidth: 100 }}>
-                        <label>Chance %</label>
+                        <label>{t('spawnZone.chancePercent')}</label>
                         <input
                           type="number"
                           min={1}
@@ -248,7 +241,7 @@ export function SpawnZoneFields({ variant, obj, customItems, onChange }: Props) 
                         />
                       </div>
                       <button className="btn small danger" type="button" onClick={removeDrop}>
-                        Remove
+                        {tc('actions.remove')}
                       </button>
                     </div>
                   </div>

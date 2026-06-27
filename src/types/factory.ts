@@ -13,6 +13,8 @@ import { type Job, type JobAction } from './job';
 import { uid, toIdentifier } from './ids';
 import { getBalancedDefaults, emptyMilestoneSlots } from '../generator/jobBalance';
 import { defaultPresetForAction } from '../generator/jobStats';
+import { type AppLocale, DEFAULT_LOCALE } from '../i18n/types';
+import { defaultsT } from '../i18n/useLabels';
 
 export const PROJECT_SCHEMA_VERSION = 6;
 
@@ -34,34 +36,36 @@ export type StarterJobKey = (typeof STARTER_JOB_KEYS)[number];
 
 interface StarterJobDef {
   starterKey: StarterJobKey;
-  name: string;
+  nameKey: string;
   action: JobAction;
   statPreset?: string;
 }
 
 const STARTER_DEFS: StarterJobDef[] = [
-  { starterKey: 'starter_fishing', name: 'Fishing', action: 'fish' },
-  { starterKey: 'starter_mining', name: 'Mining', action: 'mine', statPreset: 'ores' },
-  { starterKey: 'starter_woodcutting', name: 'Woodcutting', action: 'woodcut', statPreset: 'logs' },
-  { starterKey: 'starter_farming', name: 'Farming', action: 'farm', statPreset: 'crops' },
-  { starterKey: 'starter_combat', name: 'Combat', action: 'combat' },
-  { starterKey: 'starter_hunting', name: 'Hunting', action: 'hunt', statPreset: 'hostile_mobs' },
-  { starterKey: 'starter_breeding', name: 'Breeding', action: 'breeding' },
-  { starterKey: 'starter_enchanting', name: 'Enchanting', action: 'enchanting' },
-  { starterKey: 'starter_trading', name: 'Trading', action: 'trading' },
-  { starterKey: 'starter_crafting', name: 'Crafting', action: 'craft', statPreset: 'basic_crafts' },
-  { starterKey: 'starter_pvp', name: 'PvP', action: 'pvp' },
+  { starterKey: 'starter_fishing', nameKey: 'starter_fishing', action: 'fish' },
+  { starterKey: 'starter_mining', nameKey: 'starter_mining', action: 'mine', statPreset: 'ores' },
+  { starterKey: 'starter_woodcutting', nameKey: 'starter_woodcutting', action: 'woodcut', statPreset: 'logs' },
+  { starterKey: 'starter_farming', nameKey: 'starter_farming', action: 'farm', statPreset: 'crops' },
+  { starterKey: 'starter_combat', nameKey: 'starter_combat', action: 'combat' },
+  { starterKey: 'starter_hunting', nameKey: 'starter_hunting', action: 'hunt', statPreset: 'hostile_mobs' },
+  { starterKey: 'starter_breeding', nameKey: 'starter_breeding', action: 'breeding' },
+  { starterKey: 'starter_enchanting', nameKey: 'starter_enchanting', action: 'enchanting' },
+  { starterKey: 'starter_trading', nameKey: 'starter_trading', action: 'trading' },
+  { starterKey: 'starter_crafting', nameKey: 'starter_crafting', action: 'craft', statPreset: 'basic_crafts' },
+  { starterKey: 'starter_pvp', nameKey: 'starter_pvp', action: 'pvp' },
 ];
 
 export function createJob(
-  name = 'Fishing',
+  name?: string,
   action: JobAction = 'fish',
   overrides: Partial<Job> = {},
+  locale: AppLocale = DEFAULT_LOCALE,
 ): Job {
+  const t = defaultsT(locale);
   const balanced = getBalancedDefaults(action);
   const job: Job = {
     id: uid(),
-    name,
+    name: name ?? t('job.defaultName'),
     action,
     xpPerAction: balanced.xpPerAction,
     xpPerLevel: balanced.xpPerLevel,
@@ -78,13 +82,14 @@ export function createJob(
 }
 
 /** Balanced starter jobs for new projects. */
-export function createStarterJobs(): Job[] {
+export function createStarterJobs(locale: AppLocale = DEFAULT_LOCALE): Job[] {
+  const t = defaultsT(locale);
   return STARTER_DEFS.map((def) => {
     const balanced = getBalancedDefaults(def.action);
     const job: Job = {
       id: uid(),
       starterKey: def.starterKey,
-      name: def.name,
+      name: t(`starterJobs.${def.nameKey}`),
       action: def.action,
       xpPerAction: balanced.xpPerAction,
       xpPerLevel: balanced.xpPerLevel,
@@ -100,13 +105,13 @@ export function createStarterJobs(): Job[] {
 }
 
 /** Append any missing starter jobs (v5 → v6 migration). */
-export function mergeStarterJobs(existing: Job[]): Job[] {
+export function mergeStarterJobs(existing: Job[], locale: AppLocale = DEFAULT_LOCALE): Job[] {
   const byKey = new Map<string, Job>();
   for (const job of existing) {
     if (job.starterKey) byKey.set(job.starterKey, job);
   }
   const out = [...existing];
-  for (const starter of createStarterJobs()) {
+  for (const starter of createStarterJobs(locale)) {
     if (!byKey.has(starter.starterKey!)) {
       out.push({ ...starter, id: uid() });
     }
@@ -114,50 +119,60 @@ export function mergeStarterJobs(existing: Job[]): Job[] {
   return out;
 }
 
-export function createNpc(): Npc {
+export function createNpc(locale: AppLocale = DEFAULT_LOCALE): Npc {
+  const t = defaultsT(locale);
   return {
-    name: 'Quest Giver',
+    name: t('npc.name'),
     tag: 'quest_giver',
     entityType: 'minecraft:villager',
     profession: 'librarian',
     variant: 'plains',
     dialogue: {
-      greeting: 'Greetings, traveler! I have need of someone with your talents.',
-      offer: 'Will you help me?',
-      inProgress: 'Have you finished the task yet?',
-      completion: 'Wonderful work! Here is your reward.',
+      greeting: t('npc.dialogue.greeting'),
+      offer: t('npc.dialogue.offer'),
+      inProgress: t('npc.dialogue.inProgress'),
+      completion: t('npc.dialogue.completion'),
     },
     spawnMode: 'player',
   };
 }
 
 /** A single fresh objective for a quest type (used for defaults and "add objective"). */
-export function newObjectiveFor(type: QuestType): Quest['objectives'][number] {
+export function newObjectiveFor(type: QuestType, locale: AppLocale = DEFAULT_LOCALE): Quest['objectives'][number] {
+  const t = defaultsT(locale);
   switch (type) {
     case 'kill':
-      return { target: 'minecraft:zombie', amount: 5, description: 'Slay zombies' };
+      return {
+        target: t('objectives.kill.target'),
+        amount: 5,
+        description: t('objectives.kill.description'),
+      };
     case 'gather':
       return {
-        target: 'minecraft:wheat',
+        target: t('objectives.gather.target'),
         amount: 10,
-        description: 'Collect wheat',
+        description: t('objectives.gather.description'),
         consumeOnTurnIn: true,
       };
     case 'delivery':
-      return { target: 'minecraft:bread', amount: 3, description: 'Deliver bread' };
+      return {
+        target: t('objectives.delivery.target'),
+        amount: 3,
+        description: t('objectives.delivery.description'),
+      };
     case 'exploration':
       return {
         location: { x: 100, y: 64, z: 100 },
         radius: 5,
-        description: 'Discover the marked location',
+        description: t('objectives.exploration.description'),
       };
     case 'talk':
-      return { description: 'Speak with the target' };
+      return { description: t('objectives.talk.description') };
     case 'daily':
       return {
-        target: 'minecraft:rotten_flesh',
+        target: t('objectives.daily.target'),
         amount: 8,
-        description: 'Gather rotten flesh',
+        description: t('objectives.daily.description'),
         consumeOnTurnIn: true,
       };
     default:
@@ -165,34 +180,45 @@ export function newObjectiveFor(type: QuestType): Quest['objectives'][number] {
   }
 }
 
-export function defaultObjectiveFor(type: QuestType): Quest['objectives'] {
-  return [newObjectiveFor(type)];
+export function defaultObjectiveFor(type: QuestType, locale: AppLocale = DEFAULT_LOCALE): Quest['objectives'] {
+  return [newObjectiveFor(type, locale)];
 }
 
-export function createQuest(name = 'New Quest', type: QuestType = 'kill'): Quest {
+export function createQuest(
+  name?: string,
+  type: QuestType = 'kill',
+  locale: AppLocale = DEFAULT_LOCALE,
+): Quest {
+  const t = defaultsT(locale);
   return {
     id: uid(),
-    name,
+    name: name ?? t('quest.name'),
     type,
-    category: 'General',
-    description: 'A quest awaits.',
-    npc: createNpc(),
-    objectives: defaultObjectiveFor(type),
+    category: t('quest.category'),
+    description: t('quest.description'),
+    npc: createNpc(locale),
+    objectives: defaultObjectiveFor(type, locale),
     rewards: [{ type: 'xp', amount: 50 } as Reward],
     chain: { autoStart: false, announce: false },
     cooldownSeconds: type === 'daily' ? 86400 : 0,
   };
 }
 
-export function createCustomItem(kind: CustomItemKind = 'general', name = 'New Item'): CustomItem {
-  const tag = toIdentifier(name, 'item');
+export function createCustomItem(
+  kind: CustomItemKind = 'general',
+  name?: string,
+  locale: AppLocale = DEFAULT_LOCALE,
+): CustomItem {
+  const t = defaultsT(locale);
+  const itemName = name ?? t('customItem.name');
+  const tag = toIdentifier(itemName, 'item');
   const base: CustomItem = {
     id: uid(),
-    name,
+    name: itemName,
     tag,
     kind,
     baseItem: 'minecraft:paper',
-    displayName: name,
+    displayName: itemName,
     lore: [],
   };
   switch (kind) {
@@ -227,14 +253,16 @@ export function createCustomItem(kind: CustomItemKind = 'general', name = 'New I
   }
 }
 
-export function createProject(name = 'My Quest Pack'): Project {
+export function createProject(name?: string, locale: AppLocale = DEFAULT_LOCALE): Project {
+  const t = defaultsT(locale);
   return {
     id: uid(),
-    name,
-    namespace: 'questpack',
+    name: name ?? t('project.name'),
+    namespace: t('project.namespace'),
     platform: 'paper',
-    quests: [createQuest('First Quest', 'kill')],
-    jobs: createStarterJobs(),
+    locale,
+    quests: [createQuest(t('quest.firstQuestName'), 'kill', locale)],
+    jobs: createStarterJobs(locale),
     customItems: [],
     version: PROJECT_SCHEMA_VERSION,
   };

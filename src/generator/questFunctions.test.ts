@@ -4,7 +4,7 @@ import { buildContext } from './context';
 import { compileQuest, buildZoneLootTableFiles } from './questFunctions';
 
 function compileFirst(type: Parameters<typeof createQuest>[1]) {
-  const project = createProject('P');
+  const project = createProject('P', 'en');
   project.namespace = 'p';
   project.quests = [createQuest('Q', type)];
   const ctx = buildContext(project);
@@ -27,7 +27,7 @@ describe('quest tick generation', () => {
   });
 
   it('multi-objective quests require every objective before completing', () => {
-    const project = createProject('P');
+    const project = createProject('P', 'en');
     project.namespace = 'p';
     const q = createQuest('Q', 'kill');
     q.objectives = [
@@ -57,7 +57,7 @@ describe('quest tick generation', () => {
   });
 
   it('keeps multiline offer dialogue on a single mcfunction line', () => {
-    const project = createProject('P');
+    const project = createProject('P', 'en');
     project.namespace = 'p';
     const q = createQuest('Lost Son', 'kill');
     q.npc.dialogue.offer = 'Han er borte i minen.\nKan du hjelpe meg?';
@@ -77,7 +77,7 @@ describe('quest tick generation', () => {
   });
 
   it('gather quests use component clear for custom item objectives', () => {
-    const project = createProject('P');
+    const project = createProject('P', 'en');
     project.namespace = 'p';
     const item = createCustomItem('general', 'Ancient Coin');
     item.baseItem = 'minecraft:gold_nugget';
@@ -94,7 +94,7 @@ describe('quest tick generation', () => {
   });
 
   it('gather quests remove items on turn-in when consumeOnTurnIn is set', () => {
-    const project = createProject('P');
+    const project = createProject('P', 'en');
     project.namespace = 'p';
     const q = createQuest('Gather', 'gather');
     q.objectives = [
@@ -113,7 +113,7 @@ describe('quest tick generation', () => {
   });
 
   it('gather quests keep items on turn-in when consumeOnTurnIn is false', () => {
-    const project = createProject('P');
+    const project = createProject('P', 'en');
     project.namespace = 'p';
     const q = createQuest('Gather', 'gather');
     q.objectives = [
@@ -126,7 +126,7 @@ describe('quest tick generation', () => {
   });
 
   it('talk quests with no target complete instantly on accept', () => {
-    const project = createProject('P');
+    const project = createProject('P', 'en');
     project.namespace = 'p';
     const talk = createQuest('Talk', 'talk');
     talk.targetNpc = undefined;
@@ -138,7 +138,7 @@ describe('quest tick generation', () => {
   });
 
   it('zoned kill quests use dummy killed objective and spawn zone tick logic', () => {
-    const project = createProject('P');
+    const project = createProject('P', 'en');
     project.namespace = 'p';
     const q = createQuest('Chickens', 'kill');
     q.objectives = [
@@ -171,7 +171,7 @@ describe('quest tick generation', () => {
   });
 
   it('zoned gather quests spawn farm mobs and track item progress', () => {
-    const project = createProject('P');
+    const project = createProject('P', 'en');
     project.namespace = 'p';
     const q = createQuest('Leather', 'gather');
     q.objectives = [
@@ -201,7 +201,7 @@ describe('quest tick generation', () => {
   });
 
   it('zoned kill quests respect a custom live mob cap', () => {
-    const project = createProject('P');
+    const project = createProject('P', 'en');
     project.namespace = 'p';
     const q = createQuest('Chickens', 'kill');
     q.objectives = [
@@ -226,7 +226,7 @@ describe('quest tick generation', () => {
   });
 
   it('zoned kill quests with no drops attach empty DeathLootTable', () => {
-    const project = createProject('P');
+    const project = createProject('P', 'en');
     project.namespace = 'p';
     const q = createQuest('Chickens', 'kill');
     q.objectives = [
@@ -248,7 +248,7 @@ describe('quest tick generation', () => {
   });
 
   it('zoned kill quests with vanilla drops omit DeathLootTable', () => {
-    const project = createProject('P');
+    const project = createProject('P', 'en');
     project.namespace = 'p';
     const q = createQuest('Chickens', 'kill');
     q.objectives = [
@@ -268,7 +268,7 @@ describe('quest tick generation', () => {
   });
 
   it('zoned kill quests with custom drops reference a loot table', () => {
-    const project = createProject('P');
+    const project = createProject('P', 'en');
     project.namespace = 'p';
     const q = createQuest('Chickens', 'kill');
     q.objectives = [
@@ -301,7 +301,7 @@ describe('quest tick generation', () => {
 
 describe('quest chains', () => {
   it('locks a quest that requires another and unlocks it on completion', () => {
-    const project = createProject('Chain');
+    const project = createProject('Chain', 'en');
     project.namespace = 'c';
     const a = createQuest('First', 'kill');
     const b = createQuest('Second', 'kill');
@@ -320,7 +320,7 @@ describe('quest chains', () => {
   });
 
   it('locks a quest that requires a job level', () => {
-    const project = createProject('JobGate');
+    const project = createProject('JobGate', 'en');
     project.namespace = 'jg';
     const job = project.jobs![0];
     const quest = createQuest('Pro Fisher', 'talk');
@@ -335,7 +335,7 @@ describe('quest chains', () => {
   });
 
   it('turn-in grants job XP reward', () => {
-    const project = createProject('JobReward');
+    const project = createProject('JobReward', 'en');
     project.namespace = 'jr';
     const job = project.jobs![0];
     const quest = createQuest('Bonus', 'kill');

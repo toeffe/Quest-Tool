@@ -2,6 +2,9 @@ import { type Project, type Quest } from '../types/quest';
 import { TYPED_JOB_ACTIONS } from '../types/job';
 import { isRewardSupported } from './platform';
 import { toIdentifier } from '../types/ids';
+import { type AppLocale } from '../i18n/types';
+import { getAppLocale } from '../i18n';
+import { tValidation } from '../i18n/translate';
 
 export type IssueLevel = 'error' | 'warning';
 
@@ -16,30 +19,34 @@ export interface ValidationIssue {
   field?: string;
 }
 
-function objectiveIssues(quest: Quest): string[] {
+function objectiveWhere(multi: boolean, i: number, locale: AppLocale): string {
+  if (!multi) return tValidation('objective', undefined, locale);
+  return tValidation('objectiveN', { n: i + 1 }, locale);
+}
+
+function objectiveIssues(quest: Quest, locale: AppLocale): string[] {
   const out: string[] = [];
   if (quest.objectives.length === 0) {
-    out.push('Quest has no objective.');
+    out.push(tValidation('noObjective', undefined, locale));
     return out;
   }
 
-  // Talk quests use a single NPC-reach objective; the others can have several.
   const multi = quest.objectives.length > 1;
   quest.objectives.forEach((o, i) => {
-    const where = multi ? `Objective ${i + 1}` : 'Objective';
+    const where = objectiveWhere(multi, i, locale);
     switch (quest.type) {
       case 'kill':
       case 'gather':
       case 'delivery':
       case 'daily':
         if (quest.type === 'kill') {
-          if (!o.target) out.push(`${where} is missing a target mob.`);
+          if (!o.target) out.push(tValidation('missingTargetMob', { where }, locale));
         } else if (!o.target && !o.customItemId) {
-          out.push(`${where} is missing a target item.`);
+          out.push(tValidation('missingTargetItem', { where }, locale));
         }
-        if (!o.amount || o.amount < 1) out.push(`${where} amount must be at least 1.`);
+        if (!o.amount || o.amount < 1) out.push(tValidation('amountMin', { where }, locale));
         if ((quest.type === 'kill' || quest.type === 'gather') && o.spawnZone && !o.location) {
-          out.push(`${where} spawn zone is enabled but no location is set.`);
+          out.push(tValidation('spawnZoneNoLocation', { where }, locale));
         }
         if (
           (quest.type === 'kill' || quest.type === 'gather') &&
@@ -47,10 +54,10 @@ function objectiveIssues(quest: Quest): string[] {
           o.zoneCap != null &&
           o.zoneCap < 1
         ) {
-          out.push(`${where} spawn cap must be at least 1.`);
+          out.push(tValidation('spawnCapMin', { where }, locale));
         }
         if (quest.type === 'gather' && o.spawnZone && !o.zoneMob) {
-          out.push(`${where} spawn zone is enabled but no mob/creature is set.`);
+          out.push(tValidation('spawnZoneNoMob', { where }, locale));
         }
         if (
           (quest.type === 'kill' || quest.type === 'gather') &&
@@ -59,34 +66,36 @@ function objectiveIssues(quest: Quest): string[] {
         ) {
           const drops = o.zoneDrops ?? [];
           if (!drops.length) {
-            out.push(`${where} custom drops is enabled but no drops are configured.`);
+            out.push(tValidation('customDropsEmpty', { where }, locale));
           }
           drops.forEach((d, di) => {
-            const dropWhere = drops.length > 1 ? `${where} drop ${di + 1}` : `${where} drop`;
+            const dropWhere =
+              drops.length > 1
+                ? tValidation('dropN', { where, n: di + 1 }, locale)
+                : tValidation('drop', { where }, locale);
             if (!d.target && !d.customItemId) {
-              out.push(`${dropWhere} is missing an item.`);
+              out.push(tValidation('dropMissingItem', { where: dropWhere }, locale));
             }
             if (d.amount != null && d.amount < 1) {
-              out.push(`${dropWhere} amount must be at least 1.`);
+              out.push(tValidation('dropAmountMin', { where: dropWhere }, locale));
             }
             if (d.chance != null && (d.chance < 1 || d.chance > 100)) {
-              out.push(`${dropWhere} chance must be between 1 and 100.`);
+              out.push(tValidation('dropChanceRange', { where: dropWhere }, locale));
             }
           });
         }
         break;
       case 'exploration':
-        if (!o.location) out.push(`${where} is missing a target location.`);
+        if (!o.location) out.push(tValidation('missingLocation', { where }, locale));
         break;
       case 'talk':
-        // Talk quests are valid with or without a target NPC.
         break;
     }
   });
   return out;
 }
 
-function customItemIssues(project: Project): ValidationIssue[] {
+function customItemIssues(project: Project, locale: AppLocale): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const items = project.customItems ?? [];
   const tagCounts = new Map<string, number>();
@@ -108,15 +117,21 @@ function customItemIssues(project: Project): ValidationIssue[] {
     const tag = toIdentifier(item.tag);
     tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
     if (!item.displayName.trim()) {
-      issues.push({ level: 'error', message: `Custom item "${item.name}" has no display name.` });
+      issues.push({
+        level: 'error',
+        message: tValidation('customItemNoDisplayName', { name: item.name }, locale),
+      });
     }
     if (!item.baseItem.trim()) {
-      issues.push({ level: 'error', message: `Custom item "${item.name}" has no base item.` });
+      issues.push({
+        level: 'error',
+        message: tValidation('customItemNoBaseItem', { name: item.name }, locale),
+      });
     }
     if (!referenced.has(item.id)) {
       issues.push({
         level: 'warning',
-        message: `Custom item "${item.name}" is not used in any quest.`,
+        message: tValidation('customItemUnused', { name: item.name }, locale),
       });
     }
   }
@@ -125,7 +140,7 @@ function customItemIssues(project: Project): ValidationIssue[] {
     if (count > 1) {
       issues.push({
         level: 'error',
-        message: `Duplicate custom item tag "${tag}" (used ${count} times).`,
+        message: tValidation('duplicateItemTag', { tag, count }, locale),
       });
     }
   }
@@ -133,7 +148,7 @@ function customItemIssues(project: Project): ValidationIssue[] {
   return issues;
 }
 
-function jobIssues(project: Project): ValidationIssue[] {
+function jobIssues(project: Project, locale: AppLocale): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const jobs = project.jobs ?? [];
   const jobIds = new Set(jobs.map((j) => j.id));
@@ -144,7 +159,7 @@ function jobIssues(project: Project): ValidationIssue[] {
     if (!name) {
       issues.push({
         level: 'error',
-        message: 'A job has an empty name.',
+        message: tValidation('jobEmptyName', undefined, locale),
         jobId: job.id,
         jobName: job.name,
       });
@@ -153,7 +168,7 @@ function jobIssues(project: Project): ValidationIssue[] {
     if (job.xpPerAction < 1) {
       issues.push({
         level: 'error',
-        message: `Job "${job.name}" XP per action must be at least 1.`,
+        message: tValidation('jobXpPerActionMin', { name: job.name }, locale),
         jobId: job.id,
         jobName: job.name,
       });
@@ -161,7 +176,7 @@ function jobIssues(project: Project): ValidationIssue[] {
     if (job.xpPerLevel < 1) {
       issues.push({
         level: 'error',
-        message: `Job "${job.name}" XP per level must be at least 1.`,
+        message: tValidation('jobXpPerLevelMin', { name: job.name }, locale),
         jobId: job.id,
         jobName: job.name,
       });
@@ -169,7 +184,7 @@ function jobIssues(project: Project): ValidationIssue[] {
     if (job.maxLevel < 1) {
       issues.push({
         level: 'error',
-        message: `Job "${job.name}" max level must be at least 1.`,
+        message: tValidation('jobMaxLevelMin', { name: job.name }, locale),
         jobId: job.id,
         jobName: job.name,
       });
@@ -177,7 +192,7 @@ function jobIssues(project: Project): ValidationIssue[] {
     if (job.advancementIcon && !job.advancementIcon.includes(':')) {
       issues.push({
         level: 'warning',
-        message: `Job "${job.name}" advancement icon should be a namespaced id (e.g. minecraft:fishing_rod).`,
+        message: tValidation('jobAdvIconWarning', { name: job.name }, locale),
         jobId: job.id,
         jobName: job.name,
       });
@@ -185,7 +200,7 @@ function jobIssues(project: Project): ValidationIssue[] {
     if (job.advancementBackground && !job.advancementBackground.includes(':')) {
       issues.push({
         level: 'warning',
-        message: `Job "${job.name}" advancement background should be a resource id (e.g. minecraft:gui/advancements/backgrounds/husbandry).`,
+        message: tValidation('jobAdvBackgroundWarning', { name: job.name }, locale),
         jobId: job.id,
         jobName: job.name,
       });
@@ -193,7 +208,7 @@ function jobIssues(project: Project): ValidationIssue[] {
     if (job.action === 'custom' && !job.customCriterion?.trim()) {
       issues.push({
         level: 'error',
-        message: `Job "${job.name}" needs a custom scoreboard criterion.`,
+        message: tValidation('jobCustomCriterion', { name: job.name }, locale),
         jobId: job.id,
         jobName: job.name,
         field: 'jobs.customCriterion',
@@ -204,7 +219,7 @@ function jobIssues(project: Project): ValidationIssue[] {
       if (preset === 'single' && !job.statTarget?.trim()) {
         issues.push({
           level: 'error',
-          message: `Job "${job.name}" needs a single target id (or choose a preset).`,
+          message: tValidation('jobSingleTarget', { name: job.name }, locale),
           jobId: job.id,
           jobName: job.name,
           field: 'jobs.statTarget',
@@ -216,7 +231,11 @@ function jobIssues(project: Project): ValidationIssue[] {
       if (milestone.level < 1 || milestone.level > job.maxLevel) {
         issues.push({
           level: 'error',
-          message: `Job "${job.name}" milestone level ${milestone.level} must be between 1 and ${job.maxLevel}.`,
+          message: tValidation(
+            'jobMilestoneLevelRange',
+            { name: job.name, level: milestone.level, maxLevel: job.maxLevel },
+            locale,
+          ),
           jobId: job.id,
           jobName: job.name,
           field: 'jobs.milestones',
@@ -225,7 +244,11 @@ function jobIssues(project: Project): ValidationIssue[] {
       if (milestoneLevels.has(milestone.level)) {
         issues.push({
           level: 'error',
-          message: `Job "${job.name}" has duplicate milestone at level ${milestone.level}.`,
+          message: tValidation(
+            'jobDuplicateMilestone',
+            { name: job.name, level: milestone.level },
+            locale,
+          ),
           jobId: job.id,
           jobName: job.name,
           field: 'jobs.milestones',
@@ -236,7 +259,11 @@ function jobIssues(project: Project): ValidationIssue[] {
         if (reward.type === 'item' && !reward.value && !reward.customItemId) {
           issues.push({
             level: 'error',
-            message: `Job "${job.name}" milestone Lv.${milestone.level} has an empty item reward.`,
+            message: tValidation(
+              'jobMilestoneEmptyItem',
+              { name: job.name, level: milestone.level },
+              locale,
+            ),
             jobId: job.id,
             jobName: job.name,
             field: 'jobs.milestones',
@@ -253,7 +280,7 @@ function jobIssues(project: Project): ValidationIssue[] {
         if (reward.customItemId && !customItemIds.has(reward.customItemId)) {
           issues.push({
             level: 'error',
-            message: `Job "${job.name}" milestone references a custom item that no longer exists.`,
+            message: tValidation('jobMilestoneMissingItem', { name: job.name }, locale),
             jobId: job.id,
             jobName: job.name,
             field: 'jobs.milestones',
@@ -267,7 +294,7 @@ function jobIssues(project: Project): ValidationIssue[] {
     if (count > 1) {
       issues.push({
         level: 'error',
-        message: `Duplicate job name: "${name}" (used ${count} times).`,
+        message: tValidation('duplicateJobName', { name, count }, locale),
       });
     }
   }
@@ -278,7 +305,7 @@ function jobIssues(project: Project): ValidationIssue[] {
       if (!jobIds.has(jobReq.jobId)) {
         issues.push({
           level: 'error',
-          message: 'Chain requires a job that no longer exists.',
+          message: tValidation('chainRequiresMissingJob', undefined, locale),
           questId: quest.id,
           questName: quest.name,
           field: 'chain.requiresJob',
@@ -287,7 +314,7 @@ function jobIssues(project: Project): ValidationIssue[] {
       if (jobReq.level < 1) {
         issues.push({
           level: 'error',
-          message: 'Job level requirement must be at least 1.',
+          message: tValidation('jobLevelMin', undefined, locale),
           questId: quest.id,
           questName: quest.name,
           field: 'chain.requiresJob',
@@ -300,7 +327,7 @@ function jobIssues(project: Project): ValidationIssue[] {
         if (!reward.jobId || !jobIds.has(reward.jobId)) {
           issues.push({
             level: 'error',
-            message: 'A job XP reward references a job that no longer exists.',
+            message: tValidation('jobXpRewardMissingJob', undefined, locale),
             questId: quest.id,
             questName: quest.name,
             field: 'rewards',
@@ -309,7 +336,7 @@ function jobIssues(project: Project): ValidationIssue[] {
         if (!reward.amount || reward.amount < 1) {
           issues.push({
             level: 'error',
-            message: 'A job XP reward must grant at least 1 XP.',
+            message: tValidation('jobXpRewardMin', undefined, locale),
             questId: quest.id,
             questName: quest.name,
             field: 'rewards',
@@ -323,18 +350,19 @@ function jobIssues(project: Project): ValidationIssue[] {
 }
 
 /** Validate the whole project; returns errors (block export) and warnings. */
-export function validateProject(project: Project): ValidationIssue[] {
+export function validateProject(project: Project, locale?: AppLocale): ValidationIssue[] {
+  const effectiveLocale = locale ?? getAppLocale();
   const issues: ValidationIssue[] = [];
   const add = (level: IssueLevel, message: string, quest?: Quest, field?: string) =>
     issues.push({ level, message, questId: quest?.id, questName: quest?.name, field });
 
   if (project.quests.length === 0) {
-    add('error', 'The project has no quests.');
+    add('error', tValidation('projectNoQuests', undefined, effectiveLocale));
     return issues;
   }
 
-  issues.push(...customItemIssues(project));
-  issues.push(...jobIssues(project));
+  issues.push(...customItemIssues(project, effectiveLocale));
+  issues.push(...jobIssues(project, effectiveLocale));
 
   const customItemIds = new Set((project.customItems ?? []).map((i) => i.id));
 
@@ -343,83 +371,108 @@ export function validateProject(project: Project): ValidationIssue[] {
 
   for (const quest of project.quests) {
     const name = quest.name.trim();
-    if (!name) add('error', 'A quest has an empty name.', quest, 'name');
+    if (!name) add('error', tValidation('questEmptyName', undefined, effectiveLocale), quest, 'name');
     nameCounts.set(name, (nameCounts.get(name) ?? 0) + 1);
 
-    if (!quest.npc.name.trim()) add('error', 'The quest giver has no name.', quest, 'npc.name');
+    if (!quest.npc.name.trim()) {
+      add('error', tValidation('npcNoName', undefined, effectiveLocale), quest, 'npc.name');
+    }
 
     const npcTag = toIdentifier(quest.npc.tag);
     npcTagCounts.set(npcTag, (npcTagCounts.get(npcTag) ?? 0) + 1);
 
-    for (const msg of objectiveIssues(quest)) add('error', msg, quest, 'objectives');
+    for (const msg of objectiveIssues(quest, effectiveLocale)) {
+      add('error', msg, quest, 'objectives');
+    }
 
     for (const o of quest.objectives) {
       if (o.customItemId && !customItemIds.has(o.customItemId)) {
-        add('error', 'An objective references a custom item that no longer exists.', quest);
+        add('error', tValidation('objectiveMissingCustomItem', undefined, effectiveLocale), quest);
       }
       for (const d of o.zoneDrops ?? []) {
         if (d.customItemId && !customItemIds.has(d.customItemId)) {
-          add('error', 'A spawn zone drop references a custom item that no longer exists.', quest);
+          add(
+            'error',
+            tValidation('spawnDropMissingCustomItem', undefined, effectiveLocale),
+            quest,
+          );
         }
       }
     }
 
     if (quest.npc.spawnMode === 'fixed' && !quest.npc.coordinates) {
-      add('error', 'NPC spawn is set to fixed coordinates but none are provided.', quest, 'npc.coordinates');
+      add('error', tValidation('npcFixedNoCoords', undefined, effectiveLocale), quest, 'npc.coordinates');
     }
 
     if (quest.type === 'talk' && quest.targetNpc) {
-      if (!quest.targetNpc.name.trim()) add('error', 'The target NPC has no name.', quest, 'targetNpc.name');
+      if (!quest.targetNpc.name.trim()) {
+        add('error', tValidation('targetNpcNoName', undefined, effectiveLocale), quest, 'targetNpc.name');
+      }
       if (quest.targetNpc.spawnMode === 'fixed' && !quest.targetNpc.coordinates) {
-        add('error', 'Target NPC uses fixed coordinates but none are provided.', quest, 'targetNpc.coordinates');
+        add(
+          'error',
+          tValidation('targetNpcFixedNoCoords', undefined, effectiveLocale),
+          quest,
+          'targetNpc.coordinates',
+        );
       }
     }
 
-    // Chain integrity.
     if (quest.chain.requires) {
       const exists = project.quests.some((q) => q.name === quest.chain.requires);
       if (!exists) {
-        add('error', `Chain requires "${quest.chain.requires}", which is not a quest in this project.`, quest, 'chain.requires');
+        add(
+          'error',
+          tValidation('chainRequiresNotFound', { name: quest.chain.requires }, effectiveLocale),
+          quest,
+          'chain.requires',
+        );
       }
       if (quest.chain.requires === quest.name) {
-        add('error', 'A quest cannot require itself.', quest, 'chain.requires');
+        add('error', tValidation('chainSelfRequire', undefined, effectiveLocale), quest, 'chain.requires');
       }
     }
     if (quest.chain.unlocks) {
       const exists = project.quests.some((q) => q.name === quest.chain.unlocks);
       if (!exists) {
-        add('error', `Chain unlocks "${quest.chain.unlocks}", which is not a quest in this project.`, quest, 'chain.unlocks');
+        add(
+          'error',
+          tValidation('chainUnlocksNotFound', { name: quest.chain.unlocks }, effectiveLocale),
+          quest,
+          'chain.unlocks',
+        );
       }
     }
 
-    // Reward platform compatibility.
     for (const reward of quest.rewards) {
-      const support = isRewardSupported(project.platform, reward);
+      const support = isRewardSupported(project.platform, reward, effectiveLocale);
       if (support.note) {
-        add(support.ok ? 'warning' : 'warning', `${support.note}`, quest);
+        add(support.ok ? 'warning' : 'warning', support.note, quest);
       }
       if (reward.type === 'item' && !reward.value && !reward.customItemId) {
-        add('error', 'An item reward is missing its item.', quest, 'rewards');
+        add('error', tValidation('rewardMissingItem', undefined, effectiveLocale), quest, 'rewards');
       }
       if (reward.customItemId && !customItemIds.has(reward.customItemId)) {
-        add('error', 'A reward references a custom item that no longer exists.', quest, 'rewards');
+        add('error', tValidation('rewardMissingCustomItem', undefined, effectiveLocale), quest, 'rewards');
       }
       if (reward.type === 'command' && !reward.value) {
-        add('error', 'A command reward is missing its value.', quest, 'rewards');
+        add('error', tValidation('rewardMissingCommand', undefined, effectiveLocale), quest, 'rewards');
       }
     }
 
     if (quest.rewards.length === 0) {
-      add('warning', 'Quest has no rewards.', quest, 'rewards');
+      add('warning', tValidation('questNoRewards', undefined, effectiveLocale), quest, 'rewards');
     }
   }
 
   for (const [name, count] of nameCounts) {
-    if (count > 1) add('error', `Duplicate quest name: "${name}" (used ${count} times).`);
+    if (count > 1) {
+      add('error', tValidation('duplicateQuestName', { name, count }, effectiveLocale));
+    }
   }
   for (const [tag, count] of npcTagCounts) {
     if (count > 1) {
-      add('warning', `NPC tag "${tag}" is used by ${count} quests; they will share/duplicate NPCs.`);
+      add('error', tValidation('duplicateNpcTag', { tag, count }, effectiveLocale));
     }
   }
 

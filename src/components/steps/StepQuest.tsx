@@ -1,10 +1,11 @@
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   type Objective,
   type Quest,
   type QuestType,
   type SpawnMode,
   type TargetNpc,
-  QUEST_TYPE_LABELS,
 } from '../../types/quest';
 import {
   TextInput,
@@ -18,9 +19,10 @@ import {
 import { defaultObjectiveFor, newObjectiveFor } from '../../types/factory';
 import { toIdentifier } from '../../types/ids';
 import { CoordsRow } from './StepNPC';
-import { MOB_OPTIONS, isVillager } from '../../data/mobs';
+import { useMobOptions, isVillager } from '../../data/mobs';
 import { VariantFields, BabySelect } from './VariantFields';
 import { type CustomItem } from '../../types/item';
+import { useQuestTypeLabels } from '../../i18n/useLabels';
 import { QuestPreview } from '../preview/QuestPreview';
 import { SpawnZoneFields } from './SpawnZoneFields';
 
@@ -36,22 +38,33 @@ function objectiveItemSource(obj: Objective): ItemSource {
   return obj.customItemId ? 'custom' : 'vanilla';
 }
 
-const TYPE_OPTIONS = (Object.keys(QUEST_TYPE_LABELS) as QuestType[]).map((t) => ({
-  value: t,
-  label: QUEST_TYPE_LABELS[t],
-}));
-
-const SPAWN_MODES: { value: SpawnMode; label: string }[] = [
-  { value: 'player', label: 'At my location' },
-  { value: 'fixed', label: 'Fixed coordinates' },
-  { value: 'manual', label: 'Manual' },
-];
-
 const usesItemTarget = (t: QuestType) => t === 'gather' || t === 'delivery' || t === 'daily';
 
 export function StepQuest({ quest, customItems, onChange }: Props) {
+  const { t } = useTranslation('editor');
+  const { t: tc } = useTranslation('common');
+  const questTypeLabels = useQuestTypeLabels();
+  const mobOptions = useMobOptions();
   const objectives: Objective[] = quest.objectives.length ? quest.objectives : [{}];
   const isMultiType = quest.type !== 'talk';
+
+  const typeOptions = useMemo(
+    () =>
+      (Object.keys(questTypeLabels) as QuestType[]).map((value) => ({
+        value,
+        label: questTypeLabels[value],
+      })),
+    [questTypeLabels],
+  );
+
+  const spawnModes = useMemo(
+    (): { value: SpawnMode; label: string }[] => [
+      { value: 'player', label: tc('spawnMode.player') },
+      { value: 'fixed', label: tc('spawnMode.fixed') },
+      { value: 'manual', label: tc('spawnMode.manual') },
+    ],
+    [tc],
+  );
 
   const setObjectiveAt = (i: number, patch: Partial<Objective>) =>
     onChange({
@@ -89,31 +102,31 @@ export function StepQuest({ quest, customItems, onChange }: Props) {
 
   return (
     <div>
-      <h1 className="step-title">Quest Definition</h1>
-      <p className="step-sub">Pick what the player must do and describe the objective.</p>
+      <h1 className="step-title">{t('quest.title')}</h1>
+      <p className="step-sub">{t('quest.subtitle')}</p>
 
       <div className="card">
-        <h3>Type</h3>
-        <Field label="Quest type" hint="This decides how progress is tracked in-game.">
-          <PillSelect value={quest.type} options={TYPE_OPTIONS} onChange={changeType} />
+        <h3>{t('quest.type')}</h3>
+        <Field label={t('quest.questType')} hint={t('quest.questTypeHint')}>
+          <PillSelect value={quest.type} options={typeOptions} onChange={changeType} />
         </Field>
         <div className="grid-2">
           <TextInput
-            label="Quest name"
-            hint="Must be unique within the project."
+            label={t('quest.questName')}
+            hint={t('quest.questNameHint')}
             value={quest.name}
             onChange={(name) => onChange({ ...quest, name })}
           />
           <TextInput
-            label="Category"
-            hint="A label for organizing quests (e.g. Main, Side, Daily)."
+            label={t('quest.category')}
+            hint={t('quest.categoryHint')}
             value={quest.category}
             onChange={(category) => onChange({ ...quest, category })}
           />
         </div>
         <TextArea
-          label="Description"
-          hint="A short summary of the quest's story or purpose."
+          label={t('quest.description')}
+          hint={t('quest.descriptionHint')}
           value={quest.description}
           onChange={(description) => onChange({ ...quest, description })}
         />
@@ -121,25 +134,23 @@ export function StepQuest({ quest, customItems, onChange }: Props) {
 
       <div className="card">
         <div className="row-between" style={{ marginBottom: 14 }}>
-          <h3 style={{ margin: 0 }}>{isMultiType ? 'Objectives' : 'Objective'}</h3>
+          <h3 style={{ margin: 0 }}>{isMultiType ? t('quest.objectives') : t('quest.objective')}</h3>
           {isMultiType && (
             <button className="btn small" onClick={addObjective}>
-              + Add objective
+              {t('quest.addObjective')}
             </button>
           )}
         </div>
 
         {isMultiType && objectives.length > 1 && (
           <p className="muted" style={{ marginTop: -6, marginBottom: 14, fontSize: 13 }}>
-            The player must complete every objective below before turning the quest in.
+            {t('quest.multiObjectiveHint')}
           </p>
         )}
 
         {usesItemTarget(quest.type) && (
           <p className="muted" style={{ marginTop: -6, marginBottom: 14, fontSize: 13 }}>
-            Each item objective has an <strong>On turn-in</strong> option below — choose whether
-            required items are removed from the player&apos;s inventory when they claim the reward.
-            Delivery quests always remove items.
+            {t('quest.turnInHint')}
           </p>
         )}
 
@@ -148,8 +159,8 @@ export function StepQuest({ quest, customItems, onChange }: Props) {
           const fields = (
             <>
               <TextInput
-                label="Objective text"
-                hint="Shown to the player on the action bar and in chat."
+                label={t('quest.objectiveText')}
+                hint={t('quest.objectiveTextHint')}
                 value={obj.description ?? ''}
                 onChange={(description) => setObjectiveAt(i, { description })}
               />
@@ -158,16 +169,16 @@ export function StepQuest({ quest, customItems, onChange }: Props) {
                 <>
                   <div className="grid-2">
                     <DataListInput
-                      label="Mob / creature"
-                      hint="Pick any Minecraft mob, or type a custom/modded entity id."
+                      label={t('quest.mobCreature')}
+                      hint={t('quest.mobCreatureHint')}
                       value={obj.target ?? ''}
                       onChange={(target) => setObjectiveAt(i, { target })}
-                      options={MOB_OPTIONS}
+                      options={mobOptions}
                       listId="mc-mob-list"
-                      placeholder="minecraft:zombie"
+                      placeholder={t('quest.mobPlaceholder')}
                     />
                     <NumberInput
-                      label="Amount to kill"
+                      label={t('quest.amountToKill')}
                       min={1}
                       value={obj.amount ?? 1}
                       onChange={(amount) => setObjectiveAt(i, { amount })}
@@ -184,15 +195,12 @@ export function StepQuest({ quest, customItems, onChange }: Props) {
 
               {usesItemTarget(quest.type) && (
                 <>
-                  <Field
-                    label="Item source"
-                    hint="Custom items are matched by their internal tag, not display name."
-                  >
+                  <Field label={tc('itemSource.label')} hint={tc('itemSource.vanillaHint')}>
                     <PillSelect
                       value={objectiveItemSource(obj)}
                       options={[
-                        { value: 'vanilla', label: 'Vanilla item' },
-                        { value: 'custom', label: 'Custom item' },
+                        { value: 'vanilla', label: tc('itemSource.vanilla') },
+                        { value: 'custom', label: tc('itemSource.custom') },
                       ]}
                       onChange={(source) => {
                         if (source === 'custom') {
@@ -213,20 +221,18 @@ export function StepQuest({ quest, customItems, onChange }: Props) {
                   <div className="grid-2">
                     {objectiveItemSource(obj) === 'vanilla' ? (
                       <TextInput
-                        label="Item id"
-                        hint="e.g. minecraft:wheat, minecraft:diamond"
+                        label={t('quest.itemId')}
+                        hint={t('quest.itemIdHint')}
                         value={obj.target ?? ''}
                         onChange={(target) => setObjectiveAt(i, { target })}
                       />
                     ) : customItems.length === 0 ? (
                       <div className="field">
-                        <label>Custom item</label>
-                        <div className="hint">
-                          No custom items yet. Open the Custom Items tab to create one.
-                        </div>
+                        <label>{tc('itemSource.custom')}</label>
+                        <div className="hint">{tc('itemSource.noCustomItems')}</div>
                       </div>
                     ) : (
-                      <Field label="Custom item">
+                      <Field label={tc('itemSource.custom')}>
                         <select
                           value={obj.customItemId ?? ''}
                           onChange={(e) =>
@@ -236,7 +242,7 @@ export function StepQuest({ quest, customItems, onChange }: Props) {
                             })
                           }
                         >
-                          {!obj.customItemId && <option value="">Select an item…</option>}
+                          {!obj.customItemId && <option value="">{tc('actions.selectItem')}</option>}
                           {customItems.map((item) => (
                             <option key={item.id} value={item.id}>
                               {item.name} ({item.displayName})
@@ -246,18 +252,18 @@ export function StepQuest({ quest, customItems, onChange }: Props) {
                       </Field>
                     )}
                     <NumberInput
-                      label="Amount required"
+                      label={t('quest.amountRequired')}
                       min={1}
                       value={obj.amount ?? 1}
                       onChange={(amount) => setObjectiveAt(i, { amount })}
                     />
                   </div>
                   <Field
-                    label="On turn-in"
+                    label={t('quest.onTurnIn')}
                     hint={
                       quest.type === 'delivery'
-                        ? 'Delivery quests always remove the required items when the player turns in.'
-                        : 'Remove required items from inventory when the player claims the reward (stops item overflow).'
+                        ? t('quest.onTurnInDeliveryHint')
+                        : t('quest.onTurnInGatherHint')
                     }
                   >
                     {quest.type === 'delivery' ? (
@@ -265,14 +271,14 @@ export function StepQuest({ quest, customItems, onChange }: Props) {
                         className="pill active"
                         style={{ cursor: 'default', display: 'inline-block' }}
                       >
-                        Remove items (always)
+                        {t('quest.removeItemsAlways')}
                       </div>
                     ) : (
                       <PillSelect
                         value={obj.consumeOnTurnIn ? 'remove' : 'keep'}
                         options={[
-                          { value: 'keep', label: 'Keep items' },
-                          { value: 'remove', label: 'Remove items' },
+                          { value: 'keep', label: tc('actions.keep') },
+                          { value: 'remove', label: tc('actions.remove') },
                         ]}
                         onChange={(v) =>
                           setObjectiveAt(i, { consumeOnTurnIn: v === 'remove' })
@@ -298,8 +304,8 @@ export function StepQuest({ quest, customItems, onChange }: Props) {
                     onChange={(location) => setObjectiveAt(i, { location })}
                   />
                   <NumberInput
-                    label="Discovery radius (blocks)"
-                    hint="How close the player must get to the location."
+                    label={t('quest.discoveryRadius')}
+                    hint={t('quest.discoveryRadiusHint')}
                     min={1}
                     value={obj.radius ?? 5}
                     onChange={(radius) => setObjectiveAt(i, { radius })}
@@ -313,9 +319,9 @@ export function StepQuest({ quest, customItems, onChange }: Props) {
           return (
             <div key={i} className="card" style={{ background: 'var(--bg)', marginBottom: 12 }}>
               <div className="row-between" style={{ marginBottom: 12 }}>
-                <strong>Objective {i + 1}</strong>
+                <strong>{t('quest.objectiveN', { n: i + 1 })}</strong>
                 <button className="btn small danger" onClick={() => removeObjective(i)}>
-                  Remove
+                  {tc('actions.remove')}
                 </button>
               </div>
               {fields}
@@ -325,15 +331,14 @@ export function StepQuest({ quest, customItems, onChange }: Props) {
 
         {quest.type === 'talk' && (
           <p className="muted" style={{ fontSize: 13 }}>
-            Talk quests complete by speaking to an NPC. Add a separate target NPC below if the
-            player must visit someone other than the quest giver.
+            {t('quest.talkHint')}
           </p>
         )}
 
         {quest.type === 'daily' && (
           <NumberInput
-            label="Cooldown (seconds)"
-            hint="Time before the quest can be taken again. 86400 = 24 hours."
+            label={t('quest.cooldown')}
+            hint={t('quest.cooldownHint')}
             min={1}
             value={quest.cooldownSeconds}
             onChange={(cooldownSeconds) => onChange({ ...quest, cooldownSeconds })}
@@ -349,16 +354,13 @@ export function StepQuest({ quest, customItems, onChange }: Props) {
 
       {quest.type === 'talk' && (
         <div className="card">
-          <h3>Target NPC (optional)</h3>
-          <Field
-            label="Require visiting a separate NPC?"
-            hint="When enabled, the player must reach this NPC, then return to the giver."
-          >
+          <h3>{t('quest.targetNpcTitle')}</h3>
+          <Field label={t('quest.requireTargetNpc')} hint={t('quest.requireTargetNpcHint')}>
             <PillSelect
               value={quest.targetNpc ? 'yes' : 'no'}
               options={[
-                { value: 'no', label: 'No - talk to the giver' },
-                { value: 'yes', label: 'Yes - visit a target NPC' },
+                { value: 'no', label: t('quest.talkToGiver') },
+                { value: 'yes', label: t('quest.visitTarget') },
               ]}
               onChange={(v) =>
                 v === 'yes'
@@ -372,26 +374,26 @@ export function StepQuest({ quest, customItems, onChange }: Props) {
             <>
               <div className="grid-2">
                 <TextInput
-                  label="Target name"
+                  label={t('quest.targetName')}
                   value={quest.targetNpc.name}
                   onChange={(name) =>
                     setTarget({ name, tag: toIdentifier(name, quest.targetNpc!.tag) })
                   }
                 />
                 <TextInput
-                  label="Target tag"
+                  label={t('quest.targetTag')}
                   value={quest.targetNpc.tag}
                   onChange={(tag) => setTarget({ tag: toIdentifier(tag) })}
                 />
               </div>
               <DataListInput
-                label="Target entity type"
-                hint="Any Minecraft mob, or a custom/modded entity id."
+                label={t('quest.targetEntityType')}
+                hint={t('quest.targetEntityHint')}
                 value={quest.targetNpc.entityType ?? 'minecraft:villager'}
                 onChange={(entityType) => setTarget({ entityType })}
-                options={MOB_OPTIONS}
+                options={mobOptions}
                 listId="mc-mob-list"
-                placeholder="minecraft:villager"
+                placeholder={t('quest.villagerPlaceholder')}
               />
               {isVillager(quest.targetNpc.entityType) ? (
                 <BabySelect
@@ -406,15 +408,15 @@ export function StepQuest({ quest, customItems, onChange }: Props) {
                 />
               )}
               <TextArea
-                label="Target dialogue"
-                hint="Shown when the player reaches this NPC."
+                label={t('quest.targetDialogue')}
+                hint={t('quest.targetDialogueHint')}
                 value={quest.targetNpc.dialogue}
                 onChange={(dialogue) => setTarget({ dialogue })}
               />
               <Select
-                label="Target spawn location"
+                label={tc('spawnMode.targetSpawn')}
                 value={quest.targetNpc.spawnMode}
-                options={SPAWN_MODES}
+                options={spawnModes}
                 onChange={(spawnMode) =>
                   setTarget({
                     spawnMode,

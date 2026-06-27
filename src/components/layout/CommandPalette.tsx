@@ -1,18 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { type ActiveView, useUIStore } from '../../store/uiStore';
 import { useProjectStore } from '../../store/useProjectStore';
 
-const VIEW_LABELS: Record<ActiveView, string> = {
-  editor: 'Open Editor',
-  flow: 'Open Story Flow',
-  items: 'Open Custom Items',
-  jobs: 'Open Jobs',
-  advancements: 'Open Advancements',
-  commands: 'Open Commands',
-  export: 'Open Export',
-};
+const VIEW_IDS: ActiveView[] = [
+  'editor',
+  'flow',
+  'items',
+  'jobs',
+  'advancements',
+  'commands',
+  'export',
+];
 
 export function CommandPalette() {
+  const { t } = useTranslation('common');
   const open = useUIStore((s) => s.commandPaletteOpen);
   const setOpen = useUIStore((s) => s.setCommandPaletteOpen);
   const setActiveView = useUIStore((s) => s.setActiveView);
@@ -21,6 +23,11 @@ export function CommandPalette() {
   const project = useProjectStore((s) => s.project);
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const modKey =
+    typeof navigator !== 'undefined' && /Mac|iPhone|iPod|iPad/.test(navigator.platform)
+      ? 'Cmd'
+      : 'Ctrl';
 
   useEffect(() => {
     if (open) {
@@ -33,12 +40,13 @@ export function CommandPalette() {
     const q = query.trim().toLowerCase();
     const items: { id: string; label: string; group: string; run: () => void }[] = [];
 
-    for (const [view, label] of Object.entries(VIEW_LABELS) as [ActiveView, string][]) {
+    for (const view of VIEW_IDS) {
+      const label = t(`commandPalette.views.${view}`);
       if (!q || label.toLowerCase().includes(q) || view.includes(q)) {
         items.push({
           id: `view-${view}`,
           label,
-          group: 'Views',
+          group: t('commandPalette.groups.views'),
           run: () => {
             setActiveView(view);
             setOpen(false);
@@ -48,15 +56,15 @@ export function CommandPalette() {
     }
 
     for (const quest of project.quests) {
-      const name = quest.name || 'Untitled quest';
+      const name = quest.name || t('sidebar.untitledQuest');
       if (!q || name.toLowerCase().includes(q)) {
         items.push({
           id: `quest-${quest.id}`,
-          label: `Edit quest: ${name}`,
-          group: 'Quests',
+          label: t('commandPalette.editInFlow', { name }),
+          group: t('commandPalette.groups.quests'),
           run: () => {
             setSelectedQuestId(quest.id);
-            setActiveView('editor');
+            setActiveView('flow');
             setOpen(false);
           },
         });
@@ -64,12 +72,12 @@ export function CommandPalette() {
     }
 
     for (const job of project.jobs ?? []) {
-      const name = job.name || 'Untitled job';
+      const name = job.name || t('commandPalette.untitledJob');
       if (!q || name.toLowerCase().includes(q) || 'job'.includes(q)) {
         items.push({
           id: `job-${job.id}`,
-          label: `Edit job: ${name}`,
-          group: 'Jobs',
+          label: t('commandPalette.editJob', { name }),
+          group: t('commandPalette.groups.jobs'),
           run: () => {
             setActiveView('jobs');
             setOpen(false);
@@ -81,8 +89,8 @@ export function CommandPalette() {
     if (!q || 'settings'.includes(q) || 'import'.includes(q)) {
       items.push({
         id: 'settings',
-        label: 'Open project settings',
-        group: 'Actions',
+        label: t('commandPalette.openSettings'),
+        group: t('commandPalette.groups.actions'),
         run: () => {
           setSettingsOpen(true);
           setOpen(false);
@@ -93,8 +101,8 @@ export function CommandPalette() {
     if (!q || 'export'.includes(q) || 'download'.includes(q)) {
       items.push({
         id: 'export',
-        label: 'Go to Export',
-        group: 'Actions',
+        label: t('commandPalette.goToExport'),
+        group: t('commandPalette.groups.actions'),
         run: () => {
           setActiveView('export');
           setOpen(false);
@@ -103,7 +111,7 @@ export function CommandPalette() {
     }
 
     return items;
-  }, [query, project.quests, project.jobs, setActiveView, setOpen, setSelectedQuestId, setSettingsOpen]);
+  }, [query, project.quests, project.jobs, setActiveView, setOpen, setSelectedQuestId, setSettingsOpen, t]);
 
   if (!open) return null;
 
@@ -112,25 +120,25 @@ export function CommandPalette() {
       className="dialog-overlay command-palette-overlay"
       role="dialog"
       aria-modal="true"
-      aria-label="Command palette"
+      aria-label={t('commandPalette.ariaLabel')}
       onClick={() => setOpen(false)}
     >
       <div className="command-palette" onClick={(e) => e.stopPropagation()}>
         <input
           ref={inputRef}
           className="command-palette-input"
-          placeholder="Search quests, views, actions…"
+          placeholder={t('commandPalette.searchPlaceholder')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Escape') setOpen(false);
             if (e.key === 'Enter' && actions[0]) actions[0].run();
           }}
-          aria-label="Command search"
+          aria-label={t('commandPalette.searchAria')}
         />
         <div className="command-palette-list" role="listbox">
           {actions.length === 0 && (
-            <div className="command-palette-empty muted">No matching commands</div>
+            <div className="command-palette-empty muted">{t('commandPalette.empty')}</div>
           )}
           {actions.map((action) => (
             <button
@@ -145,7 +153,7 @@ export function CommandPalette() {
           ))}
         </div>
         <div className="command-palette-hint muted">
-          <kbd>Ctrl</kbd>+<kbd>K</kbd> to open · <kbd>Esc</kbd> to close
+          {t('commandPalette.hint', { modKey, kKey: 'K' })}
         </div>
       </div>
     </div>

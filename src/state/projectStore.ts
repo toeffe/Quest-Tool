@@ -69,7 +69,10 @@ function migrate(project: Project): Project {
     ) {
       jobs[0] = { ...jobs[0], starterKey: 'starter_fishing' };
     }
-    next.jobs = mergeStarterJobs(jobs);
+    next.jobs = mergeStarterJobs(jobs, next.locale ?? 'da');
+  }
+  if (!next.locale) {
+    next.locale = 'da';
   }
   return next;
 }

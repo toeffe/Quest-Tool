@@ -16,7 +16,7 @@ interface UIStore {
 }
 
 export const useUIStore = create<UIStore>((set) => ({
-  activeView: 'editor',
+  activeView: 'flow',
   selectedQuestId: null,
   commandPaletteOpen: false,
   settingsOpen: false,

@@ -1,11 +1,12 @@
+import { useTranslation } from 'react-i18next';
 import {
   type Job,
   type JobMilestone,
   type JobMilestoneReward,
   type JobMilestoneRewardType,
-  JOB_MILESTONE_REWARD_LABELS,
 } from '../types/job';
 import { type CustomItem } from '../types/item';
+import { useJobMilestoneRewardLabels } from '../i18n/useLabels';
 import { NumberInput } from './ui/Field';
 
 interface Props {
@@ -13,8 +14,6 @@ interface Props {
   customItems: CustomItem[];
   onChange: (milestones: JobMilestone[]) => void;
 }
-
-const REWARD_TYPES = Object.keys(JOB_MILESTONE_REWARD_LABELS) as JobMilestoneRewardType[];
 
 function defaultMilestoneReward(type: JobMilestoneRewardType): JobMilestoneReward {
   switch (type) {
@@ -30,6 +29,10 @@ function defaultMilestoneReward(type: JobMilestoneRewardType): JobMilestoneRewar
 }
 
 export function JobMilestonesEditor({ job, customItems, onChange }: Props) {
+  const { t } = useTranslation('jobs');
+  const { t: tc } = useTranslation('common');
+  const milestoneRewardLabels = useJobMilestoneRewardLabels();
+  const REWARD_TYPES = Object.keys(milestoneRewardLabels) as JobMilestoneRewardType[];
   const milestones = job.milestones ?? [];
 
   const setMilestones = (next: JobMilestone[]) => onChange(next);
@@ -63,44 +66,43 @@ export function JobMilestonesEditor({ job, customItems, onChange }: Props) {
   return (
     <div className="card">
       <div className="row-between" style={{ marginBottom: 12 }}>
-        <h3 style={{ margin: 0 }}>Milestone rewards</h3>
+        <h3 style={{ margin: 0 }}>{t('milestones.title')}</h3>
         <button type="button" className="btn small" onClick={addMilestone}>
-          + Add milestone
+          {t('milestones.add')}
         </button>
       </div>
       <p className="hint" style={{ marginTop: 0 }}>
-        Granted automatically when a player reaches the level in-game. Link custom items from the
-        Custom Items tab.
+        {t('milestones.hint')}
       </p>
 
       {milestones.length === 0 && (
-        <p className="muted">No milestones yet. Add levels 5, 10, 25, 50 to reward loyal players.</p>
+        <p className="muted">{t('milestones.empty')}</p>
       )}
 
       {milestones.map((milestone, mi) => (
         <div key={`${milestone.level}-${mi}`} className="card" style={{ background: 'var(--bg)', marginBottom: 12 }}>
           <div className="row-between" style={{ marginBottom: 10 }}>
             <NumberInput
-              label="At level"
+              label={t('milestones.atLevel')}
               value={milestone.level}
               min={1}
               onChange={(level) => updateMilestone(mi, { level: Math.min(job.maxLevel, level) })}
             />
             <button type="button" className="btn small danger" onClick={() => removeMilestone(mi)}>
-              Remove
+              {tc('actions.remove')}
             </button>
           </div>
 
           {milestone.rewards.length === 0 && (
             <p className="muted" style={{ marginTop: 0 }}>
-              No rewards configured — this milestone will be skipped in the datapack.
+              {t('milestones.noRewards')}
             </p>
           )}
 
           {milestone.rewards.map((reward, ri) => (
             <div key={ri} className="list-row" style={{ marginBottom: 8, alignItems: 'flex-end' }}>
               <div className="field">
-                <label>Type</label>
+                <label>{t('milestones.type')}</label>
                 <select
                   value={reward.type}
                   onChange={(e) => {
@@ -113,9 +115,9 @@ export function JobMilestonesEditor({ job, customItems, onChange }: Props) {
                     updateReward(mi, ri, next);
                   }}
                 >
-                  {REWARD_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {JOB_MILESTONE_REWARD_LABELS[t]}
+                  {REWARD_TYPES.map((rt) => (
+                    <option key={rt} value={rt}>
+                      {milestoneRewardLabels[rt]}
                     </option>
                   ))}
                 </select>
@@ -123,7 +125,7 @@ export function JobMilestonesEditor({ job, customItems, onChange }: Props) {
 
               {reward.type === 'item' && (
                 <div className="field" style={{ flex: 2 }}>
-                  <label>Item</label>
+                  <label>{t('milestones.item')}</label>
                   {customItems.length > 0 ? (
                     <select
                       value={reward.customItemId ?? ''}
@@ -139,7 +141,9 @@ export function JobMilestonesEditor({ job, customItems, onChange }: Props) {
                         }
                       }}
                     >
-                      <option value="">Vanilla: {reward.value ?? 'minecraft:diamond'}</option>
+                      <option value="">
+                        {t('milestones.vanillaOption', { item: reward.value ?? 'minecraft:diamond' })}
+                      </option>
                       {customItems.map((item) => (
                         <option key={item.id} value={item.id}>
                           {item.name}
@@ -161,7 +165,7 @@ export function JobMilestonesEditor({ job, customItems, onChange }: Props) {
                 reward.type === 'xp' ||
                 reward.type === 'money') && (
                 <div className="field">
-                  <label>Amount</label>
+                  <label>{t('milestones.amount')}</label>
                   <input
                     type="number"
                     min={1}
@@ -173,11 +177,11 @@ export function JobMilestonesEditor({ job, customItems, onChange }: Props) {
 
               {reward.type === 'command' && (
                 <div className="field" style={{ flex: 2 }}>
-                  <label>Command</label>
+                  <label>{t('milestones.command')}</label>
                   <input
                     value={reward.value ?? ''}
                     onChange={(e) => updateReward(mi, ri, { value: e.target.value })}
-                    placeholder="effect give {player} minecraft:speed 60 1"
+                    placeholder={t('milestones.commandPlaceholder')}
                   />
                 </div>
               )}
@@ -205,7 +209,7 @@ export function JobMilestonesEditor({ job, customItems, onChange }: Props) {
               })
             }
           >
-            + Add reward
+            {t('milestones.addReward')}
           </button>
         </div>
       ))}

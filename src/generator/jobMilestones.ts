@@ -3,13 +3,14 @@ import { type CompileContext } from './context';
 import { buildGiveCommand } from './items';
 import { namespaced } from './context';
 import { tellraw, escapeSnbtString } from './text';
-import { STR } from './strings';
+import { type DatapackStrings } from './strings';
 
 /** mcfunction command lines for one milestone reward list. */
 export function jobMilestoneRewardCommands(
   ctx: CompileContext,
   rewards: JobMilestoneReward[],
 ): string[] {
+  const STR = ctx.str;
   const lines: string[] = [];
   for (const reward of rewards) {
     switch (reward.type) {
@@ -31,9 +32,6 @@ export function jobMilestoneRewardCommands(
       case 'money': {
         const amount = reward.amount ?? 0;
         lines.push(`scoreboard players add @s money ${amount}`);
-        if (ctx.project.platform === 'paper') {
-          lines.push(`execute as @s run eco give @s ${amount}`);
-        }
         lines.push(tellraw('@s', [{ text: STR.coinsEarned(amount), color: 'gold' }]));
         break;
       }
@@ -47,11 +45,11 @@ export function jobMilestoneRewardCommands(
   return lines;
 }
 
-export function milestoneAnnouncement(jobName: string, level: number): string {
+export function milestoneAnnouncement(str: DatapackStrings, jobName: string, level: number): string {
   return (
     `tellraw @s ["",` +
-    `{"text":"${escapeSnbtString(STR.jobMilestonePrefix)}","color":"gold"},` +
+    `{"text":"${escapeSnbtString(str.jobMilestonePrefix)}","color":"gold"},` +
     `{"text":"${escapeSnbtString(jobName)}","color":"aqua","bold":true},` +
-    `{"text":"${escapeSnbtString(STR.jobMilestoneSuffix(level))}","color":"gold"}]`
+    `{"text":"${escapeSnbtString(str.jobMilestoneSuffix(level))}","color":"gold"}]`
   );
 }

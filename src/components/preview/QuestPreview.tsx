@@ -1,5 +1,7 @@
+import { useTranslation } from 'react-i18next';
 import { type Quest } from '../../types/quest';
-import { STR } from '../../generator/strings';
+import { getDatapackStrings } from '../../generator/strings';
+import { useProjectStore } from '../../store/useProjectStore';
 
 interface Props {
   quest: Quest;
@@ -34,11 +36,15 @@ function objectiveLine(quest: Quest, o: Quest['objectives'][number]): string {
  * a dark "in-game" look in both app themes.
  */
 export function QuestPreview({ quest, variant = 'dialogue' }: Props) {
+  const { t } = useTranslation('editor');
+  const projectLocale = useProjectStore((s) => s.project.locale ?? 'da');
+  const STR = getDatapackStrings(projectLocale);
+
   if (variant === 'objective') {
     const objectives = quest.objectives.length ? quest.objectives : [{}];
     return (
       <div className="card" style={{ marginBottom: 0 }}>
-        <h3>In-game preview</h3>
+        <h3>{t('preview.title')}</h3>
         <div className="mc-screen">
           {objectives.map((o, i) => (
             <div key={i} className="mc-actionbar">
@@ -47,7 +53,7 @@ export function QuestPreview({ quest, variant = 'dialogue' }: Props) {
           ))}
         </div>
         <div className="hint" style={{ marginTop: 8 }}>
-          The action bar updates live as the player makes progress.
+          {t('preview.actionBarHint')}
         </div>
       </div>
     );
@@ -63,12 +69,12 @@ export function QuestPreview({ quest, variant = 'dialogue' }: Props) {
 
   return (
     <div className="card" style={{ marginBottom: 0 }}>
-      <h3>In-game preview</h3>
+      <h3>{t('preview.title')}</h3>
       <div className="mc-screen">
         {lines.map((line, i) => (
           <div key={i} className="mc-chat-line">
-            <span className="mc-name">&lt;{quest.npc.name || 'NPC'}&gt;</span>{' '}
-            <span className={`mc-text ${line.tone}`}>{line.text || '...'}</span>
+            <span className="mc-name">&lt;{quest.npc.name || t('preview.npcFallback')}&gt;</span>{' '}
+            <span className={`mc-text ${line.tone}`}>{line.text || t('preview.ellipsis')}</span>
           </div>
         ))}
         <div className="mc-chat-line">
@@ -76,8 +82,7 @@ export function QuestPreview({ quest, variant = 'dialogue' }: Props) {
         </div>
       </div>
       <div className="hint" style={{ marginTop: 8 }}>
-        This is roughly how the dialogue appears in chat. The button uses /trigger (no cheats
-        needed).
+        {t('preview.dialogueHint')}
       </div>
     </div>
   );

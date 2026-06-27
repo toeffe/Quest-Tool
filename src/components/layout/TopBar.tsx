@@ -1,17 +1,18 @@
+import { useTranslation } from 'react-i18next';
 import { type ActiveView, useUIStore } from '../../store/uiStore';
 import { useValidation } from '../../hooks/useValidation';
 import { hasBlockingErrors } from '../../generator/validate';
 import { useProject } from '../../store/useProjectStore';
-import { PLATFORM_LABELS } from '../../types/quest';
+import { usePlatformLabels } from '../../i18n/useLabels';
 
-const VIEWS: { id: ActiveView; label: string }[] = [
-  { id: 'editor', label: 'Editor' },
-  { id: 'flow', label: 'Story flow' },
-  { id: 'items', label: 'Custom items' },
-  { id: 'jobs', label: 'Jobs' },
-  { id: 'advancements', label: 'Advancements' },
-  { id: 'commands', label: 'Commands' },
-  { id: 'export', label: 'Export' },
+const VIEW_IDS: ActiveView[] = [
+  'flow',
+  'editor',
+  'items',
+  'jobs',
+  'advancements',
+  'commands',
+  'export',
 ];
 
 interface Props {
@@ -20,6 +21,8 @@ interface Props {
 }
 
 export function TopBar({ theme, onToggleTheme }: Props) {
+  const { t } = useTranslation('common');
+  const platformLabels = usePlatformLabels();
   const project = useProject();
   const activeView = useUIStore((s) => s.activeView);
   const setActiveView = useUIStore((s) => s.setActiveView);
@@ -38,20 +41,20 @@ export function TopBar({ theme, onToggleTheme }: Props) {
         <span className="topbar-project-name" title={project.name}>
           {project.name}
         </span>
-        <span className="badge platform">{PLATFORM_LABELS[project.platform]}</span>
+        <span className="badge platform">{platformLabels[project.platform]}</span>
       </div>
 
-      <nav className="topbar-nav" aria-label="Main views">
-        {VIEWS.map((v) => (
+      <nav className="topbar-nav" aria-label={t('nav.mainViewsAria')}>
+        {VIEW_IDS.map((id) => (
           <button
-            key={v.id}
+            key={id}
             type="button"
-            className={`topbar-tab ${activeView === v.id ? 'active' : ''}`}
-            onClick={() => setActiveView(v.id)}
+            className={`topbar-tab ${activeView === id ? 'active' : ''}`}
+            onClick={() => setActiveView(id)}
           >
-            {v.label}
-            {v.id === 'export' && exportBlocked && (
-              <span className="topbar-tab-dot error" aria-label="Export blocked by errors" />
+            {t(`nav.${id}`)}
+            {id === 'export' && exportBlocked && (
+              <span className="topbar-tab-dot error" aria-label={t('nav.exportBlockedAria')} />
             )}
           </button>
         ))}
@@ -62,25 +65,25 @@ export function TopBar({ theme, onToggleTheme }: Props) {
           type="button"
           className="icon-btn"
           onClick={() => setHelpOpen(!helpOpen)}
-          title="Help"
+          title={helpOpen ? t('actions.closeHelp') : t('actions.help')}
         >
-          {helpOpen ? 'Close help' : '? Help'}
+          {helpOpen ? t('actions.closeHelp') : t('actions.help')}
         </button>
         <button
           type="button"
           className="icon-btn"
           onClick={onToggleTheme}
-          title="Toggle light / dark theme"
+          title={t('theme.toggleTitle')}
         >
-          {theme === 'dark' ? 'Light' : 'Dark'}
+          {theme === 'dark' ? t('actions.lightTheme') : t('actions.darkTheme')}
         </button>
         <button
           type="button"
           className="icon-btn"
           onClick={() => setSettingsOpen(true)}
-          title="Project settings (namespace, platform, import)"
+          title={t('settings.titleButton')}
         >
-          Settings
+          {t('actions.settings')}
         </button>
       </div>
     </header>

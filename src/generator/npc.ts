@@ -1,9 +1,9 @@
 import { type Coordinates, type Npc, type TargetNpc } from '../types/quest';
-import { type QuestContext } from './context';
+import { type QuestContext, questObjectives } from './context';
 import { normalizeEntityId } from '../data/mobs';
 import { buildVariantNbt } from '../data/mobVariants';
 import { escapeSnbtString } from './text';
-import { STR } from './strings';
+import { type DatapackStrings } from './strings';
 
 /** Age value that keeps baby mobs from ever growing up. */
 const PERMANENT_BABY_AGE = -2147483648;
@@ -120,7 +120,7 @@ export function spawnTargetCommand(qc: QuestContext): string[] | null {
 }
 
 /** Lines for the per-quest spawn function (giver + optional target). */
-export function spawnFunctionLines(qc: QuestContext): string[] {
+export function spawnFunctionLines(qc: QuestContext, str: DatapackStrings): string[] {
   const lines = [
     `# Spawn NPC(s) for quest: ${qc.quest.name}`,
     killGiverCommand(qc),
@@ -130,7 +130,15 @@ export function spawnFunctionLines(qc: QuestContext): string[] {
   if (target) {
     lines.push(killTargetCommand(qc), ...target);
   }
-  lines.push(`say ${STR.npcSpawned(qc.quest.name)}`);
+  if (qc.quest.type === 'exploration') {
+    for (const o of questObjectives(qc.quest)) {
+      if (!o.location || !o.markerBlock?.trim()) continue;
+      const block = o.markerBlock.trim();
+      const { x, y, z } = o.location;
+      lines.push(`setblock ${x} ${y} ${z} ${block}`);
+    }
+  }
+  lines.push(`say ${str.npcSpawned(qc.quest.name)}`);
   return lines;
 }
 

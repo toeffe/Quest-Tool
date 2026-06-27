@@ -1,8 +1,45 @@
 import { type Edge } from '@xyflow/react';
 import { type Project, type Quest } from '../../types/quest';
+import i18n, { getAppLocale } from '../../i18n';
+import { type AppLocale } from '../../i18n/types';
 
 /** Id of the synthetic terminal node every leaf quest flows into. */
 export const GENERATE_NODE_ID = '__generate__';
+
+export const BROKEN_UNLOCK_PREFIX = '__broken_unlock__';
+export const BROKEN_REQUIRES_PREFIX = '__broken_requires__';
+
+export type FlowEdgeLabelKey = 'requires' | 'unlocks' | 'autoStarts' | 'missingQuest';
+
+export interface FlowEdgeData {
+  label: FlowEdgeLabelKey;
+  autoStart?: boolean;
+  broken?: boolean;
+  requiresOnly?: boolean;
+}
+
+export interface BrokenStub {
+  id: string;
+  label: string;
+  anchorQuestId: string;
+  kind: 'unlock' | 'requires';
+}
+
+function edgeLabel(key: FlowEdgeLabelKey, locale?: AppLocale): string {
+  return i18n.t(`edges.${key}`, { ns: 'flow', lng: locale ?? getAppLocale() });
+}
+
+export function brokenUnlockId(questId: string): string {
+  return `${BROKEN_UNLOCK_PREFIX}${questId}`;
+}
+
+export function brokenRequiresId(questId: string): string {
+  return `${BROKEN_REQUIRES_PREFIX}${questId}`;
+}
+
+export function isBrokenNodeId(id: string): boolean {
+  return id.startsWith(BROKEN_UNLOCK_PREFIX) || id.startsWith(BROKEN_REQUIRES_PREFIX);
+}
 
 /** Look up a quest by its (possibly stale) name reference. */
 function byName(quests: Quest[], name: string | undefined): Quest | undefined {
@@ -10,52 +47,134 @@ function byName(quests: Quest[], name: string | undefined): Quest | undefined {
   return quests.find((q) => q.name === name);
 }
 
-/**
- * Derive a deduped set of quest-to-quest edges from the chain model.
- * Chain links reference quests by name (the current model), so a source/target
- * pair is keyed by quest id once resolved. Edges point source -> target where
- * the source unlocks / is required-by the target.
- */
-export function questsToEdges(quests: Quest[]): Edge[] {
+interface EdgeMeta {
+  label: FlowEdgeLabelKey;
+  autoStart?: boolean;
+  broken?: boolean;
+  requiresOnly?: boolean;
+}
+
+export function collectBrokenStubs(quests: Quest[]): BrokenStub[] {
+  const stubs: BrokenStub[] = [];
   const seen = new Set<string>();
+
+  for (const quest of quests) {
+    if (quest.chain.unlocks && !byName(quests, quest.chain.unlocks)) {
+      const id = brokenUnlockId(quest.id);
+      if (!seen.has(id)) {
+        seen.add(id);
+        stubs.push({
+          id,
+          label: quest.chain.unlocks,
+          anchorQuestId: quest.id,
+          kind: 'unlock',
+        });
+      }
+    }
+    if (quest.chain.requires && !byName(quests, quest.chain.requires)) {
+      const id = brokenRequiresId(quest.id);
+      if (!seen.has(id)) {
+        seen.add(id);
+        stubs.push({
+          id,
+          label: quest.chain.requires,
+          anchorQuestId: quest.id,
+          kind: 'requires',
+        });
+      }
+    }
+  }
+  return stubs;
+}
+
+/** Count incoming story edges targeting a quest (excludes broken stub sources for entry detection). */
+export function getIncomingEdgeCount(questId: string, edges: Edge[]): number {
+  return edges.filter(
+    (e) => e.target === questId && !isBrokenNodeId(e.source) && e.source !== GENERATE_NODE_ID,
+  ).length;
+}
+
+export function questsToEdges(quests: Quest[]): Edge[] {
+  const seen = new Map<string, EdgeMeta>();
   const edges: Edge[] = [];
 
-  const push = (sourceId: string, targetId: string) => {
+  const push = (sourceId: string, targetId: string, meta: EdgeMeta) => {
     if (sourceId === targetId) return;
     const key = `${sourceId}->${targetId}`;
-    if (seen.has(key)) return;
-    seen.add(key);
-    edges.push({
-      id: key,
-      source: sourceId,
-      target: targetId,
-      type: 'smoothstep',
-      animated: true,
-      className: 'flow-edge',
-    });
+    const existing = seen.get(key);
+    if (existing) {
+      if (meta.autoStart || meta.label === 'unlocks' || meta.broken) {
+        seen.set(key, { ...existing, ...meta });
+      }
+      return;
+    }
+    seen.set(key, meta);
   };
 
   for (const quest of quests) {
-    // quest unlocks X  => edge quest -> X
-    const unlocked = byName(quests, quest.chain.unlocks);
-    if (unlocked) push(quest.id, unlocked.id);
+    if (quest.chain.unlocks) {
+      const unlocked = byName(quests, quest.chain.unlocks);
+      if (unlocked) {
+        push(quest.id, unlocked.id, {
+          label: quest.chain.autoStart ? 'autoStarts' : 'unlocks',
+          autoStart: quest.chain.autoStart,
+        });
+      } else {
+        push(quest.id, brokenUnlockId(quest.id), {
+          label: 'missingQuest',
+          broken: true,
+        });
+      }
+    }
 
-    // quest requires Y => edge Y -> quest
-    const required = byName(quests, quest.chain.requires);
-    if (required) push(required.id, quest.id);
+    if (quest.chain.requires) {
+      const required = byName(quests, quest.chain.requires);
+      if (required) {
+        const reciprocal = required.chain.unlocks === quest.name;
+        push(required.id, quest.id, {
+          label: reciprocal ? (required.chain.autoStart ? 'autoStarts' : 'unlocks') : 'requires',
+          autoStart: reciprocal ? required.chain.autoStart : false,
+          requiresOnly: !reciprocal,
+        });
+      } else {
+        push(brokenRequiresId(quest.id), quest.id, {
+          label: 'missingQuest',
+          broken: true,
+          requiresOnly: true,
+        });
+      }
+    }
+  }
+
+  for (const [key, meta] of seen) {
+    const [source, target] = key.split('->');
+    edges.push({
+      id: key,
+      source,
+      target,
+      type: 'story',
+      animated: !meta.broken && !meta.requiresOnly,
+      className: `flow-edge ${meta.broken ? 'broken' : ''} ${meta.requiresOnly ? 'requires-only' : ''} ${meta.autoStart ? 'auto-start' : ''}`,
+      data: {
+        label: meta.label,
+        autoStart: meta.autoStart,
+        broken: meta.broken,
+        requiresOnly: meta.requiresOnly,
+      } satisfies FlowEdgeData,
+    });
   }
 
   return edges;
 }
 
-/** Quests that nothing else unlocks/requires onward, i.e. storyline leaves. */
 export function leafQuestIds(quests: Quest[]): string[] {
   const edges = questsToEdges(quests);
-  const hasOutgoing = new Set(edges.map((e) => e.source));
+  const hasOutgoing = new Set(
+    edges.filter((e) => !isBrokenNodeId(e.target)).map((e) => e.source),
+  );
   return quests.filter((q) => !hasOutgoing.has(q.id)).map((q) => q.id);
 }
 
-/** Edges connecting every leaf quest into the terminal Generate node. */
 export function generateEdges(quests: Quest[]): Edge[] {
   return leafQuestIds(quests).map((id) => ({
     id: `${id}->${GENERATE_NODE_ID}`,
@@ -66,17 +185,16 @@ export function generateEdges(quests: Quest[]): Edge[] {
   }));
 }
 
-/** Would connecting source -> target introduce a prerequisite cycle? */
 export function wouldCreateCycle(
   quests: Quest[],
   sourceId: string,
   targetId: string,
 ): boolean {
-  if (sourceId === targetId) return true;
-  // A cycle forms if target can already reach source.
+  if (sourceId === targetId || isBrokenNodeId(sourceId) || isBrokenNodeId(targetId)) return true;
   const edges = questsToEdges(quests);
   const adjacency = new Map<string, string[]>();
   for (const e of edges) {
+    if (isBrokenNodeId(e.target)) continue;
     const list = adjacency.get(e.source) ?? [];
     list.push(e.target);
     adjacency.set(e.source, list);
@@ -93,22 +211,38 @@ export function wouldCreateCycle(
   return false;
 }
 
-/**
- * Connect two quests in the chain: the source unlocks the target and the target
- * requires the source. Returns a new project (pure). Rejects self-links and
- * connections that would create a cycle by returning the project unchanged.
- */
+export type ConnectFailureReason = 'self' | 'generate' | 'cycle' | 'missing' | 'broken';
+
+export function getConnectFailureReason(
+  project: Project,
+  sourceId: string,
+  targetId: string,
+): ConnectFailureReason | null {
+  if (sourceId === targetId) return 'self';
+  if (targetId === GENERATE_NODE_ID || isBrokenNodeId(targetId)) return 'generate';
+  if (isBrokenNodeId(sourceId)) return 'broken';
+  const source = project.quests.find((q) => q.id === sourceId);
+  const target = project.quests.find((q) => q.id === targetId);
+  if (!source || !target) return 'missing';
+  if (wouldCreateCycle(project.quests, sourceId, targetId)) return 'cycle';
+  return null;
+}
+
+export function connectFailureMessage(reason: ConnectFailureReason): string {
+  return i18n.t(`connect.${reason}`, { ns: 'flow', lng: getAppLocale() });
+}
+
+export { edgeLabel };
+
 export function connectQuests(
   project: Project,
   sourceId: string,
   targetId: string,
 ): Project {
-  if (sourceId === targetId || targetId === GENERATE_NODE_ID) return project;
-  if (wouldCreateCycle(project.quests, sourceId, targetId)) return project;
+  if (getConnectFailureReason(project, sourceId, targetId)) return project;
 
-  const source = project.quests.find((q) => q.id === sourceId);
-  const target = project.quests.find((q) => q.id === targetId);
-  if (!source || !target) return project;
+  const source = project.quests.find((q) => q.id === sourceId)!;
+  const target = project.quests.find((q) => q.id === targetId)!;
 
   const quests = project.quests.map((q) => {
     if (q.id === sourceId) return { ...q, chain: { ...q.chain, unlocks: target.name } };
@@ -118,7 +252,6 @@ export function connectQuests(
   return { ...project, quests };
 }
 
-/** Remove the chain link between two quests (clears both ends). */
 export function disconnectQuests(
   project: Project,
   sourceId: string,

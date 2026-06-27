@@ -11,7 +11,7 @@ import {
 
 describe('jobAdvancements', () => {
   it('emits root and level chain with impossible criteria', () => {
-    const project = createProject('Adv');
+    const project = createProject('Adv', 'en');
     project.namespace = 'adv';
     project.jobs![0].maxLevel = 3;
     const ctx = buildContext(project);
@@ -32,7 +32,7 @@ describe('jobAdvancements', () => {
   });
 
   it('level_1 parent is root', () => {
-    const project = createProject('Adv');
+    const project = createProject('Adv', 'en');
     project.namespace = 'adv';
     project.jobs![0].maxLevel = 2;
     const ctx = buildContext(project);
@@ -43,7 +43,7 @@ describe('jobAdvancements', () => {
   });
 
   it('sync always grants root and levels up to current score', () => {
-    const project = createProject('Adv');
+    const project = createProject('Adv', 'en');
     project.namespace = 'adv';
     project.jobs![0].maxLevel = 2;
     const ctx = buildContext(project);
@@ -58,7 +58,7 @@ describe('jobAdvancements', () => {
   });
 
   it('revoke uses from root to clear branch', () => {
-    const project = createProject('Adv');
+    const project = createProject('Adv', 'en');
     project.namespace = 'adv';
     const ctx = buildContext(project);
     const jc = ctx.jobs[0];
@@ -73,7 +73,7 @@ describe('jobAdvancements', () => {
   });
 
   it('uses custom advancement background on root', () => {
-    const project = createProject('Adv');
+    const project = createProject('Adv', 'en');
     project.namespace = 'adv';
     project.jobs![0].advancementBackground = 'minecraft:gui/advancements/backgrounds/end';
     const ctx = buildContext(project);
@@ -84,7 +84,7 @@ describe('jobAdvancements', () => {
   });
 
   it('uses custom level title template', () => {
-    const project = createProject('Adv');
+    const project = createProject('Adv', 'en');
     project.namespace = 'adv';
     const job = project.jobs![0];
     job.maxLevel = 1;

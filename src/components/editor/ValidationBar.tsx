@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { type ValidationIssue } from '../../generator/validate';
 
 interface Props {
@@ -70,9 +72,15 @@ export function issueMatchesTab(
 
 export type EditorTab = 'objectives' | 'npc' | 'rewards' | 'chain';
 
-export const EDITOR_TABS: { id: EditorTab; label: string }[] = [
-  { id: 'objectives', label: 'Quest & objectives' },
-  { id: 'npc', label: 'NPC' },
-  { id: 'rewards', label: 'Rewards' },
-  { id: 'chain', label: 'Story chain' },
-];
+export function useEditorTabs(): { id: EditorTab; label: string }[] {
+  const { t } = useTranslation('editor');
+  return useMemo(
+    () => [
+      { id: 'objectives', label: t('tabs.objectives') },
+      { id: 'npc', label: t('tabs.npc') },
+      { id: 'rewards', label: t('tabs.rewards') },
+      { id: 'chain', label: t('tabs.chain') },
+    ],
+    [t],
+  );
+}

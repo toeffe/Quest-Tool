@@ -1,65 +1,105 @@
-/**
- * Danish player-facing strings emitted into generated datapacks.
- * User-authored quest/NPC text in the editor is unchanged.
- */
+import i18n from '../i18n';
+import { type AppLocale, DEFAULT_LOCALE } from '../i18n/types';
 
-export const STR = {
-  packLoaded: (projectName: string) => `[Quest Tool] ${projectName} er indlæst.`,
-  resetSelf: '[Quest Tool] Din quest-fremgang er nulstillet.',
-  resetAll: '[Quest Tool] Al quest-fremgang er nulstillet.',
+export interface DatapackStrings {
+  packLoaded: (projectName: string) => string;
+  resetSelf: string;
+  resetAll: string;
+  acceptQuestButton: string;
+  acceptQuestHover: string;
+  turnInQuestButton: string;
+  turnInQuestHover: string;
+  questAccepted: string;
+  objectiveSingle: (desc: string) => string;
+  objectivesMultiple: (count: number) => string;
+  objectiveComplete: string;
+  returnToNpc: (name: string) => string;
+  readyForReward: string;
+  newQuestStarted: string;
+  newQuestAvailable: string;
+  seeNpc: (name: string) => string;
+  questsAnnouncePrefix: string;
+  questsAnnounceCompleted: string;
+  objectivesProgress: string;
+  deliveryStillNeed: (amount: number, label: string) => string;
+  coinsEarned: (amount: number) => string;
+  permissionGranted: (node: string) => string;
+  permissionUnlocked: (node: string) => string;
+  npcSpawned: (questName: string) => string;
+  setupGuideTitle: string;
+  setupFixedAt: (x: number, y: number, z: number) => string;
+  setupManual: string;
+  setupAtPlayer: string;
+  setupSpawnZone: (index: number) => string;
+  setupTip: (namespace: string) => string;
+  setupTipLabel: string;
+  setupCommandHover: string;
+  debugTitle: string;
+  debugGiverOk: (questName: string) => string;
+  debugGiverMissing: (questName: string) => string;
+  debugYourState: string;
+  debugStateLegend: string;
+  debugJobsTitle: string;
+  jobXpGained: (jobName: string) => string;
+  jobLevelUpPrefix: string;
+  jobLevelUpSuffix: string;
+  jobQuestUnlocked: (questName: string) => string;
+  jobMilestonePrefix: string;
+  jobMilestoneSuffix: (level: number) => string;
+  resetJobsNote: string;
+}
 
-  acceptQuestButton: '[ Acceptér quest ]',
-  acceptQuestHover: 'Klik for at acceptére denne quest',
-  turnInQuestButton: '[ Aflever quest ]',
-  turnInQuestHover: 'Klik for at hente din belønning',
+/** Player-facing strings emitted into generated datapacks. */
+export function getDatapackStrings(locale: AppLocale = DEFAULT_LOCALE): DatapackStrings {
+  const t = i18n.getFixedT(locale, 'datapack');
+  return {
+    packLoaded: (projectName) => t('packLoaded', { projectName }),
+    resetSelf: t('resetSelf'),
+    resetAll: t('resetAll'),
+    acceptQuestButton: t('acceptQuestButton'),
+    acceptQuestHover: t('acceptQuestHover'),
+    turnInQuestButton: t('turnInQuestButton'),
+    turnInQuestHover: t('turnInQuestHover'),
+    questAccepted: t('questAccepted'),
+    objectiveSingle: (desc) => t('objectiveSingle', { desc }),
+    objectivesMultiple: (count) => t('objectivesMultiple', { count }),
+    objectiveComplete: t('objectiveComplete'),
+    returnToNpc: (name) => t('returnToNpc', { name }),
+    readyForReward: t('readyForReward'),
+    newQuestStarted: t('newQuestStarted'),
+    newQuestAvailable: t('newQuestAvailable'),
+    seeNpc: (name) => t('seeNpc', { name }),
+    questsAnnouncePrefix: t('questsAnnouncePrefix'),
+    questsAnnounceCompleted: t('questsAnnounceCompleted'),
+    objectivesProgress: t('objectivesProgress'),
+    deliveryStillNeed: (amount, label) => t('deliveryStillNeed', { amount, label }),
+    coinsEarned: (amount) => t('coinsEarned', { amount }),
+    permissionGranted: (node) => t('permissionGranted', { node }),
+    permissionUnlocked: (node) => t('permissionUnlocked', { node }),
+    npcSpawned: (questName) => t('npcSpawned', { questName }),
+    setupGuideTitle: t('setupGuideTitle'),
+    setupFixedAt: (x, y, z) => t('setupFixedAt', { x, y, z }),
+    setupManual: t('setupManual'),
+    setupAtPlayer: t('setupAtPlayer'),
+    setupSpawnZone: (index) => t('setupSpawnZone', { index: index + 1 }),
+    setupTip: (namespace) => t('setupTip', { namespace }),
+    setupTipLabel: t('setupTipLabel'),
+    setupCommandHover: t('setupCommandHover'),
+    debugTitle: t('debugTitle'),
+    debugGiverOk: (questName) => t('debugGiverOk', { questName }),
+    debugGiverMissing: (questName) => t('debugGiverMissing', { questName }),
+    debugYourState: t('debugYourState'),
+    debugStateLegend: t('debugStateLegend'),
+    debugJobsTitle: t('debugJobsTitle'),
+    jobXpGained: (jobName) => t('jobXpGained', { jobName }),
+    jobLevelUpPrefix: t('jobLevelUpPrefix'),
+    jobLevelUpSuffix: t('jobLevelUpSuffix'),
+    jobQuestUnlocked: (questName) => t('jobQuestUnlocked', { questName }),
+    jobMilestonePrefix: t('jobMilestonePrefix'),
+    jobMilestoneSuffix: (level) => t('jobMilestoneSuffix', { level }),
+    resetJobsNote: t('resetJobsNote'),
+  };
+}
 
-  questAccepted: 'Quest acceptéret: ',
-  objectiveSingle: (desc: string) => `Mål: ${desc}`,
-  objectivesMultiple: (count: number) => `Mål: ${count} at fuldføre`,
-  objectiveComplete: 'Mål fuldført! ',
-  returnToNpc: (name: string) => `Vend tilbage til ${name}.`,
-  readyForReward: 'Du klarede det! Lad mig belønne dig.',
-
-  newQuestStarted: 'Ny quest startet: ',
-  newQuestAvailable: 'Ny quest tilgængelig: ',
-  seeNpc: (name: string) => ` (se ${name})`,
-
-  questsAnnouncePrefix: '[Quests] ',
-  questsAnnounceCompleted: ' fuldførte ',
-
-  objectivesProgress: 'Mål: ',
-  deliveryStillNeed: (amount: number, label: string) => `Du mangler stadig ${amount}x ${label}.`,
-
-  coinsEarned: (amount: number) => `Du tjente ${amount} mønter!`,
-  permissionGranted: (node: string) => `Tilladelse givet: ${node}`,
-  permissionUnlocked: (node: string) =>
-    `Du har låst op for: ${node} (bed personalet om at aktivere det)`,
-
-  npcSpawned: (questName: string) => `[Quest Tool] NPC(er) spawnet for "${questName}".`,
-
-  setupGuideTitle: '=== Quest Tool: NPC-opsætning ===',
-  setupFixedAt: (x: number, y: number, z: number) => `fast position ${x} ${y} ${z}`,
-  setupManual: 'manuel placering (kør kommandoen hvor du vil have den)',
-  setupAtPlayer: 'ved din position (stå hvor du vil have den, og kør)',
-  setupSpawnZone: (index: number) => `  spawn-zone ${index + 1}: `,
-  setupTip: (namespace: string) =>
-    `kør /function ${namespace}:spawn_all for at placere alle NPC'er på én gang.`,
-  setupTipLabel: 'Tip: ',
-  setupCommandHover: 'Klik for at sætte denne kommando i chatten',
-
-  debugTitle: '=== Quest Tool: Debug ===',
-  debugGiverOk: (questName: string) => `${questName} questgiver fundet`,
-  debugGiverMissing: (questName: string) =>
-    `${questName} questgiver MANGLER - kør spawn-funktionen`,
-  debugYourState: '  din status: ',
-  debugStateLegend: ' (0 ledig, 1 aktiv, 2 klar, 3 færdig, 4 cooldown, -1 låst)',
-  debugJobsTitle: '=== Jobs ===',
-
-  jobXpGained: (jobName: string) => `${jobName}`,
-  jobLevelUpPrefix: '[Jobs] ',
-  jobLevelUpSuffix: ' niveau ',
-  jobQuestUnlocked: (questName: string) => `Ny quest låst op: ${questName}`,
-  jobMilestonePrefix: '[Jobs] Milestone: ',
-  jobMilestoneSuffix: (level: number) => ` ${level} — reward granted!`,
-  resetJobsNote: 'Job-fremgang (XP og niveau) nulstilles også.',
-} as const;
+/** @deprecated Use getDatapackStrings(project.locale) via CompileContext.str */
+export const STR = getDatapackStrings('da');

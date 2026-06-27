@@ -1,0 +1,52 @@
+export const commandsEn = {
+  page: {
+    title: 'In-Game Commands',
+    subtitle:
+      'Every command this datapack adds, ready to copy. They use your project\'s namespace, so re-export and reload the pack if you rename it. Players never need these to play quests — they are for setup and administration.',
+  },
+
+  groups: {
+    setup: {
+      title: 'Setup & Spawning',
+      description: 'Run these after installing the datapack and reloading the world.',
+    },
+    progress: {
+      title: 'Progress & Admin',
+      description:
+        'Reset quest progress and job XP/levels. Requires operator/cheats. {{resetJobsNote}}',
+    },
+    diagnostics: {
+      title: 'Diagnostics',
+    },
+    jobs: {
+      title: 'Jobs',
+      description:
+        'Jobs run automatically every tick. Track levels under Esc → Advancements → your pack namespace tab.',
+    },
+  },
+
+  entries: {
+    reload: 'Load the datapack after dropping the ZIP into the datapacks folder.',
+    setupGuide: 'Show clickable spawn commands for every NPC in chat.',
+    spawnAll: 'Spawn every NPC at your current location at once.',
+    spawnQuest:
+      'Spawn NPC(s) for "{{questName}}" ({{where}})',
+    spawnFixed:
+      'spawns at fixed coords {{x}} {{y}} {{z}}',
+    spawnManual: 'spawns where you run it',
+    spawnPlayer: 'spawns at your location',
+    resetSelf:
+      'Reset your own quest progress, job XP, and job levels.',
+    resetPlayer:
+      "Reset a specific player's quest and job progress (replace <player>).",
+    resetAll:
+      'Reset quest and job progress for everyone currently online.',
+    debug:
+      'Verify that NPCs exist, view quest state values, and see your job levels and XP.',
+    syncAll:
+      'Re-grant job advancement nodes for all online players (fixes missing tabs after export).',
+    syncJob: 'Sync "{{jobName}}" advancement tree to current levels.',
+    passiveJob:
+      '{{xpPerAction}} XP per fish caught, max level {{maxLevel}}',
+  },
+} as const;

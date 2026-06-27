@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { type Project } from '../types/quest';
 import { buildCommandReference } from '../generator/commands';
 import { CopyButton } from './ui/CopyButton';
@@ -8,16 +9,13 @@ interface Props {
 }
 
 export function CommandsPage({ project }: Props) {
+  const { t } = useTranslation('commands');
   const groups = useMemo(() => buildCommandReference(project), [project]);
 
   return (
     <div>
-      <h1 className="step-title">In-Game Commands</h1>
-      <p className="step-sub">
-        Every command this datapack adds, ready to copy. They use your project's namespace, so
-        re-export and reload the pack if you rename it. Players never need these to play quests
-        &mdash; they are for setup and administration.
-      </p>
+      <h1 className="step-title">{t('page.title')}</h1>
+      <p className="step-sub">{t('page.subtitle')}</p>
 
       {groups.map((group) => (
         <div className="card" key={group.title}>

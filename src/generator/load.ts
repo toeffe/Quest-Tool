@@ -2,7 +2,6 @@ import { type CompileContext, questObjectives, statId } from './context';
 import { buildJobLoadLines, buildJobResetLines } from './jobFunctions';
 import { buildJobBossBarSetupLines, buildHideJobBossBarLines, jobsUseProgressBar } from './jobBossBar';
 import { NOW_HOLDER, SYS_OBJECTIVE } from './sys';
-import { STR } from './strings';
 import { escapeSnbtString } from './text';
 
 export { NOW_HOLDER, SYS_OBJECTIVE } from './sys';
@@ -12,6 +11,7 @@ export { NOW_HOLDER, SYS_OBJECTIVE } from './sys';
  * prints a confirmation line. Runs on world load and every /reload.
  */
 export function buildLoadFunction(ctx: CompileContext): string {
+  const STR = ctx.str;
   const lines: string[] = [
     `# Quest Tool MC - load`,
     `# Project: ${ctx.project.name} | Minecraft 1.21.11 | Platform: ${ctx.project.platform}`,
@@ -113,6 +113,7 @@ function initialState(ctx: CompileContext, qc: CompileContext['quests'][number])
  * /execute as <player> run function <ns>:reset to reset someone else.
  */
 export function buildResetFunction(ctx: CompileContext): string {
+  const STR = ctx.str;
   const lines: string[] = [`# Reset all quest progress for the executing player (@s)`];
   for (const qc of ctx.quests) {
     const isInstantTalk = qc.quest.type === 'talk' && !qc.quest.targetNpc;
@@ -163,6 +164,7 @@ export function buildResetFunction(ctx: CompileContext): string {
 
 /** Reset quest progress for every online player. */
 export function buildResetAllFunction(ctx: CompileContext): string {
+  const STR = ctx.str;
   return (
     [
       `# Reset quest progress for all online players`,

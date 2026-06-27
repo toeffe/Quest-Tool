@@ -1,0 +1,205 @@
+export const editorDa = {
+  tabs: {
+    objectives: 'Quest & mål',
+    npc: 'NPC',
+    rewards: 'Belønninger',
+    chain: 'Historiekæde',
+  },
+
+  quest: {
+    title: 'Questdefinition',
+    subtitle: 'Vælg hvad spilleren skal gøre, og beskriv målet.',
+    type: 'Type',
+    questType: 'Questtype',
+    questTypeHint: 'Dette afgør hvordan fremgang spores i spillet.',
+    questName: 'Questnavn',
+    questNameHint: 'Skal være unikt inden for projektet.',
+    category: 'Kategori',
+    categoryHint: 'Et label til at organisere quests (f.eks. Hoved, Side, Daglig).',
+    description: 'Beskrivelse',
+    descriptionHint: 'Et kort resumé af questens historie eller formål.',
+    objectives: 'Mål',
+    objective: 'Mål',
+    objectiveN: 'Mål {{n}}',
+    addObjective: '+ Tilføj mål',
+    multiObjectiveHint:
+      'Spilleren skal fuldføre alle mål nedenfor, før questen afleveres.',
+    turnInHint:
+      'Hvert genstandsmål har en Ved aflevering-indstilling nedenfor — vælg om de krævede genstande fjernes fra spillerens inventar, når belønningen hentes. Leveringsquests fjerner altid genstande.',
+    objectiveText: 'Måltekst',
+    objectiveTextHint: 'Vises for spilleren på action bar og i chat.',
+    mobCreature: 'Mob / væsen',
+    mobCreatureHint: 'Vælg en Minecraft-mob, eller skriv et brugerdefineret/moddet entity-id.',
+    mobPlaceholder: 'minecraft:zombie',
+    amountToKill: 'Antal at dræbe',
+    itemId: 'Genstand-id',
+    itemIdHint: 'f.eks. minecraft:wheat, minecraft:diamond',
+    amountRequired: 'Krævet antal',
+    onTurnIn: 'Ved aflevering',
+    onTurnInDeliveryHint:
+      'Leveringsquests fjerner altid de krævede genstande, når spilleren afleverer.',
+    onTurnInGatherHint:
+      'Fjern krævede genstande fra inventaret, når spilleren henter belønningen (undgår genstandsoverløb).',
+    removeItemsAlways: 'Fjern genstande (altid)',
+    discoveryRadius: 'Opdagelsesradius (blokke)',
+    discoveryRadiusHint: 'Hvor tæt spilleren skal komme på placeringen.',
+    talkHint:
+      'Snak-quests fuldføres ved at tale med en NPC. Tilføj en separat mål-NPC nedenfor, hvis spilleren skal besøge en anden end questgiveren.',
+    cooldown: 'Cooldown (sekunder)',
+    cooldownHint: 'Tid før questen kan tages igen. 86400 = 24 timer.',
+    targetNpcTitle: 'Mål-NPC (valgfri)',
+    requireTargetNpc: 'Kræv besøg hos separat NPC?',
+    requireTargetNpcHint:
+      'Når aktiveret, skal spilleren nå denne NPC og derefter vende tilbage til giveren.',
+    talkToGiver: 'Nej — tal med giveren',
+    visitTarget: 'Ja — besøg en mål-NPC',
+    targetName: 'Målnavn',
+    targetTag: 'Mål-tag',
+    targetEntityType: 'Mål-entitytype',
+    targetEntityHint: 'Enhver Minecraft-mob, eller et brugerdefineret/moddet entity-id.',
+    targetDialogue: 'Måldialog',
+    targetDialogueHint: 'Vises når spilleren når denne NPC.',
+    villagerPlaceholder: 'minecraft:villager',
+  },
+
+  npc: {
+    title: 'Questgiver (NPC)',
+    subtitle:
+      'Design landsbyboeren der tilbyder denne quest. De hilser på spillere i nærheden, udleverer questen og modtager afleveringen.',
+    identity: 'Identitet',
+    npcName: 'NPC-navn',
+    npcNameHint: 'Vises svævende over landsbyboeren og i dialog.',
+    uniqueTag: 'Unikt tag',
+    uniqueTagHint: 'Auto-genereret id til at finde denne NPC. Hold det unikt pr. NPC.',
+    entityType: 'Entitytype',
+    entityTypeHint:
+      'Enhver Minecraft-mob kan være questgiver (landsbyboer, piglin, zombie osv.). Du kan også skrive et brugerdefineret/moddet entity-id.',
+    profession: 'Profession (udseende)',
+    biomeVariant: 'Biomvariant (udseende)',
+    dialogue: 'Dialog',
+    greeting: 'Hilsen',
+    greetingHint: 'Første linje vist når en spiller går hen til questen, før den startes.',
+    offer: 'Tilbud',
+    offerHint: 'Teksten lige over den klikbare [Acceptér quest]-knap.',
+    inProgress: 'I gang',
+    inProgressHint: 'Vises når en spiller vender tilbage, mens questen stadig er uafsluttet.',
+    completion: 'Fuldførelse',
+    completionHint: 'Vises når questen afleveres og belønninger gives.',
+    spawnLocation: 'Spawnplacering',
+  },
+
+  rewards: {
+    title: 'Belønninger',
+    subtitle: 'Hvad spilleren modtager ved fuldførelse. Tilføj så mange du vil.',
+    rewardList: 'Belønningsliste',
+    addReward: '+ Tilføj belønning',
+    empty: 'Ingen belønninger endnu. Klik "Tilføj belønning" for at oprette en.',
+    type: 'Type',
+    job: 'Job',
+    noJobs: 'Ingen jobs endnu. Åbn fanen Jobs for at oprette et.',
+    command: 'Kommando',
+    value: 'Værdi',
+    amount: 'Antal',
+    commandPlaceholder: 'Brug {player} som pladsholder for den belønnede spiller.',
+    vanillaItemHint:
+      'Brug et præcist Minecraft-genstand-id (f.eks. minecraft:diamond). En stavefejl betyder at genstanden stille og roligt ikke gives i spillet.',
+    customItemHint:
+      'Giver genstanden med dens brugerdefinerede navn, lore og komponenter fra fanen Genstande.',
+    jobXpHint:
+      'Giver bonus job-XP ved questfuldførelse (ud over passiv XP fra handlinger).',
+    placeholders: {
+      item: 'minecraft:diamond',
+      permission: 'group.vip or some.permission.node',
+      command: 'effect give {player} minecraft:speed 30 1',
+    },
+  },
+
+  chain: {
+    title: 'Questkæde',
+    subtitleCanvas:
+      'Historierækkefølge sættes på canvas. Brug denne fane til job-gates og opfølgningsadfærd.',
+    subtitleEditor:
+      'Link quests til historielinjer. Foretræk træk-og-forbind i Historieflow; brug felterne nedenfor om nødvendigt.',
+    storyOrder: 'Historierækkefølge',
+    topologyHint:
+      'Træk fra højre port på et questkort til en andens venstre port. For at fjerne link: klik på pilen mellem quests, eller brug Fjern link-knapperne nedenfor.',
+    requires: 'Kræver',
+    unlocks: 'Låser op',
+    missingQuest: '(manglende quest)',
+    jobRequirement: 'Jobkrav',
+    requiresJobLevel: 'Kræver jobniveau',
+    requiresJobLevelHint:
+      'Questen forbliver låst, indtil spilleren når det krævede jobniveau.',
+    minimumLevel: 'Minimumsniveau',
+    noJobsHint: 'Tilføj et job på fanen Jobs for at låse quests efter færdighedsniveau.',
+    followUp: 'Opfølgningsadfærd',
+    autoStart: 'Auto-start når låst op',
+    autoStartHint:
+      'Hvis aktiveret, starter den låste quest automatisk, når denne er fuldført (ingen accept fra giveren nødvendig).',
+    autoStartCheckbox: 'Auto-start næste quest',
+    autoStartNoUnlockHint:
+      'Link denne quest til en opfølgning i Historieflow for at bruge auto-start.',
+    announcement: 'Meddelelse',
+    announceCompletion: 'Meddel fuldførelse til alle',
+    announceHint:
+      'Sender en serveromfattende chatbesked, når en spiller fuldfører denne quest.',
+    announceCheckbox: 'Send fuldførelsesmeddelelse',
+    manualEdit: 'Manuelt link (dropdowns)',
+    requiresQuestFirst: 'Kræver denne quest først',
+    requiresQuestFirstHint:
+      'Denne quest forbliver låst, indtil den valgte quest er fuldført.',
+    completingUnlocks: 'Fuldførelse låser op for',
+    completingUnlocksHint:
+      'Når denne quest er færdig, bliver den valgte quest tilgængelig.',
+  },
+
+  spawnZone: {
+    killEnable: 'Spawn mobs i en zone?',
+    killEnableHint:
+      'Når aktiveret, spawner taggede mobs i området nedenfor, og kun disse drab tæller.',
+    gatherEnable: 'Spawn dyr/mobs i en zone?',
+    gatherEnableHint:
+      'Spawn taggede mobs så spillere kan farme drops. Genstandsfremgang bruger stadig inventarantal.',
+    killNo: 'Nej — ethvert drab tæller',
+    gatherNo: 'Nej — spillere finder genstande selv',
+    yes: 'Ja — spawn-zone',
+    mobToSpawn: 'Mob / væsen at spawne',
+    mobToSpawnHint: 'Dyr eller mobs der dropper de genstande spillere skal samle.',
+    zoneCenter: 'Zonecenter',
+    zoneCenterHint: 'Verdenskoordinater for centrum af spawnområdet.',
+    spawnRadius: 'Spawnradius (blokke)',
+    spawnRadiusHint: 'Mobs spawner inden for denne afstand fra zonecentrum.',
+    liveMobCap: 'Levende mob-grænse',
+    liveMobCapKillHint:
+      'Maks. mobs i live i zonen ad gangen. Nye spawner efter drab.',
+    liveMobCapGatherHint:
+      'Maks. mobs i live i zonen ad gangen. Nye spawner når mobs fjernes.',
+    dropBehavior: 'Drop-adfærd',
+    dropBehaviorHint:
+      'Hvilke genstande der droppes, når spillere dræber quest-spawnede mobs i denne zone.',
+    dropNone: 'Ingen drops',
+    dropVanilla: 'Vanilla-drops',
+    dropCustom: 'Brugerdefinerede drops',
+    dropList: 'Dropliste',
+    addDrop: '+ Tilføj drop',
+    addDropEmpty: 'Tilføj mindst ét genstandsdrop.',
+    chancePercent: 'Chance %',
+    cowPlaceholder: 'minecraft:cow',
+    fleshPlaceholder: 'minecraft:rotten_flesh',
+  },
+
+  preview: {
+    title: 'Forhåndsvisning i spillet',
+    actionBarHint: 'Action baren opdateres live, mens spilleren gør fremskridt.',
+    dialogueHint:
+      'Sådan vises dialogen cirka i chat. Knappen bruger /trigger (ingen snydekoder nødvendige).',
+    npcFallback: 'NPC',
+    ellipsis: '...',
+  },
+
+  checklist: {
+    title: 'Denne quest',
+    needsFixes: '{{count}} at rette',
+    noProblems: 'Ingen problemer. Denne quest er klar til generering.',
+  },
+} as const;

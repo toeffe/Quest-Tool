@@ -4,6 +4,8 @@
  * and the generator turns a Project into a Minecraft 1.21.11 datapack.
  */
 
+import { type AppLocale } from '../i18n/types';
+
 export type Platform = 'paper' | 'vanilla' | 'lan';
 
 export const PLATFORM_LABELS: Record<Platform, string> = {
@@ -134,6 +136,8 @@ export interface Objective {
   zoneDropMode?: ZoneDropMode;
   /** Spawn zones: custom drop list when zoneDropMode is 'custom'. */
   zoneDrops?: ZoneDrop[];
+  /** Exploration: place this block at the objective location when NPCs spawn (e.g. minecraft:gold_block). */
+  markerBlock?: string;
 }
 
 export type RewardType =
@@ -209,6 +213,8 @@ export interface Project {
   /** Datapack namespace, derived from the project name. */
   namespace: string;
   platform: Platform;
+  /** Language for generated datapack strings and new-entity defaults. */
+  locale?: AppLocale;
   quests: Quest[];
   /** Passive job / skill definitions (fishing, etc.). */
   jobs?: Job[];

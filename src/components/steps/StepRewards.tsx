@@ -1,13 +1,15 @@
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   type Platform,
   type Quest,
   type Reward,
   type RewardType,
-  REWARD_TYPE_LABELS,
 } from '../../types/quest';
 import { type CustomItem } from '../../types/item';
 import { type Job } from '../../types/job';
 import { isRewardSupported } from '../../generator/platform';
+import { useRewardTypeLabels } from '../../i18n/useLabels';
 import { PillSelect } from '../ui/Field';
 
 interface Props {
@@ -17,8 +19,6 @@ interface Props {
   jobs: Job[];
   onChange: (quest: Quest) => void;
 }
-
-const REWARD_TYPES = Object.keys(REWARD_TYPE_LABELS) as RewardType[];
 
 function defaultReward(type: RewardType): Reward {
   switch (type) {
@@ -37,19 +37,6 @@ function defaultReward(type: RewardType): Reward {
   }
 }
 
-function valuePlaceholder(type: RewardType): string {
-  switch (type) {
-    case 'item':
-      return 'minecraft:diamond';
-    case 'permission':
-      return 'group.vip or some.permission.node';
-    case 'command':
-      return 'effect give {player} minecraft:speed 30 1';
-    default:
-      return '';
-  }
-}
-
 type ItemSource = 'vanilla' | 'custom';
 
 function itemSource(reward: Reward): ItemSource {
@@ -57,8 +44,22 @@ function itemSource(reward: Reward): ItemSource {
 }
 
 export function StepRewards({ quest, platform, customItems, jobs, onChange }: Props) {
+  const { t } = useTranslation('editor');
+  const { t: tc } = useTranslation('common');
+  const rewardTypeLabels = useRewardTypeLabels();
+  const REWARD_TYPES = Object.keys(rewardTypeLabels) as RewardType[];
   const rewards = quest.rewards;
   const setRewards = (next: Reward[]) => onChange({ ...quest, rewards: next });
+
+  const valuePlaceholder = useMemo(
+    () =>
+      ({
+        item: t('rewards.placeholders.item'),
+        permission: t('rewards.placeholders.permission'),
+        command: t('rewards.placeholders.command'),
+      }) as Partial<Record<RewardType, string>>,
+    [t],
+  );
 
   const update = (i: number, patch: Partial<Reward>) =>
     setRewards(rewards.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
@@ -84,21 +85,19 @@ export function StepRewards({ quest, platform, customItems, jobs, onChange }: Pr
 
   return (
     <div>
-      <h1 className="step-title">Rewards</h1>
-      <p className="step-sub">
-        What the player receives on completion. Add as many as you like.
-      </p>
+      <h1 className="step-title">{t('rewards.title')}</h1>
+      <p className="step-sub">{t('rewards.subtitle')}</p>
 
       <div className="card">
         <div className="row-between" style={{ marginBottom: 14 }}>
-          <h3 style={{ margin: 0 }}>Reward list</h3>
+          <h3 style={{ margin: 0 }}>{t('rewards.rewardList')}</h3>
           <button className="btn small" onClick={add}>
-            + Add reward
+            {t('rewards.addReward')}
           </button>
         </div>
 
         {rewards.length === 0 && (
-          <p className="muted">No rewards yet. Click "Add reward" to create one.</p>
+          <p className="muted">{t('rewards.empty')}</p>
         )}
 
         {rewards.map((reward, i) => {
@@ -115,7 +114,7 @@ export function StepRewards({ quest, platform, customItems, jobs, onChange }: Pr
             <div key={i} className="card" style={{ background: 'var(--bg)', marginBottom: 12 }}>
               <div className="list-row">
                 <div className="field">
-                  <label>Type</label>
+                  <label>{t('rewards.type')}</label>
                   <select
                     value={reward.type}
                     onChange={(e) => {
@@ -127,9 +126,9 @@ export function StepRewards({ quest, platform, customItems, jobs, onChange }: Pr
                       setRewards(rewards.map((r, idx) => (idx === i ? next : r)));
                     }}
                   >
-                    {REWARD_TYPES.map((t) => (
-                      <option key={t} value={t}>
-                        {REWARD_TYPE_LABELS[t]}
+                    {REWARD_TYPES.map((rt) => (
+                      <option key={rt} value={rt}>
+                        {rewardTypeLabels[rt]}
                       </option>
                     ))}
                   </select>
@@ -137,12 +136,12 @@ export function StepRewards({ quest, platform, customItems, jobs, onChange }: Pr
 
                 {isItem && (
                   <div className="field" style={{ flex: 2 }}>
-                    <label>Item source</label>
+                    <label>{tc('itemSource.label')}</label>
                     <PillSelect
                       value={source}
                       options={[
-                        { value: 'vanilla', label: 'Vanilla item' },
-                        { value: 'custom', label: 'Custom item' },
+                        { value: 'vanilla', label: tc('itemSource.vanilla') },
+                        { value: 'custom', label: tc('itemSource.custom') },
                       ]}
                       onChange={(v) => setItemSource(i, v)}
                     />
@@ -151,10 +150,10 @@ export function StepRewards({ quest, platform, customItems, jobs, onChange }: Pr
 
                 {isItem && source === 'vanilla' && (
                   <div className="field" style={{ flex: 2 }}>
-                    <label>Item id</label>
+                    <label>{t('quest.itemId')}</label>
                     <input
                       value={reward.value ?? ''}
-                      placeholder={valuePlaceholder('item')}
+                      placeholder={valuePlaceholder.item}
                       onChange={(e) => update(i, { value: e.target.value })}
                     />
                   </div>
@@ -162,10 +161,10 @@ export function StepRewards({ quest, platform, customItems, jobs, onChange }: Pr
 
                 {isItem && source === 'custom' && (
                   <div className="field" style={{ flex: 2 }}>
-                    <label>Custom item</label>
+                    <label>{tc('itemSource.custom')}</label>
                     {customItems.length === 0 ? (
                       <div className="hint" style={{ marginTop: 8 }}>
-                        No custom items yet. Open the Custom Items tab to create one.
+                        {tc('itemSource.noCustomItems')}
                       </div>
                     ) : (
                       <select
@@ -174,7 +173,7 @@ export function StepRewards({ quest, platform, customItems, jobs, onChange }: Pr
                           update(i, { customItemId: e.target.value, value: undefined })
                         }
                       >
-                        {!reward.customItemId && <option value="">Select an item…</option>}
+                        {!reward.customItemId && <option value="">{tc('actions.selectItem')}</option>}
                         {customItems.map((item) => (
                           <option key={item.id} value={item.id}>
                             {item.name} ({item.displayName})
@@ -187,17 +186,17 @@ export function StepRewards({ quest, platform, customItems, jobs, onChange }: Pr
 
                 {isJobXp && (
                   <div className="field" style={{ flex: 2 }}>
-                    <label>Job</label>
+                    <label>{t('rewards.job')}</label>
                     {jobs.length === 0 ? (
                       <div className="hint" style={{ marginTop: 8 }}>
-                        No jobs yet. Open the Jobs tab to create one.
+                        {t('rewards.noJobs')}
                       </div>
                     ) : (
                       <select
                         value={reward.jobId ?? ''}
                         onChange={(e) => update(i, { jobId: e.target.value })}
                       >
-                        {!reward.jobId && <option value="">Select a job…</option>}
+                        {!reward.jobId && <option value="">{tc('actions.selectJob')}</option>}
                         {jobs.map((job) => (
                           <option key={job.id} value={job.id}>
                             {job.name}
@@ -210,10 +209,10 @@ export function StepRewards({ quest, platform, customItems, jobs, onChange }: Pr
 
                 {(reward.type === 'permission' || reward.type === 'command') && (
                   <div className="field" style={{ flex: 2 }}>
-                    <label>{reward.type === 'command' ? 'Command' : 'Value'}</label>
+                    <label>{reward.type === 'command' ? t('rewards.command') : t('rewards.value')}</label>
                     <input
                       value={reward.value ?? ''}
-                      placeholder={valuePlaceholder(reward.type)}
+                      placeholder={valuePlaceholder[reward.type] ?? ''}
                       onChange={(e) => update(i, { value: e.target.value })}
                     />
                   </div>
@@ -221,7 +220,7 @@ export function StepRewards({ quest, platform, customItems, jobs, onChange }: Pr
 
                 {showAmount && (
                   <div className="field" style={{ maxWidth: 120 }}>
-                    <label>Amount</label>
+                    <label>{t('rewards.amount')}</label>
                     <input
                       type="number"
                       min={1}
@@ -232,28 +231,21 @@ export function StepRewards({ quest, platform, customItems, jobs, onChange }: Pr
                 )}
 
                 <button className="btn small danger" onClick={() => remove(i)}>
-                  Remove
+                  {tc('actions.remove')}
                 </button>
               </div>
 
               {reward.type === 'command' && (
-                <div className="hint">Use {'{player}'} as a placeholder for the rewarded player.</div>
+                <div className="hint">{t('rewards.commandPlaceholder')}</div>
               )}
               {isItem && source === 'vanilla' && (
-                <div className="hint">
-                  Use an exact Minecraft item id (e.g. minecraft:diamond). A typo means the item
-                  silently won't be given in-game.
-                </div>
+                <div className="hint">{t('rewards.vanillaItemHint')}</div>
               )}
               {isItem && source === 'custom' && (
-                <div className="hint">
-                  Gives the item with its custom name, lore, and components from the Items tab.
-                </div>
+                <div className="hint">{t('rewards.customItemHint')}</div>
               )}
               {isJobXp && (
-                <div className="hint">
-                  Grants bonus job XP on quest completion (in addition to passive XP from actions).
-                </div>
+                <div className="hint">{t('rewards.jobXpHint')}</div>
               )}
               {support.note && (
                 <div className="hint" style={{ color: 'var(--gold)' }}>

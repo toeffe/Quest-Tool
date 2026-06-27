@@ -17,7 +17,6 @@ import {
 import { type ZoneDropMode } from '../types/quest';
 import { NOW_HOLDER, SYS_OBJECTIVE } from './sys';
 import { escapeSnbtString, tellraw, type TextPart } from './text';
-import { STR } from './strings';
 
 const RANGE_ALL = '-2147483648..2147483647';
 
@@ -281,7 +280,8 @@ function progressActionbar(scoreName: string, info: ObjectiveInfo): string {
 }
 
 /** Action-bar progress across multiple objectives, e.g. "Objectives: 2/3". */
-function doneActionbar(qc: QuestContext, total: number): string {
+function doneActionbar(ctx: CompileContext, qc: QuestContext, total: number): string {
+  const STR = ctx.str;
   return (
     `title @s actionbar ["",` +
     `{"text":"${STR.objectivesProgress}","color":"yellow"},` +
@@ -300,6 +300,7 @@ function questStartsLocked(ctx: CompileContext, quest: Quest): boolean {
 
 /** try_unlock.mcfunction lines: set state 0 when all gates pass. */
 function buildTryUnlockLines(ctx: CompileContext, qc: QuestContext): string[] {
+  const STR = ctx.str;
   const quest = qc.quest;
   const lines: string[] = [
     `# Try unlock "${quest.name}"`,
@@ -343,6 +344,7 @@ function unlockTargets(ctx: CompileContext, qc: QuestContext): QuestContext[] {
 
 /** Reward + completion + chain + done lines, shared by turn-in and instant talk quests. */
 function completionBody(ctx: CompileContext, qc: QuestContext): string[] {
+  const STR = ctx.str;
   const quest = qc.quest;
   const lines: string[] = [];
   const cleanup = cleanupSpawnZoneLines(ctx, qc);
@@ -426,6 +428,7 @@ function completionBody(ctx: CompileContext, qc: QuestContext): string[] {
 
 /** Build all mcfunction files for one quest, keyed by path under the function root. */
 export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<string, string> {
+  const STR = ctx.str;
   const ns = ctx.namespace;
   const quest = qc.quest;
   const infos = objectiveInfos(ctx, qc);
@@ -506,7 +509,7 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
         const live = quest.type === 'kill' ? infos[0].killed : infos[0].progress;
         tick.push(`execute as @a[scores={${qc.state}=1}] run ${progressActionbar(live, infos[0])}`);
       } else {
-        tick.push(`execute as @a[scores={${qc.state}=1}] run ${doneActionbar(qc, objCount)}`);
+        tick.push(`execute as @a[scores={${qc.state}=1}] run ${doneActionbar(ctx, qc, objCount)}`);
       }
 
       tick.push(

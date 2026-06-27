@@ -3,6 +3,10 @@
  * kill-quest target. The scoreboard `killed` criterion works with any entity
  * type id, so users can still type a custom/modded id if it is not listed here.
  */
+import { mobLabelI18n } from '../i18n/useLabels';
+import { useLocaleStore } from '../store/localeStore';
+import { useMemo } from 'react';
+
 export const MOB_IDS: string[] = [
   'minecraft:allay',
   'minecraft:armadillo',
@@ -89,15 +93,20 @@ export const MOB_IDS: string[] = [
   'minecraft:zombified_piglin',
 ];
 
-/** Turn "minecraft:cave_spider" into "Cave Spider" for display. */
-export function mobLabel(id: string): string {
-  return id
-    .replace(/^minecraft:/, '')
-    .split('_')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
+/** Turn "minecraft:cave_spider" into a display label (localized when available). */
+export function mobLabel(id: string, locale?: import('../i18n/types').AppLocale): string {
+  return mobLabelI18n(id, locale);
 }
 
+export function useMobOptions() {
+  const locale = useLocaleStore((s) => s.locale);
+  return useMemo(
+    () => MOB_IDS.map((value) => ({ value, label: mobLabel(value, locale) })),
+    [locale],
+  );
+}
+
+/** @deprecated Use useMobOptions() for localized labels */
 export const MOB_OPTIONS = MOB_IDS.map((value) => ({ value, label: mobLabel(value) }));
 
 /** Ensure an entity id has a namespace, defaulting to villager if blank. */

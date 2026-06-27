@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { type Project } from '../types/quest';
 import { type Job, totalXpForLevel } from '../types/job';
 import {
@@ -10,19 +11,6 @@ import { buildContext } from '../generator/context';
 
 interface Props {
   project: Project;
-}
-
-function levelTitle(job: Job, level: number): string {
-  if (job.levelTitle) {
-    return job.levelTitle.replace(/\{name\}/g, job.name).replace(/\{n\}/g, String(level));
-  }
-  return `${job.name} — Level ${level}`;
-}
-
-function rootDescription(job: Job): string {
-  if (job.advancementDescription?.trim()) return job.advancementDescription.trim();
-  if (job.action === 'fish') return 'Catch fish to earn XP and level up this skill.';
-  return 'Perform actions to earn XP and level up this skill.';
 }
 
 function previewLevels(maxLevel: number): number[] {
@@ -39,6 +27,8 @@ function backgroundPreviewClass(background: string): string {
 }
 
 export function AdvancementsPage({ project }: Props) {
+  const { t } = useTranslation('advancements');
+  const { t: tj } = useTranslation('jobs');
   const jobs = project.jobs ?? [];
   const [selectedId, setSelectedId] = useState(() => jobs[0]?.id ?? '');
   const ctx = useMemo(() => buildContext(project), [project]);
@@ -52,23 +42,34 @@ export function AdvancementsPage({ project }: Props) {
   const background = selected ? jobAdvancementBackground(selected) : '';
   const previewClass = backgroundPreviewClass(background);
 
+  function levelTitle(job: Job, level: number): string {
+    if (job.levelTitle) {
+      return job.levelTitle.replace(/\{name\}/g, job.name).replace(/\{n\}/g, String(level));
+    }
+    return t('levelTitleDefault', { name: job.name, level });
+  }
+
+  function rootDescription(job: Job): string {
+    if (job.advancementDescription?.trim()) return job.advancementDescription.trim();
+    if (job.action === 'fish') return tj('rootDescriptions.fish');
+    return tj('rootDescriptions.default');
+  }
+
   return (
     <div className="items-page">
-      <h1 className="step-title">Advancements</h1>
+      <h1 className="step-title">{t('title')}</h1>
       <p className="step-sub">
-        Preview how job skills appear in Minecraft. In-game, open{' '}
-        <strong>Esc → Advancements → {project.namespace || 'your namespace'}</strong> to track
-        levels. Each job generates a root node and a level chain (Lv.1 → Lv.2 → …).
+        {t('subtitle', { namespace: project.namespace || t('namespaceFallback') })}
       </p>
 
       {jobs.length === 0 ? (
         <div className="card">
-          <p className="muted">No jobs defined. Add a job on the Jobs tab to generate a skill tree.</p>
+          <p className="muted">{t('empty')}</p>
         </div>
       ) : (
         <div className="items-layout">
           <aside className="items-list card">
-            <h3 style={{ margin: '0 0 12px' }}>Job trees ({jobs.length})</h3>
+            <h3 style={{ margin: '0 0 12px' }}>{t('list.title', { count: jobs.length })}</h3>
             {jobs.map((job) => (
               <div
                 key={job.id}
@@ -79,7 +80,7 @@ export function AdvancementsPage({ project }: Props) {
                 onKeyDown={(e) => e.key === 'Enter' && setSelectedId(job.id)}
               >
                 <div className="quest-item-name">{job.name}</div>
-                <div className="quest-item-meta muted">{job.maxLevel} levels</div>
+                <div className="quest-item-meta muted">{t('list.levels', { count: job.maxLevel })}</div>
               </div>
             ))}
           </aside>
@@ -88,12 +89,12 @@ export function AdvancementsPage({ project }: Props) {
             {selected && jc && (
               <>
                 <div className="card adv-tab-preview-wrap">
-                  <h3 style={{ marginTop: 0 }}>In-game preview</h3>
+                  <h3 style={{ marginTop: 0 }}>{t('preview.inGameTitle')}</h3>
                   <div className={`adv-tab-preview ${previewClass}`}>
                     <div className="adv-tab-preview-title">{selected.name}</div>
                     <div className="adv-tab-preview-tree">
                       <div className="adv-tab-preview-node root">
-                        <span className="adv-tab-preview-icon" title="Root">
+                        <span className="adv-tab-preview-icon" title={t('preview.rootIconTitle')}>
                           🎣
                         </span>
                       </div>
@@ -101,30 +102,35 @@ export function AdvancementsPage({ project }: Props) {
                         <div key={level} className="adv-tab-preview-branch">
                           <span className="adv-tab-preview-connector" />
                           <div className="adv-tab-preview-node">
-                            <span className="adv-tab-preview-icon" title={`Level ${level}`}>
+                            <span
+                              className="adv-tab-preview-icon"
+                              title={t('preview.levelIconTitle', { level })}
+                            >
                               🎣
                             </span>
                           </div>
                         </div>
                       ))}
                       {selected.maxLevel > 6 && (
-                        <span className="adv-tab-preview-more muted">+{selected.maxLevel - 6} more</span>
+                        <span className="adv-tab-preview-more muted">
+                          {t('preview.moreLevels', { count: selected.maxLevel - 6 })}
+                        </span>
                       )}
                     </div>
                   </div>
                   <p className="hint" style={{ marginBottom: 0 }}>
-                    Background: <code>{background}</code>
+                    {t('preview.background', { background })}
                   </p>
                 </div>
 
                 <div className="card">
-                  <h3 style={{ marginTop: 0 }}>Root — {selected.name}</h3>
+                  <h3 style={{ marginTop: 0 }}>{t('root.title', { name: selected.name })}</h3>
                   <p className="muted">
-                    <strong>Icon:</strong>{' '}
+                    <strong>{t('root.icon')}</strong>{' '}
                     {selected.advancementIcon ?? defaultJobAdvancementIcon(selected.action)}
                   </p>
                   <p className="muted">
-                    <strong>Description:</strong> {rootDescription(selected)}
+                    <strong>{t('root.description')}</strong> {rootDescription(selected)}
                   </p>
                   <p className="hint">
                     ID: <code>{jobAdvancementId(ctx, jc, 'root')}</code>
@@ -132,29 +138,28 @@ export function AdvancementsPage({ project }: Props) {
                 </div>
 
                 <div className="card">
-                  <h3 style={{ marginTop: 0 }}>Level chain</h3>
+                  <h3 style={{ marginTop: 0 }}>{t('levelChain.title')}</h3>
                   <div className="adv-chain-preview">
                     {previewLevels(selected.maxLevel).map((level, i, arr) => {
                       const hasReward = (selected.milestones ?? []).some(
                         (m) => m.level === level && m.rewards.length > 0,
                       );
                       return (
-                      <span key={level} className="adv-chain-node">
-                        <span className={`adv-chain-pill${hasReward ? ' adv-chain-milestone' : ''}`}>
-                          <strong>Lv.{level}</strong>
-                          <span className="muted">
-                            {levelTitle(selected, level)} · {totalXpForLevel(selected, level)} XP
-                            {hasReward ? ' · reward' : ''}
+                        <span key={level} className="adv-chain-node">
+                          <span className={`adv-chain-pill${hasReward ? ' adv-chain-milestone' : ''}`}>
+                            <strong>{t('levelChain.level', { level })}</strong>
+                            <span className="muted">
+                              {levelTitle(selected, level)} · {totalXpForLevel(selected, level)} XP
+                              {hasReward ? ` · ${t('levelChain.reward')}` : ''}
+                            </span>
                           </span>
+                          {i < arr.length - 1 && <span className="adv-chain-arrow">→</span>}
                         </span>
-                        {i < arr.length - 1 && <span className="adv-chain-arrow">→</span>}
-                      </span>
                       );
                     })}
                     {selected.maxLevel > 10 && (
                       <p className="hint" style={{ marginTop: 12 }}>
-                        Showing milestones; all {selected.maxLevel} levels are generated in the
-                        datapack.
+                        {t('levelChain.showingMilestones', { maxLevel: selected.maxLevel })}
                       </p>
                     )}
                   </div>
@@ -162,9 +167,7 @@ export function AdvancementsPage({ project }: Props) {
 
                 <div className="card">
                   <p className="hint" style={{ margin: 0 }}>
-                    Quest kill-zone advancements are internal counters only and do not appear here.
-                    Edit icons, background, and descriptions on the Jobs tab. After re-export, run{' '}
-                    <code>/function {project.namespace}:jobs/sync_all</code> if tabs look wrong.
+                    {t('footer', { namespace: project.namespace })}
                   </p>
                 </div>
               </>

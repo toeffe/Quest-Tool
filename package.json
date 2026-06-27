@@ -9,13 +9,16 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "ingame:fixture": "node scripts/ingame/run-export.mjs"
   },
   "dependencies": {
     "@xyflow/react": "^12.11.0",
+    "i18next": "^26.3.3",
     "jszip": "^3.10.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-i18next": "^17.0.8",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

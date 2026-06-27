@@ -23,8 +23,6 @@ import {
   emptyLootTablePath,
   needsEmptyLootTable,
 } from './lootTables';
-import { STR } from './strings';
-
 /** A flat map of file paths (inside the ZIP) to their text contents. */
 export type FileMap = Record<string, string>;
 
@@ -37,6 +35,7 @@ function mapJobBossBarFiles(fnRoot: string, relFiles: Record<string, string>): F
 }
 
 function setupGuideFunction(ctx: CompileContext): string {
+  const STR = ctx.str;
   const lines = [
     `# Setup guide - lists how to spawn each NPC`,
     tellraw('@s', [{ text: STR.setupGuideTitle, color: 'gold', bold: true }]),
@@ -100,6 +99,7 @@ function spawnAllFunction(ctx: CompileContext): string {
 }
 
 function debugFunction(ctx: CompileContext): string {
+  const STR = ctx.str;
   const lines = [
     `# Debug - verify NPC tags and quest state`,
     tellraw('@s', [{ text: STR.debugTitle, color: 'gold', bold: true }]),
@@ -118,7 +118,8 @@ function debugFunction(ctx: CompileContext): string {
 }
 
 function readmeText(project: Project, ctx: CompileContext): string {
-  const guide = installGuide(project.platform, ctx.namespace);
+  const STR = ctx.str;
+  const guide = installGuide(project.platform, ctx.namespace, ctx.locale);
   const lines: string[] = [
     `Quest Tool MC - ${project.name}`,
     `Generated for Minecraft Java Edition ${MINECRAFT_VERSION}`,
@@ -228,7 +229,7 @@ export function buildDatapackFiles(project: Project): FileMap {
     for (const [rel, content] of Object.entries(questFiles)) {
       files[`${fnRoot}/${rel}`] = content;
     }
-    files[`${fnRoot}/${qc.spawnFn}.mcfunction`] = spawnFunctionLines(qc).join('\n') + '\n';
+    files[`${fnRoot}/${qc.spawnFn}.mcfunction`] = spawnFunctionLines(qc, ctx.str).join('\n') + '\n';
     Object.assign(files, buildKillZoneAdvancementFiles(ctx, qc));
     Object.assign(files, buildZoneLootTableFiles(ctx, qc));
   }
@@ -279,7 +280,14 @@ export function buildRawCommands(project: Project): string {
 
 /** Build the downloadable datapack ZIP as a Blob. */
 export async function buildDatapackZip(project: Project): Promise<Blob> {
-  const files = buildDatapackFiles(project);
+  return buildDatapackZipFromFiles(project, buildDatapackFiles(project));
+}
+
+/** Build a ZIP from a pre-built file map (used by the test datapack export). */
+export async function buildDatapackZipFromFiles(
+  project: Project,
+  files: FileMap,
+): Promise<Blob> {
   const zip = new JSZip();
   for (const [path, content] of Object.entries(files)) {
     zip.file(path, content);
