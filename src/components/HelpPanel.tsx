@@ -4,22 +4,18 @@ interface Props {
 
 const VIEWS = [
   {
-    title: 'Quest Builder',
+    title: 'Editor',
     body:
-      'Edit one quest at a time through five steps: NPC, Quest, Rewards, Chain, then Generate. ' +
+      'Tabbed quest editor — select a quest in the sidebar, then edit Objectives, NPC, Rewards, and Chain. ' +
       'Kill quests with spawn zones can set drop behavior: no drops, vanilla mob loot, or a custom drop list. ' +
-      'Download the datapack on Generate — the ZIP includes quest-tool-project.json so you can re-import your work from the sidebar.',
+      'A validation bar at the bottom shows issues for the current quest.',
   },
   {
-    title: 'Story Flow',
-    body: 'A visual map of every quest. Drag between quests to link them, and click a card to edit it.',
+    title: 'Story flow',
+    body: 'A visual map of every quest. Drag between quests to link chains, use auto-layout, and click a node to edit it in the inspector.',
   },
   {
-    title: 'In-Game Commands',
-    body: 'A reference of the admin commands the generated datapack adds (spawning NPCs, resets, debug).',
-  },
-  {
-    title: 'Custom Items',
+    title: 'Custom items',
     body:
       'Define trophy collectibles, food, tools, and more. Use them as quest rewards, gather/delivery targets, ' +
       'or spawn-zone mob drops. Items use component syntax — no custom textures unless you add a resource pack.',
@@ -27,16 +23,25 @@ const VIEWS = [
   {
     title: 'Jobs',
     body:
-      'Passive skills (fishing, mining, combat, and more) level up from player actions. Configure balanced XP curves, stat presets, and milestone rewards that grant custom items on level-up.',
+      'Passive skills (fishing, mining, combat, and more) level up from player actions. New projects include 11 starter jobs. ' +
+      'Configure XP curves, stat presets, and milestone rewards that grant custom items on level-up.',
   },
   {
     title: 'Advancements',
     body:
       'Preview the in-game skill trees exported with your datapack. Players open Esc → Advancements → your namespace tab to track job levels.',
   },
+  {
+    title: 'Commands',
+    body: 'A reference of the admin commands the generated datapack adds (spawning NPCs, resets, debug, job sync).',
+  },
+  {
+    title: 'Export',
+    body:
+      'Review validation, read the platform install guide, preview generated files, and download the datapack ZIP. ' +
+      'The ZIP includes quest-tool-project.json so you can re-import your work via Settings.',
+  },
 ];
-
-const STEPS = ['NPC', 'Quest', 'Rewards', 'Chain', 'Generate'];
 
 export function HelpPanel({ onClose }: Props) {
   return (
@@ -50,20 +55,15 @@ export function HelpPanel({ onClose }: Props) {
 
       <p className="muted" style={{ marginTop: 0 }}>
         Build quests for Minecraft Java 1.21.11, then export a ready-to-install datapack. Your work
-        auto-saves in this browser. Use Import in the sidebar to restore a JSON file or a datapack
-        ZIP you downloaded earlier.
+        auto-saves in this browser. Use <strong>Settings</strong> (gear icon) → Import to restore a JSON file
+        or a datapack ZIP you downloaded earlier. Shortcuts: <kbd>Ctrl/Cmd+K</kbd> command palette,{' '}
+        <kbd>Ctrl/Cmd+E</kbd> jump to Export.
       </p>
 
-      <div className="help-flow">
-        {STEPS.map((label, i) => (
-          <span key={label} className="help-flow-step">
-            <span className="help-flow-pill">{label}</span>
-            {i < STEPS.length - 1 && <span className="help-flow-arrow">-&gt;</span>}
-          </span>
-        ))}
-      </div>
-
-      <div className="help-views" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+      <div
+        className="help-views"
+        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}
+      >
         {VIEWS.map((v) => (
           <div key={v.title} className="help-view">
             <strong>{v.title}</strong>
