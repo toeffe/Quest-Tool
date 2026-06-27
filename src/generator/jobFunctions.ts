@@ -166,8 +166,6 @@ export function compileJob(ctx: CompileContext, jc: JobContext): Record<string, 
   const ns = ctx.namespace;
   const { job } = jc;
   const files: Record<string, string> = {};
-  const maxLvl = constName(jc, 'max_level');
-  const xpPerLevel = constName(jc, 'xp_per_level');
   const xpPerAction = constName(jc, 'xp_per_action');
   const hasMilestones = (job.milestones ?? []).some((m) => m.rewards.length > 0);
 
