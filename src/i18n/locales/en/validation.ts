@@ -19,6 +19,33 @@ export const validationEn = {
   customItemNoBaseItem: 'Custom item "{{name}}" has no base item.',
   customItemUnused: 'Custom item "{{name}}" is not used in any quest.',
   duplicateItemTag: 'Duplicate custom item tag "{{tag}}" (used {{count}} times).',
+  customMobNoName: 'Custom mob "{{name}}" has no name.',
+  customMobNoTag: 'Custom mob "{{name}}" has no identity tag.',
+  customMobNoBaseEntity: 'Custom mob "{{name}}" has no base entity.',
+  customMobUnused: 'Custom mob "{{name}}" is not used in any kill objective.',
+  customMobHighHealth: 'Custom mob "{{name}}" has very high health ({{health}}) — may affect survivability.',
+  customMobDropsNoSpawnZone:
+    'Custom mob "{{name}}" has drops configured but is not used in a spawn zone — players must encounter it world-wide.',
+  duplicateMobTag: 'Duplicate custom mob tag "{{tag}}" (used {{count}} times).',
+  customMobPhaseThresholdMissing:
+    'Custom mob "{{name}}" phase {{phase}} is missing an HP threshold (required after phase 1).',
+  customMobPhaseThresholdInvalid:
+    'Custom mob "{{name}}" phase {{phase}} threshold must be between 1 and 99.',
+  customMobPhaseThresholdOrder:
+    'Custom mob "{{name}}" phase thresholds must decrease (e.g. 66%, then 33%).',
+  dungeonNoName: 'A dungeon has an empty name.',
+  dungeonNoTag: 'Dungeon "{{name}}" has no function tag.',
+  dungeonNoRooms: 'Dungeon "{{name}}" has no rooms.',
+  dungeonRoomNoName: 'A room in dungeon "{{dungeon}}" has an empty name.',
+  dungeonGateMissingQuest: 'Room "{{room}}" quest gate references missing quest "{{quest}}".',
+  dungeonSpawnMissingMob: 'Room "{{room}}" spawn references a deleted custom mob.',
+  dungeonTriggerMissingQuest: 'Room "{{room}}" trigger references missing quest "{{quest}}".',
+  duplicateDungeonTag: 'Duplicate dungeon tag "{{tag}}" (used {{count}} times).',
+  dungeonSpawnsNoOutcome: 'Room "{{room}}" has spawns that do not respawn but no on_all_killed trigger.',
+  dungeonBossNoTrigger: 'Boss room "{{room}}" has no on_all_mobs_killed trigger.',
+  dungeonOverlappingRooms: 'Rooms "{{a}}" and "{{b}}" in "{{dungeon}}" have overlapping bounds.',
+  dungeonUnreferenced: 'Dungeon "{{name}}" is not referenced by any quest gate or trigger.',
+  objectiveMissingCustomMob: 'Kill objective references a custom mob that was deleted.',
   customItemEnchantmentLevel:
     'Custom item "{{name}}" enchantment "{{enchant}}" level must be at least 1.',
   customItemEnchantmentMaxLevel:

@@ -1,5 +1,8 @@
 import { type Project } from '../types/quest';
 import { buildContext, projectLocale } from './context';
+import { mobHasPhaseTransitions } from './customMobPhases';
+import { buildDungeonCommandEntries } from './dungeons';
+import { toIdentifier } from '../types/ids';
 import i18n from '../i18n';
 import { type AppLocale } from '../i18n/types';
 
@@ -96,6 +99,71 @@ export function buildCommandReference(
                   maxLevel: jc.job.maxLevel,
                 }),
               })),
+            ],
+          },
+        ]
+      : []),
+    ...((project.customMobs ?? []).length > 0
+      ? [
+          {
+            title: t('groups.customMobs.title'),
+            description: t('groups.customMobs.description'),
+            commands: [
+              {
+                command: `/function ${ns}:give_custom_mobs`,
+                description: t('entries.giveCustomMobs'),
+              },
+              ...(project.customMobs ?? []).flatMap((mob) => {
+                const entries: CommandEntry[] = [
+                  {
+                    command: `/function ${ns}:spawn_mob/${mob.tag}`,
+                    description: t('entries.spawnCustomMob', {
+                      mobName: mob.displayName || mob.name,
+                    }),
+                  },
+                ];
+                if (mobHasPhaseTransitions(mob)) {
+                  entries.push({
+                    command: `/function ${ns}:mobs/phases/${mob.tag}/debug`,
+                    description: t('entries.debugCustomMobPhases', {
+                      mobName: mob.displayName || mob.name,
+                    }),
+                  });
+                }
+                return entries;
+              }),
+            ],
+          },
+        ]
+      : []),
+    ...((project.dungeons ?? []).length > 0
+      ? [
+          {
+            title: t('groups.dungeons.title'),
+            description: t('groups.dungeons.description'),
+            commands: [
+              ...(project.dungeons ?? []).flatMap((dungeon) => {
+                const tag = toIdentifier(dungeon.tag, 'dungeon');
+                const roomEntries = buildDungeonCommandEntries(ctx).filter((e) =>
+                  e.command.includes(`dungeons/${tag}/`),
+                );
+                return [
+                  {
+                    command: `/function ${ns}:dungeons/${tag}/init`,
+                    description: t('entries.dungeonInit', { name: dungeon.name }),
+                  },
+                  {
+                    command: `/function ${ns}:dungeons/${tag}/reset`,
+                    description: t('entries.dungeonReset', { name: dungeon.name }),
+                  },
+                  ...roomEntries
+                    .filter((e) => e.command.includes('/rooms/'))
+                    .map((e) => ({
+                      command: e.command,
+                      description: e.description,
+                    })),
+                ];
+              }),
             ],
           },
         ]

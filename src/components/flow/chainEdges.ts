@@ -9,7 +9,7 @@ export const GENERATE_NODE_ID = '__generate__';
 export const BROKEN_UNLOCK_PREFIX = '__broken_unlock__';
 export const BROKEN_REQUIRES_PREFIX = '__broken_requires__';
 
-export type FlowEdgeLabelKey = 'requires' | 'unlocks' | 'autoStarts' | 'missingQuest';
+export type FlowEdgeLabelKey = 'requires' | 'unlocks' | 'autoStarts' | 'missingQuest' | 'gates';
 
 export interface FlowEdgeData {
   label: FlowEdgeLabelKey;
@@ -213,6 +213,33 @@ export function wouldCreateCycle(
 
 export type ConnectFailureReason = 'self' | 'generate' | 'cycle' | 'missing' | 'broken';
 
+export function isDungeonNodeId(project: Project, id: string): boolean {
+  return (project.dungeons ?? []).some((d) => d.id === id);
+}
+
+export function dungeonFlowEdges(project: Project): Edge[] {
+  const edges: Edge[] = [];
+  const seen = new Set<string>();
+  for (const dungeon of project.dungeons ?? []) {
+    for (const room of dungeon.rooms) {
+      if (!room.questGate) continue;
+      const quest = project.quests.find((q) => q.name === room.questGate!.questName);
+      if (!quest) continue;
+      const edgeId = `${quest.id}->dungeon:${dungeon.id}`;
+      if (seen.has(edgeId)) continue;
+      seen.add(edgeId);
+      edges.push({
+        id: edgeId,
+        source: quest.id,
+        target: dungeon.id,
+        type: 'story',
+        data: { label: 'gates', requiresOnly: true } satisfies FlowEdgeData,
+      });
+    }
+  }
+  return edges;
+}
+
 export function getConnectFailureReason(
   project: Project,
   sourceId: string,
@@ -221,9 +248,16 @@ export function getConnectFailureReason(
   if (sourceId === targetId) return 'self';
   if (targetId === GENERATE_NODE_ID || isBrokenNodeId(targetId)) return 'generate';
   if (isBrokenNodeId(sourceId)) return 'broken';
+
   const source = project.quests.find((q) => q.id === sourceId);
+  if (!source) return 'missing';
+
+  if (isDungeonNodeId(project, targetId)) {
+    return null;
+  }
+
   const target = project.quests.find((q) => q.id === targetId);
-  if (!source || !target) return 'missing';
+  if (!target) return 'missing';
   if (wouldCreateCycle(project.quests, sourceId, targetId)) return 'cycle';
   return null;
 }
@@ -241,6 +275,10 @@ export function connectQuests(
 ): Project {
   if (getConnectFailureReason(project, sourceId, targetId)) return project;
 
+  if (isDungeonNodeId(project, targetId)) {
+    return connectQuestToDungeon(project, sourceId, targetId);
+  }
+
   const source = project.quests.find((q) => q.id === sourceId)!;
   const target = project.quests.find((q) => q.id === targetId)!;
 
@@ -252,11 +290,54 @@ export function connectQuests(
   return { ...project, quests };
 }
 
+export function connectQuestToDungeon(
+  project: Project,
+  questId: string,
+  dungeonId: string,
+): Project {
+  const quest = project.quests.find((q) => q.id === questId);
+  if (!quest) return project;
+  const dungeons = (project.dungeons ?? []).map((d) => {
+    if (d.id !== dungeonId) return d;
+    return {
+      ...d,
+      rooms: d.rooms.map((r) => ({
+        ...r,
+        questGate: { questName: quest.name, requiredState: 1 as const },
+      })),
+    };
+  });
+  return { ...project, dungeons };
+}
+
+export function disconnectQuestFromDungeon(
+  project: Project,
+  questId: string,
+  dungeonId: string,
+): Project {
+  const quest = project.quests.find((q) => q.id === questId);
+  if (!quest) return project;
+  const dungeons = (project.dungeons ?? []).map((d) => {
+    if (d.id !== dungeonId) return d;
+    return {
+      ...d,
+      rooms: d.rooms.map((r) =>
+        r.questGate?.questName === quest.name ? { ...r, questGate: undefined } : r,
+      ),
+    };
+  });
+  return { ...project, dungeons };
+}
+
 export function disconnectQuests(
   project: Project,
   sourceId: string,
   targetId: string,
 ): Project {
+  if (isDungeonNodeId(project, targetId)) {
+    return disconnectQuestFromDungeon(project, sourceId, targetId);
+  }
+
   const source = project.quests.find((q) => q.id === sourceId);
   const target = project.quests.find((q) => q.id === targetId);
   if (!source || !target) return project;

@@ -18,10 +18,13 @@ export const commandsDa = {
     diagnostics: {
       title: 'Diagnostik',
     },
-    jobs: {
-      title: 'Jobs',
-      description:
-        'Jobs kører automatisk hvert tick. Følg niveauer under Esc → Advancements → dit packs namespace-faneblad.',
+    customMobs: {
+      title: 'Brugerdefinerede mobs',
+      description: 'Spawn projekt-definerede mobs til test eller placering i verdenen.',
+    },
+    dungeons: {
+      title: 'Dungeons',
+      description: 'Initialisér, nulstil og styr dungeon-rum manuelt.',
     },
   },
 
@@ -48,5 +51,11 @@ export const commandsDa = {
     syncJob: 'Synkronisér "{{jobName}}" advancement-træ til nuværende niveauer.',
     passiveJob:
       '{{xpPerAction}} XP pr. fisk fanget, maks. niveau {{maxLevel}}',
+    giveCustomMobs: 'Spawn én af hver brugerdefineret mob foran dig (test).',
+    spawnCustomMob: 'Spawn brugerdefineret mob "{{mobName}}" ved din placering.',
+    debugCustomMobPhases:
+      'Debug fasetilstand for "{{mobName}}" (HP%, faseindeks, tærskler).',
+    dungeonInit: 'Initialisér dungeon "{{name}}" — scoreboards og init-spawns.',
+    dungeonReset: 'Nulstil dungeon "{{name}}" — dræb mobs og ryd rumtilstand.',
   },
 } as const;

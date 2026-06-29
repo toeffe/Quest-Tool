@@ -9,6 +9,7 @@ import {
   type CustomItem,
   type CustomItemKind,
 } from './item';
+import { type CustomMob, type CustomMobPhase } from './customMob';
 import { type Job, type JobAction } from './job';
 import { uid, toIdentifier } from './ids';
 import { getBalancedDefaults, emptyMilestoneSlots } from '../generator/jobBalance';
@@ -16,7 +17,7 @@ import { defaultPresetForAction } from '../generator/jobStats';
 import { type AppLocale, DEFAULT_LOCALE } from '../i18n/types';
 import { defaultsT } from '../i18n/useLabels';
 
-export const PROJECT_SCHEMA_VERSION = 6;
+export const PROJECT_SCHEMA_VERSION = 8;
 
 export const STARTER_JOB_KEYS = [
   'starter_fishing',
@@ -253,6 +254,29 @@ export function createCustomItem(
   }
 }
 
+export function createCustomMob(
+  name?: string,
+  locale: AppLocale = DEFAULT_LOCALE,
+): CustomMob {
+  const t = defaultsT(locale);
+  const mobName = name ?? t('customMob.name');
+  const tag = toIdentifier(mobName, 'mob');
+  return {
+    id: uid(),
+    name: mobName,
+    tag,
+    baseEntity: 'minecraft:zombie',
+    displayName: mobName,
+  };
+}
+
+export function createCustomMobPhase(name?: string): CustomMobPhase {
+  return {
+    id: uid(),
+    name: name ?? 'Phase 1',
+  };
+}
+
 export function createProject(name?: string, locale: AppLocale = DEFAULT_LOCALE): Project {
   const t = defaultsT(locale);
   return {
@@ -264,6 +288,8 @@ export function createProject(name?: string, locale: AppLocale = DEFAULT_LOCALE)
     quests: [createQuest(t('quest.firstQuestName'), 'kill', locale)],
     jobs: createStarterJobs(locale),
     customItems: [],
+    customMobs: [],
+    dungeons: [],
     version: PROJECT_SCHEMA_VERSION,
   };
 }

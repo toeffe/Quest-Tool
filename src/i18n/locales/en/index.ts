@@ -12,6 +12,8 @@ import { commandsEn } from './commands';
 import { defaultsEn } from './defaults';
 import { advancementsEn } from './advancements';
 import { validationEn } from './validation';
+import { customMobsEn } from './customMobs';
+import { dungeonsEn } from './dungeons';
 import { mobsEn } from '../mobs.generated';
 
 export const enResources = {
@@ -22,6 +24,8 @@ export const enResources = {
   help: helpEn,
   jobs: jobsEn,
   items: itemsEn,
+  customMobs: customMobsEn,
+  dungeons: dungeonsEn,
   quest: questEn,
   datapack: datapackEn,
   platform: platformEn,

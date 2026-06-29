@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import { type Project, type Quest } from '../types/quest';
 import { type CustomItem, type CustomItemKind } from '../types/item';
+import { type CustomMob } from '../types/customMob';
 import { type Job } from '../types/job';
+import { type Dungeon, type DungeonRoom, createDungeonRoom } from '../types/dungeon';
 import { createQuest } from '../types/factory';
 import {
   addQuest,
@@ -14,10 +16,20 @@ import {
   createAndAddCustomItem,
   deleteCustomItem,
   duplicateCustomItem,
+  createAndAddCustomMob,
+  deleteCustomMob,
+  duplicateCustomMob,
   updateJob,
   deleteJob,
   duplicateJob,
   createAndAddJob,
+  updateDungeon,
+  deleteDungeon,
+  duplicateDungeon,
+  addRoom,
+  updateRoom,
+  deleteRoom,
+  createAndAddDungeon,
 } from '../state/projectStore';
 
 interface ProjectStore {
@@ -34,10 +46,21 @@ interface ProjectStore {
   updateCustomItem: (item: CustomItem) => void;
   deleteCustomItem: (id: string) => void;
   duplicateCustomItem: (id: string) => void;
+  addCustomMob: () => CustomMob;
+  updateCustomMob: (mob: CustomMob) => void;
+  deleteCustomMob: (id: string) => void;
+  duplicateCustomMob: (id: string) => void;
   addJob: () => Job;
   updateJob: (job: Job) => void;
   deleteJob: (id: string) => void;
   duplicateJob: (id: string) => void;
+  addDungeon: () => Dungeon;
+  updateDungeon: (dungeon: Dungeon) => void;
+  deleteDungeon: (id: string) => void;
+  duplicateDungeon: (id: string) => void;
+  addRoom: (dungeonId: string) => DungeonRoom;
+  updateRoom: (dungeonId: string, roomId: string, patch: Partial<DungeonRoom>) => void;
+  deleteRoom: (dungeonId: string, roomId: string) => void;
 }
 
 export const useProjectStore = create<ProjectStore>((set, get) => ({
@@ -118,6 +141,34 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     set({ project: duplicateCustomItem(project, id) });
   },
 
+  addCustomMob: () => {
+    const { project } = get();
+    const { project: next, mob } = createAndAddCustomMob(project);
+    set({ project: next });
+    return mob;
+  },
+
+  updateCustomMob: (mob) => {
+    const { project } = get();
+    const mobs = project.customMobs ?? [];
+    set({
+      project: {
+        ...project,
+        customMobs: mobs.map((m) => (m.id === mob.id ? mob : m)),
+      },
+    });
+  },
+
+  deleteCustomMob: (id) => {
+    const { project } = get();
+    set({ project: deleteCustomMob(project, id) });
+  },
+
+  duplicateCustomMob: (id) => {
+    const { project } = get();
+    set({ project: duplicateCustomMob(project, id) });
+  },
+
   addJob: () => {
     const { project } = get();
     const { project: next, job } = createAndAddJob(project);
@@ -138,6 +189,45 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   duplicateJob: (id) => {
     const { project } = get();
     set({ project: duplicateJob(project, id) });
+  },
+
+  addDungeon: () => {
+    const { project } = get();
+    const { project: next, dungeon } = createAndAddDungeon(project);
+    set({ project: next });
+    return dungeon;
+  },
+
+  updateDungeon: (dungeon) => {
+    const { project } = get();
+    set({ project: updateDungeon(project, dungeon) });
+  },
+
+  deleteDungeon: (id) => {
+    const { project } = get();
+    set({ project: deleteDungeon(project, id) });
+  },
+
+  duplicateDungeon: (id) => {
+    const { project } = get();
+    set({ project: duplicateDungeon(project, id) });
+  },
+
+  addRoom: (dungeonId) => {
+    const { project } = get();
+    const room = createDungeonRoom();
+    set({ project: addRoom(project, dungeonId, room) });
+    return room;
+  },
+
+  updateRoom: (dungeonId, roomId, patch) => {
+    const { project } = get();
+    set({ project: updateRoom(project, dungeonId, roomId, patch) });
+  },
+
+  deleteRoom: (dungeonId, roomId) => {
+    const { project } = get();
+    set({ project: deleteRoom(project, dungeonId, roomId) });
   },
 }));
 

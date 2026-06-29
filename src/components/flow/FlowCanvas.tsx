@@ -19,6 +19,7 @@ import { type Project, type Quest } from '../../types/quest';
 import { type ValidationIssue } from '../../generator/validate';
 import { type EditorTab } from '../editor/ValidationBar';
 import { QuestNode } from './QuestNode';
+import { DungeonNode } from './DungeonNode';
 import { GenerateNode } from './GenerateNode';
 import { BrokenRefNode } from './BrokenRefNode';
 import { InspectorPanel, type InspectorTarget } from './InspectorPanel';
@@ -33,9 +34,11 @@ import {
   connectFailureMessage,
   connectQuests,
   disconnectQuests,
+  dungeonFlowEdges,
   generateEdges,
   getConnectFailureReason,
   isBrokenNodeId,
+  isDungeonNodeId,
   questsToEdges,
 } from './chainEdges';
 import { layeredLayout, placeBrokenStubs, type XY } from './layout';
@@ -53,6 +56,7 @@ interface Props {
 
 const nodeTypes: NodeTypes = {
   quest: QuestNode,
+  dungeon: DungeonNode,
   generate: GenerateNode,
   broken: BrokenRefNode,
 } as unknown as NodeTypes;
@@ -67,6 +71,7 @@ function seedPositions(project: Project, edges: Edge[]): Map<string, XY> {
   const stubs = collectBrokenStubs(project.quests);
   const ids = [
     ...project.quests.map((q) => q.id),
+    ...(project.dungeons ?? []).map((d) => d.id),
     ...stubs.map((s) => s.id),
     GENERATE_NODE_ID,
   ];
@@ -95,9 +100,10 @@ function FlowCanvasInner({
   const { t } = useTranslation('flow');
   const { fitView } = useReactFlow();
   const storyEdges = useMemo(() => questsToEdges(project.quests), [project.quests]);
+  const dungeonEdges = useMemo(() => dungeonFlowEdges(project), [project]);
   const edges = useMemo<Edge[]>(
-    () => [...storyEdges, ...generateEdges(project.quests)],
-    [project.quests, storyEdges],
+    () => [...storyEdges, ...dungeonEdges, ...generateEdges(project.quests)],
+    [project, storyEdges, dungeonEdges],
   );
   const brokenStubs = useMemo(() => collectBrokenStubs(project.quests), [project.quests]);
 
@@ -129,6 +135,7 @@ function FlowCanvasInner({
     setPositions((prev) => {
       const needed = [
         ...project.quests.map((q) => q.id),
+        ...(project.dungeons ?? []).map((d) => d.id),
         ...brokenStubs.map((s) => s.id),
         GENERATE_NODE_ID,
       ];
@@ -259,7 +266,20 @@ function FlowCanvasInner({
       },
     };
 
-    return [...questNodes, ...stubNodes, generateNode];
+    const dungeonNodes: Node[] = (project.dungeons ?? []).map((dungeon) => ({
+      id: dungeon.id,
+      type: 'dungeon',
+      position: positions.get(dungeon.id) ?? { x: 400, y: 200 },
+      hidden: errorsOnly && !issues.some((i) => i.dungeonId === dungeon.id && i.level === 'error'),
+      data: {
+        dungeon,
+        project,
+        issues: issues.filter((i) => i.dungeonId === dungeon.id),
+        isSelected: false,
+      },
+    }));
+
+    return [...questNodes, ...dungeonNodes, ...stubNodes, generateNode];
   }, [
     project,
     positions,
@@ -311,6 +331,10 @@ function FlowCanvasInner({
       let next = project;
       for (const edge of deleted) {
         if (isBrokenNodeId(edge.source) || isBrokenNodeId(edge.target)) continue;
+        if (isDungeonNodeId(project, edge.target)) {
+          next = disconnectQuests(next, edge.source, edge.target);
+          continue;
+        }
         next = disconnectQuests(next, edge.source, edge.target);
       }
       if (next !== project) onChangeProject(next);

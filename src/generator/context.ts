@@ -1,5 +1,6 @@
 import { type Project, type Quest } from '../types/quest';
 import { type CustomItem } from '../types/item';
+import { type CustomMob } from '../types/customMob';
 import { type Job } from '../types/job';
 import { type AppLocale } from '../i18n/types';
 import { toIdentifier } from '../types/ids';
@@ -96,6 +97,8 @@ export interface CompileContext {
   jobsById: Map<string, JobContext>;
   /** Custom items keyed by internal id. */
   customItemsById: Map<string, CustomItem>;
+  /** Custom mobs keyed by internal id. */
+  customMobsById: Map<string, CustomMob>;
 }
 
 export function projectLocale(project: Project): AppLocale {
@@ -174,6 +177,11 @@ export function buildContext(project: Project): CompileContext {
     customItemsById.set(item.id, item);
   }
 
+  const customMobsById = new Map<string, CustomMob>();
+  for (const mob of project.customMobs ?? []) {
+    customMobsById.set(mob.id, mob);
+  }
+
   const locale = projectLocale(project);
   return {
     project,
@@ -185,6 +193,7 @@ export function buildContext(project: Project): CompileContext {
     byName,
     jobsById,
     customItemsById,
+    customMobsById,
   };
 }
 

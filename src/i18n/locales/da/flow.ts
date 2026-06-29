@@ -52,6 +52,7 @@ export const flowDa = {
     unlocks: 'Låser op',
     autoStarts: 'Auto-starter',
     missingQuest: 'Manglende quest',
+    gates: 'Quest-gate',
     popoverTitle: 'Kædelink',
     popoverAria: 'Indstillinger for kædelink',
     popoverRoute: '{{source}} → {{target}}',
@@ -94,6 +95,15 @@ export const flowDa = {
     title: 'Manglende quest: {{name}}',
   },
 
+  dungeonNode: {
+    untitled: 'Dungeon uden titel',
+    typeLabel: 'Dungeon',
+    handleInTitle: 'Slip et quest-link her for at sætte quest-gate på alle rum',
+    roomCount: '{{count}} rum',
+    roomCount_plural: '{{count}} rum',
+    missingMobTitle: 'Et rum-spawn refererer til en slettet brugerdefineret mob',
+  },
+
   generateNode: {
     pack: 'PAKKE',
     title: 'Generér & eksportér',
@@ -132,6 +142,8 @@ export const flowDa = {
     missingNext: 'Manglende næste quest "{{name}}"',
     cooldownHours: 'Tilgængelig igen efter {{hours}}t',
     cooldownMinutes: 'Tilgængelig igen efter {{minutes}}m',
+    dungeonGate: 'Dungeon "{{dungeon}}" rum "{{room}}" aktiveres når denne quest er aktiv',
+    dungeonStateChange: 'Dungeon "{{dungeon}}" / "{{room}}" kan sætte quest-tilstand til {{state}}',
     kill: 'Dræb {{amount}} {{target}}',
     gather: 'Saml {{amount}} {{target}}',
     deliver: 'Lever {{amount}} {{target}}',

@@ -12,6 +12,8 @@ import { commandsDa } from './commands';
 import { defaultsDa } from './defaults';
 import { advancementsDa } from './advancements';
 import { validationDa } from './validation';
+import { customMobsDa } from './customMobs';
+import { dungeonsDa } from './dungeons';
 import { mobsDa } from '../mobs.generated';
 
 export const daResources = {
@@ -22,6 +24,8 @@ export const daResources = {
   help: helpDa,
   jobs: jobsDa,
   items: itemsDa,
+  customMobs: customMobsDa,
+  dungeons: dungeonsDa,
   quest: questDa,
   datapack: datapackDa,
   platform: platformDa,

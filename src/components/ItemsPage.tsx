@@ -477,6 +477,7 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
                         hint={t('advanced.enchantmentIdHint')}
                         value={enchant.enchantmentId}
                         options={ENCHANTMENT_OPTIONS}
+                        listId={`enchant-list-${i}`}
                         onChange={(enchantmentId) => {
                           const enchantments = [...(selected.enchantments ?? [])];
                           enchantments[i] = { ...enchantments[i], enchantmentId };

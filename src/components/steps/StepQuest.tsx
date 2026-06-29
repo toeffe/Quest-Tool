@@ -22,6 +22,7 @@ import { CoordsRow } from './StepNPC';
 import { useMobOptions, isVillager } from '../../data/mobs';
 import { VariantFields, BabySelect } from './VariantFields';
 import { type CustomItem } from '../../types/item';
+import { type CustomMob } from '../../types/customMob';
 import { useQuestTypeLabels } from '../../i18n/useLabels';
 import { QuestPreview } from '../preview/QuestPreview';
 import { SpawnZoneFields } from './SpawnZoneFields';
@@ -29,18 +30,24 @@ import { SpawnZoneFields } from './SpawnZoneFields';
 interface Props {
   quest: Quest;
   customItems: CustomItem[];
+  customMobs: CustomMob[];
   onChange: (quest: Quest) => void;
 }
 
 type ItemSource = 'vanilla' | 'custom';
+type MobSource = 'vanilla' | 'custom';
 
 function objectiveItemSource(obj: Objective): ItemSource {
   return obj.customItemId ? 'custom' : 'vanilla';
 }
 
+function objectiveMobSource(obj: Objective): MobSource {
+  return obj.eliteMobId ? 'custom' : 'vanilla';
+}
+
 const usesItemTarget = (t: QuestType) => t === 'gather' || t === 'delivery' || t === 'daily';
 
-export function StepQuest({ quest, customItems, onChange }: Props) {
+export function StepQuest({ quest, customItems, customMobs, onChange }: Props) {
   const { t } = useTranslation('editor');
   const { t: tc } = useTranslation('common');
   const questTypeLabels = useQuestTypeLabels();
@@ -167,16 +174,67 @@ export function StepQuest({ quest, customItems, onChange }: Props) {
 
               {quest.type === 'kill' && (
                 <>
-                  <div className="grid-2">
-                    <DataListInput
-                      label={t('quest.mobCreature')}
-                      hint={t('quest.mobCreatureHint')}
-                      value={obj.target ?? ''}
-                      onChange={(target) => setObjectiveAt(i, { target })}
-                      options={mobOptions}
-                      listId="mc-mob-list"
-                      placeholder={t('quest.mobPlaceholder')}
+                  <Field label={tc('mobSource.label')}>
+                    <PillSelect
+                      value={objectiveMobSource(obj)}
+                      options={[
+                        { value: 'vanilla', label: tc('mobSource.vanilla') },
+                        { value: 'custom', label: tc('mobSource.custom') },
+                      ]}
+                      onChange={(v) => {
+                        if (v === 'custom') {
+                          const first = customMobs[0];
+                          setObjectiveAt(i, {
+                            eliteMobId: first?.id,
+                            target: undefined,
+                          });
+                        } else {
+                          setObjectiveAt(i, {
+                            target: obj.target ?? 'minecraft:zombie',
+                            eliteMobId: undefined,
+                          });
+                        }
+                      }}
                     />
+                  </Field>
+                  <div className="grid-2">
+                    {objectiveMobSource(obj) === 'vanilla' ? (
+                      <DataListInput
+                        label={t('quest.mobCreature')}
+                        hint={t('quest.mobCreatureHint')}
+                        value={obj.target ?? ''}
+                        onChange={(target) => setObjectiveAt(i, { target })}
+                        options={mobOptions}
+                        listId="mc-mob-list"
+                        placeholder={t('quest.mobPlaceholder')}
+                      />
+                    ) : customMobs.length === 0 ? (
+                      <div className="field">
+                        <label>{tc('mobSource.custom')}</label>
+                        <div className="hint">{tc('mobSource.noCustomMobsShort')}</div>
+                      </div>
+                    ) : (
+                      <Field label={tc('mobSource.custom')}>
+                        <select
+                          value={obj.eliteMobId ?? ''}
+                          onChange={(e) =>
+                            setObjectiveAt(i, {
+                              eliteMobId: e.target.value,
+                              target: undefined,
+                            })
+                          }
+                        >
+                          {!obj.eliteMobId && (
+                            <option value="">{tc('mobSource.selectMob')}</option>
+                          )}
+                          {customMobs.map((mob) => (
+                            <option key={mob.id} value={mob.id}>
+                              {mob.name} ({mob.displayName})
+                            </option>
+                          ))}
+                        </select>
+                      </Field>
+                    )}
                     <NumberInput
                       label={t('quest.amountToKill')}
                       min={1}

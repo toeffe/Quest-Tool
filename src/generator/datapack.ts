@@ -18,6 +18,14 @@ import { installGuide } from './platform';
 import { tellraw, escapeSnbtString } from './text';
 import { questObjectives } from './context';
 import { buildGiveCustomItemsFunction } from './items';
+import { buildCustomMobBossBarSupportFiles } from './customMobBossBar';
+import { buildCustomMobPhaseSupportFiles } from './customMobPhases';
+import {
+  buildCustomMobLootTableFiles,
+  buildGiveCustomMobsFunction,
+  buildSpawnMobFunctions,
+} from './customMobs';
+import { compileDungeons } from './dungeons';
 import {
   buildEmptyEntityLootTable,
   emptyLootTablePath,
@@ -152,6 +160,11 @@ function readmeText(project: Project, ctx: CompileContext): string {
     `- /function ${ctx.namespace}:spawn_all     - spawn every NPC at your feet`,
     `- /function ${ctx.namespace}:debug         - check NPCs and your quest state`,
     `- /function ${ctx.namespace}:give_custom_items - give one of each custom item (testing)`,
+    ...(project.customMobs?.length
+      ? [
+          `- /function ${ctx.namespace}:give_custom_mobs - spawn one of each custom mob (testing)`,
+        ]
+      : []),
     ...(ctx.jobs.length > 0
       ? [
           `- /function ${ctx.namespace}:jobs/sync_all - refresh job advancement tabs for everyone online`,
@@ -262,6 +275,19 @@ export function buildDatapackFiles(project: Project): FileMap {
   if (giveCustomItems) {
     files[`${fnRoot}/give_custom_items.mcfunction`] = giveCustomItems;
   }
+
+  Object.assign(files, buildCustomMobLootTableFiles(project, ns));
+
+  const giveCustomMobs = buildGiveCustomMobsFunction(project, ns);
+  if (giveCustomMobs) {
+    files[`${fnRoot}/give_custom_mobs.mcfunction`] = giveCustomMobs;
+  }
+
+  Object.assign(files, mapJobBossBarFiles(fnRoot, buildSpawnMobFunctions(project, ns)));
+  Object.assign(files, mapJobBossBarFiles(fnRoot, buildCustomMobBossBarSupportFiles(ctx)));
+  Object.assign(files, mapJobBossBarFiles(fnRoot, buildCustomMobPhaseSupportFiles(ctx)));
+
+  Object.assign(files, compileDungeons(ctx));
 
   files['install.txt'] = readmeText(project, ctx);
 

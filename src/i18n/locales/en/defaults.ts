@@ -74,6 +74,15 @@ export const defaultsEn = {
     baseItem: 'minecraft:paper',
   },
 
+  customMob: {
+    name: 'New Mob',
+  },
+
+  dungeon: {
+    name: 'New Dungeon',
+    defaultRoom: 'Entry Room',
+  },
+
   job: {
     defaultName: 'Fishing',
     milestoneCommand: 'say {player} reached a job milestone!',

@@ -79,6 +79,7 @@ export function QuestEditor({
           <StepQuest
             quest={quest}
             customItems={project.customItems ?? []}
+            customMobs={project.customMobs ?? []}
             onChange={onChange}
           />
         )}

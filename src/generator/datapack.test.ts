@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { type Project } from '../types/quest';
-import { createProject, createQuest, createCustomItem, createStarterJobs } from '../types/factory';
+import { createProject, createQuest, createCustomItem, createCustomMob, createStarterJobs } from '../types/factory';
 import JSZip from 'jszip';
 import { buildDatapackFiles, buildRawCommands, buildDatapackZip } from './datapack';
 import { PROJECT_BACKUP_FILENAME } from '../state/projectStore';
@@ -170,6 +170,16 @@ describe('datapack structure', () => {
     const files = buildDatapackFiles(project);
     const turnin = Object.entries(files).find(([p]) => /turnin\.mcfunction$/.test(p))?.[1] ?? '';
     expect(turnin).toContain('give @s minecraft:diamond 2');
+  });
+
+  it('includes give_custom_mobs and spawn_mob functions when custom mobs exist', () => {
+    const project = sampleProject();
+    const mob = createCustomMob('Elite', 'en');
+    mob.tag = 'elite_zombie';
+    project.customMobs = [mob];
+    const files = buildDatapackFiles(project);
+    expect(files['data/testpack/function/give_custom_mobs.mcfunction']).toBeDefined();
+    expect(files['data/testpack/function/spawn_mob/elite_zombie.mcfunction']).toBeDefined();
   });
 
   it('gives custom item rewards with item components', () => {

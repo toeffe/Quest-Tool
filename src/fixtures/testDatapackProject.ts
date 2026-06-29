@@ -1,7 +1,7 @@
 /**
  * Complete flat-world test datapack — quests, jobs, stations, and in-pack guide.
  */
-import { createProject, createCustomItem } from '../types/factory';
+import { createProject, createCustomItem, createCustomMob, createCustomMobPhase } from '../types/factory';
 import { buildDatapackFiles, buildDatapackZipFromFiles, type FileMap } from '../generator/datapack';
 import { configureTestJobs } from './testDatapackJobs';
 import { buildTestQuests } from './testDatapackQuests';
@@ -32,8 +32,40 @@ export function buildTestDatapackProject() {
   coin.lore = ['Test custom item reward'];
   project.customItems = [coin];
 
+  const elite = createCustomMob('Test Elite', 'en');
+  elite.tag = 'test_elite';
+  elite.baseEntity = 'minecraft:zombie';
+  elite.displayName = 'Test Elite';
+  elite.health = 30;
+  project.customMobs = [elite];
+
+  const phaseBoss = createCustomMob('Test Phase Boss', 'en');
+  phaseBoss.tag = 'test_phase_boss';
+  phaseBoss.baseEntity = 'minecraft:zombie';
+  phaseBoss.displayName = 'Phase Boss';
+  phaseBoss.health = 40;
+  phaseBoss.bossBar = true;
+  phaseBoss.phases = [
+    { ...createCustomMobPhase('Phase 1'), name: 'Phase 1' },
+    {
+      ...createCustomMobPhase('Phase 2'),
+      name: 'Phase 2',
+      atHealthPercent: 50,
+      displayName: 'testspeed',
+      bossBarColor: 'blue',
+      effects: [{ effectId: 'minecraft:speed', amplifier: 1 }],
+      equipment: [{ slot: 'feet', item: 'minecraft:diamond_boots' }],
+    },
+  ];
+  project.customMobs.push(phaseBoss);
+
   configureTestJobs(project, coin.id);
   project.quests = buildTestQuests(project, coin);
+
+  const killQuest = project.quests.find((q) => q.type === 'kill');
+  if (killQuest) {
+    killQuest.objectives = [{ eliteMobId: elite.id, amount: 2, description: 'Slay test elites' }];
+  }
 
   return project;
 }

@@ -7,6 +7,8 @@ export const commonDa = {
     flow: 'Historieflow',
     editor: 'Editor',
     items: 'Brugerdefinerede genstande',
+    mobs: 'Brugerdefinerede mobs',
+    dungeons: 'Dungeons',
     jobs: 'Jobs',
     advancements: 'Advancements',
     commands: 'Kommandoer',
@@ -98,6 +100,8 @@ export const commonDa = {
       editor: 'Åbn editor',
       flow: 'Åbn historieflow',
       items: 'Åbn brugerdefinerede genstande',
+      mobs: 'Åbn brugerdefinerede mobs',
+      dungeons: 'Åbn dungeons',
       jobs: 'Åbn jobs',
       advancements: 'Åbn advancements',
       commands: 'Åbn kommandoer',
@@ -144,6 +148,15 @@ export const commonDa = {
     vanillaHint: 'Brugerdefinerede genstande matches via deres interne tag, ikke visningsnavn.',
     noCustomItems: 'Ingen brugerdefinerede genstande endnu. Åbn fanen Brugerdefinerede genstande for at oprette en.',
     noCustomItemsShort: 'Ingen brugerdefinerede genstande endnu. Åbn fanen Brugerdefinerede genstande.',
+  },
+
+  mobSource: {
+    label: 'Mob-kilde',
+    vanilla: 'Vanilla-mob',
+    custom: 'Brugerdefineret mob',
+    noCustomMobs: 'Ingen brugerdefinerede mobs endnu. Åbn fanen Brugerdefinerede mobs for at oprette en.',
+    noCustomMobsShort: 'Ingen brugerdefinerede mobs endnu. Åbn fanen Brugerdefinerede mobs.',
+    selectMob: 'Vælg en mob…',
   },
 
   professions: {

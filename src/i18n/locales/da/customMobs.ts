@@ -1,0 +1,91 @@
+export const customMobsDa = {
+  title: 'Brugerdefinerede mobs',
+  subtitle:
+    'Definér genbrugelige mobs med navne, stats og drops. Brug dem i dræb-objektiver på tværs af projektet. Udseendet følger vanilla-modellen medmindre du tilføjer en resource pack.',
+
+  list: {
+    title: 'Mobs ({{count}})',
+    addTitle: 'Tilføj brugerdefineret mob',
+    empty: 'Ingen brugerdefinerede mobs endnu. Opret en til dræb-quests.',
+    untitled: 'Mob uden navn',
+    copy: 'Kopi',
+    delete: 'Slet',
+    selectEmpty: 'Vælg en mob fra listen eller opret en ny.',
+  },
+
+  editor: {
+    editorName: 'Redaktørnavn',
+    editorNameHint: 'Internt navn i værktøjet.',
+    identityTag: 'Identitetstag',
+    identityTagHint: 'Entity-tag der identificerer mobben in-game. Skal være unik.',
+    baseEntity: 'Basis-entity',
+    baseEntityHint:
+      'Vanilla mob-type. Udseendet matcher denne entity medmindre du tilføjer en resource pack.',
+    baseEntityNote:
+      'Udseendet er baseret på vanilla-entityen. Tilføj en resource pack for brugerdefinerede modeller.',
+    baseEntityPlaceholder: 'minecraft:zombie',
+    displayName: 'Visningsnavn',
+    displayNameHint: 'Vises over mobben in-game.',
+    health: 'Max liv',
+    healthHint: 'Tilsidesæt max liv (tom = vanilla standard).',
+    damage: 'Angrebsskade',
+    damageHint: 'Tilsidesæt angrebsskade (tom = vanilla standard).',
+    glowing: 'Glødende',
+    glowingHint: 'Gør mobben synlig gennem vægge.',
+    bossBar: 'Boss liv-bar',
+    bossBarHint:
+      'Viser en boss-bar til spillere i nærheden mens mobben lever. Skaleres efter max liv (tilpasset eller vanilla standard).',
+    previewCommand: 'Summon-forhåndsvisning',
+    previewCommandHint: 'Testkommando til at spawne mobben ved din placering.',
+  },
+
+  phases: {
+    title: 'Faser',
+    hint:
+      'Liv-baserede faser. Fase 1 bruger mob-stats ved spawn. Hver senere fase skal have en Start ved HP % tærskel — uden den starter fasen aldrig. Eksporter igen efter ændringer. Test med /function <namespace>:spawn_mob/<tag> (anbefalet); summon-forhåndsvisning initialiseres kun på første tick.',
+    addPhase: '+ Tilføj fase',
+    empty: 'Ingen faser konfigureret. Tilføj en anden fase for at aktivere liv-baserede overgange.',
+    phaseLabel: 'Fase {{index}}',
+    phaseName: 'Fasenavn',
+    phaseNameHint: 'Kun redaktør-label.',
+    atHealthPercent: 'Start ved HP %',
+    atHealthPercentHint: 'Fasen starter når liv falder til denne procent eller derunder. Gælder ikke fase 1.',
+    displayName: 'Visningsnavn',
+    displayNameHint: 'Tilsidesæt in-game navn for denne fase.',
+    damage: 'Angrebsskade',
+    damageHint: 'Tilsidesæt angrebsskade for denne fase.',
+    glowing: 'Glødende',
+    bossBarColor: 'Boss bar-farve',
+    bossBarColorDefault: 'Standard (rød)',
+    announceMessage: 'Meddelelse',
+    announceMessageHint: 'Vises til spillere i nærheden når fasen starter.',
+    announcePlaceholder: 'Bossen raser!',
+    effects: 'Status-effekter',
+    addEffect: '+ Tilføj effekt',
+    effectId: 'Effekt-id',
+    effectPlaceholder: 'minecraft:strength',
+    amplifier: 'Forstærker',
+    duration: 'Varighed (ticks)',
+    durationHint: '0 = uendelig mens fasen varer',
+    equipmentOverride: 'Udstyr-tilsidesættelse',
+    equipmentOverrideHint: 'Erstat udstyr ved fase-skift. Tom = behold nuværende udstyr.',
+    inheritHint: 'Tomme felter arver fra mob-standarderne ovenfor.',
+  },
+
+  drops: {
+    title: 'Brugerdefinerede drops',
+    hint: 'Items der droppes når mobben dør. Kræver at mobben spawnes af datapacken eller manuelt.',
+    addDrop: '+ Tilføj drop',
+    empty: 'Ingen brugerdefinerede drops konfigureret.',
+  },
+
+  equipment: {
+    title: 'Udstyr',
+    hint: 'Valgfri rustning og genstande i hænderne når mobben spawnes.',
+    slot: 'Slot',
+    item: 'Item-id',
+    itemPlaceholder: 'minecraft:iron_sword',
+    add: '+ Tilføj udstyr',
+    empty: 'Intet udstyr konfigureret.',
+  },
+} as const;

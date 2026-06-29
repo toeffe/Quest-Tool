@@ -1,0 +1,91 @@
+export const customMobsEn = {
+  title: 'Custom Mobs',
+  subtitle:
+    'Define reusable mobs with custom names, stats, and drops. Reference them from kill objectives across your project. Appearance uses the vanilla entity model unless you add a resource pack.',
+
+  list: {
+    title: 'Mobs ({{count}})',
+    addTitle: 'Add custom mob',
+    empty: 'No custom mobs yet. Create one to use in kill quests.',
+    untitled: 'Untitled mob',
+    copy: 'Copy',
+    delete: 'Del',
+    selectEmpty: 'Select a mob from the list or create a new one.',
+  },
+
+  editor: {
+    editorName: 'Editor name',
+    editorNameHint: 'Internal label in this tool only.',
+    identityTag: 'Identity tag',
+    identityTagHint: 'Entity tag used to identify this mob in-game. Must be unique.',
+    baseEntity: 'Base entity',
+    baseEntityHint:
+      'Vanilla mob type. Appearance matches this entity unless you add a resource pack.',
+    baseEntityNote:
+      'Appearance is based on the vanilla entity. Add a resource pack to use custom models.',
+    baseEntityPlaceholder: 'minecraft:zombie',
+    displayName: 'Display name',
+    displayNameHint: 'Shown above the mob in-game.',
+    health: 'Max health',
+    healthHint: 'Override max health (leave empty for vanilla default).',
+    damage: 'Attack damage',
+    damageHint: 'Override attack damage (leave empty for vanilla default).',
+    glowing: 'Glowing',
+    glowingHint: 'Makes the mob glow through walls.',
+    bossBar: 'Boss health bar',
+    bossBarHint:
+      'Shows a boss bar to nearby players while this mob is alive. Uses max health for the bar scale (custom or vanilla default).',
+    previewCommand: 'Summon preview',
+    previewCommandHint: 'Test command to spawn this mob at your location.',
+  },
+
+  phases: {
+    title: 'Phases',
+    hint:
+      'Health-based phases. Phase 1 uses mob stats at spawn. Each later phase needs an Enter at HP % threshold — without it, that phase never triggers. Re-export after changes. Test with /function <namespace>:spawn_mob/<tag> (recommended); preview summon auto-initializes on the first tick only.',
+    addPhase: '+ Add phase',
+    empty: 'No phases configured. Add a second phase to enable health-based transitions.',
+    phaseLabel: 'Phase {{index}}',
+    phaseName: 'Phase name',
+    phaseNameHint: 'Editor label only.',
+    atHealthPercent: 'Enter at HP %',
+    atHealthPercentHint: 'Phase begins when health drops to this percent or below. Not used on phase 1.',
+    displayName: 'Display name',
+    displayNameHint: 'Override the in-game name for this phase.',
+    damage: 'Attack damage',
+    damageHint: 'Override attack damage for this phase.',
+    glowing: 'Glowing',
+    bossBarColor: 'Boss bar color',
+    bossBarColorDefault: 'Default (red)',
+    announceMessage: 'Announce message',
+    announceMessageHint: 'Shown to nearby players when this phase begins.',
+    announcePlaceholder: 'The boss enrages!',
+    effects: 'Status effects',
+    addEffect: '+ Add effect',
+    effectId: 'Effect id',
+    effectPlaceholder: 'minecraft:strength',
+    amplifier: 'Amplifier',
+    duration: 'Duration (ticks)',
+    durationHint: '0 = infinite while phase lasts',
+    equipmentOverride: 'Equipment override',
+    equipmentOverrideHint: 'Replace equipment when entering this phase. Leave empty to keep current gear.',
+    inheritHint: 'Empty fields inherit from the mob defaults above.',
+  },
+
+  drops: {
+    title: 'Custom drops',
+    hint: 'Items dropped when this mob dies. Requires the mob to be spawned by the datapack or manually.',
+    addDrop: '+ Add drop',
+    empty: 'No custom drops configured.',
+  },
+
+  equipment: {
+    title: 'Equipment',
+    hint: 'Optional armor and held items when the mob is spawned.',
+    slot: 'Slot',
+    item: 'Item id',
+    itemPlaceholder: 'minecraft:iron_sword',
+    add: '+ Add equipment',
+    empty: 'No equipment configured.',
+  },
+} as const;

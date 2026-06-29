@@ -4,6 +4,7 @@ import { type EditorTab } from '../editor/ValidationBar';
 import { getIncomingEdgeCount } from './chainEdges';
 import i18n, { getAppLocale } from '../../i18n';
 import { mobLabelI18n } from '../../i18n/useLabels';
+import { customMobDisplayLabel } from '../../generator/customMobs';
 import { type AppLocale } from '../../i18n/types';
 
 export type PlaythroughStepKind =
@@ -42,11 +43,20 @@ function mobDisplay(id: string | undefined, locale?: AppLocale): string {
   return shortId(id);
 }
 
-function objectiveLabel(quest: Quest, o: Objective, index: number, locale?: AppLocale): string {
+function objectiveLabel(
+  quest: Quest,
+  o: Objective,
+  index: number,
+  project: Project,
+  locale?: AppLocale,
+): string {
   const desc = o.description?.trim();
   if (desc) return desc;
 
-  const target = mobDisplay(o.target, locale);
+  const target =
+    quest.type === 'kill' && o.eliteMobId
+      ? customMobDisplayLabel(project, o.eliteMobId)
+      : mobDisplay(o.target, locale);
   switch (quest.type) {
     case 'kill':
       return pt('playthrough.kill', { amount: o.amount ?? 0, target }, locale);
@@ -195,7 +205,7 @@ export function buildQuestPlaythrough(quest: Quest, project: Project): Playthrou
       const kind = quest.type === 'exploration' ? 'travel' : 'objective';
       add(
         kind,
-        objectiveLabel(quest, o, i, locale),
+        objectiveLabel(quest, o, i, project, locale),
         'objectives',
         quest.type === 'exploration' ? 'travel' : quest.type === 'kill' ? 'fight' : 'task',
         objectiveDetail(quest, o, locale),
@@ -240,6 +250,36 @@ export function buildQuestPlaythrough(quest: Quest, project: Project): Playthrou
       'objectives',
       'cooldown',
     );
+  }
+
+  for (const dungeon of project.dungeons ?? []) {
+    for (const room of dungeon.rooms) {
+      if (room.questGate?.questName === quest.name) {
+        add(
+          'objective',
+          pt('playthrough.dungeonGate', { dungeon: dungeon.name, room: room.name }, locale),
+          'objectives',
+          'dungeon',
+        );
+      }
+      for (const trigger of room.triggers) {
+        if (
+          trigger.action.type === 'set_quest_state' &&
+          trigger.action.questName === quest.name
+        ) {
+          add(
+            'objective',
+            pt(
+              'playthrough.dungeonStateChange',
+              { dungeon: dungeon.name, room: room.name, state: trigger.action.state },
+              locale,
+            ),
+            'objectives',
+            'dungeon',
+          );
+        }
+      }
+    }
   }
 
   return steps;

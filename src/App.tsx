@@ -12,6 +12,8 @@ import { CommandPalette } from './components/layout/CommandPalette';
 import { QuestEditor } from './components/editor/QuestEditor';
 import { ExportPanel } from './components/export/ExportPanel';
 import { ItemsPage } from './components/ItemsPage';
+import { CustomMobsPage } from './components/CustomMobsPage';
+import { DungeonsPage } from './components/DungeonsPage';
 import { JobsPage } from './components/JobsPage';
 import { AdvancementsPage } from './components/AdvancementsPage';
 import { HelpPanel } from './components/HelpPanel';
@@ -39,6 +41,14 @@ export default function App() {
   const addCustomItem = useProjectStore((s) => s.addCustomItem);
   const deleteCustomItem = useProjectStore((s) => s.deleteCustomItem);
   const duplicateCustomItem = useProjectStore((s) => s.duplicateCustomItem);
+  const addCustomMob = useProjectStore((s) => s.addCustomMob);
+  const deleteCustomMob = useProjectStore((s) => s.deleteCustomMob);
+  const duplicateCustomMob = useProjectStore((s) => s.duplicateCustomMob);
+  const addDungeon = useProjectStore((s) => s.addDungeon);
+  const deleteDungeon = useProjectStore((s) => s.deleteDungeon);
+  const duplicateDungeon = useProjectStore((s) => s.duplicateDungeon);
+  const addRoom = useProjectStore((s) => s.addRoom);
+  const deleteRoom = useProjectStore((s) => s.deleteRoom);
   const addJob = useProjectStore((s) => s.addJob);
   const deleteJob = useProjectStore((s) => s.deleteJob);
   const duplicateJob = useProjectStore((s) => s.duplicateJob);
@@ -138,6 +148,43 @@ export default function App() {
                   }}
                   onDuplicate={duplicateCustomItem}
                   onDelete={deleteCustomItem}
+                />
+              </div>
+            </div>
+          )}
+
+          {activeView === 'mobs' && (
+            <div className="content">
+              <div className="content-inner">
+                <CustomMobsPage
+                  project={project}
+                  onChange={setProject}
+                  onAdd={() => {
+                    addCustomMob();
+                  }}
+                  onDuplicate={duplicateCustomMob}
+                  onDelete={deleteCustomMob}
+                />
+              </div>
+            </div>
+          )}
+
+          {activeView === 'dungeons' && (
+            <div className="content">
+              <div className="content-inner">
+                <DungeonsPage
+                  project={project}
+                  issues={issues}
+                  onChange={setProject}
+                  onAdd={() => {
+                    addDungeon();
+                  }}
+                  onDuplicate={duplicateDungeon}
+                  onDelete={deleteDungeon}
+                  onAddRoom={(dungeonId) => {
+                    addRoom(dungeonId);
+                  }}
+                  onDeleteRoom={deleteRoom}
                 />
               </div>
             </div>

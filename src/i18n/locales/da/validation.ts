@@ -19,6 +19,34 @@ export const validationDa = {
   customItemNoBaseItem: 'Brugerdefineret genstand "{{name}}" har ingen basis-genstand.',
   customItemUnused: 'Brugerdefineret genstand "{{name}}" bruges ikke i nogen quest.',
   duplicateItemTag: 'Dubleret genstands-tag "{{tag}}" (brugt {{count}} gange).',
+  customMobNoName: 'Brugerdefineret mob "{{name}}" har intet navn.',
+  customMobNoTag: 'Brugerdefineret mob "{{name}}" har intet identitetstag.',
+  customMobNoBaseEntity: 'Brugerdefineret mob "{{name}}" har ingen basis-entity.',
+  customMobUnused: 'Brugerdefineret mob "{{name}}" bruges ikke i nogen dræb-quest.',
+  customMobHighHealth:
+    'Brugerdefineret mob "{{name}}" har meget højt liv ({{health}}) — kan påvirke overlevelse.',
+  customMobDropsNoSpawnZone:
+    'Brugerdefineret mob "{{name}}" har drops konfigureret, men bruges ikke i en spawn-zone — spillere skal møde den i hele verdenen.',
+  duplicateMobTag: 'Dubleret mob-tag "{{tag}}" (brugt {{count}} gange).',
+  customMobPhaseThresholdMissing:
+    'Brugerdefineret mob "{{name}}" fase {{phase}} mangler HP-tærskel (påkrævet efter fase 1).',
+  customMobPhaseThresholdInvalid:
+    'Brugerdefineret mob "{{name}}" fase {{phase}} tærskel skal være mellem 1 og 99.',
+  customMobPhaseThresholdOrder:
+    'Brugerdefineret mob "{{name}}" fase-tærskler skal falde (fx 66%, derefter 33%).',
+  dungeonNoName: 'En dungeon har et tomt navn.',
+  dungeonNoTag: 'Dungeon "{{name}}" har intet funktionstag.',
+  dungeonNoRooms: 'Dungeon "{{name}}" har ingen rum.',
+  dungeonRoomNoName: 'Et rum i dungeon "{{dungeon}}" har et tomt navn.',
+  dungeonGateMissingQuest: 'Rum "{{room}}" quest-gate refererer til manglende quest "{{quest}}".',
+  dungeonSpawnMissingMob: 'Rum "{{room}}" spawn refererer til en slettet brugerdefineret mob.',
+  dungeonTriggerMissingQuest: 'Rum "{{room}}" trigger refererer til manglende quest "{{quest}}".',
+  duplicateDungeonTag: 'Dubleret dungeon-tag "{{tag}}" (brugt {{count}} gange).',
+  dungeonSpawnsNoOutcome: 'Rum "{{room}}" har spawns uden respawn men ingen on_all_killed-trigger.',
+  dungeonBossNoTrigger: 'Boss-rum "{{room}}" har ingen on_all_mobs_killed-trigger.',
+  dungeonOverlappingRooms: 'Rum "{{a}}" og "{{b}}" i "{{dungeon}}" har overlappende afgrænsninger.',
+  dungeonUnreferenced: 'Dungeon "{{name}}" refereres ikke af nogen quest-gate eller trigger.',
+  objectiveMissingCustomMob: 'Dræb-mål refererer til en brugerdefineret mob der er slettet.',
   customItemEnchantmentLevel:
     'Brugerdefineret genstand "{{name}}" fortryllelse "{{enchant}}" skal have niveau mindst 1.',
   customItemEnchantmentMaxLevel:

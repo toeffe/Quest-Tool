@@ -6,6 +6,8 @@ const VALID_VIEWS: ActiveView[] = [
   'editor',
   'flow',
   'items',
+  'mobs',
+  'dungeons',
   'jobs',
   'advancements',
   'commands',

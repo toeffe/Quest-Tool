@@ -7,6 +7,8 @@ export const commonEn = {
     flow: 'Story flow',
     editor: 'Editor',
     items: 'Custom items',
+    mobs: 'Custom mobs',
+    dungeons: 'Dungeons',
     jobs: 'Jobs',
     advancements: 'Advancements',
     commands: 'Commands',
@@ -98,6 +100,8 @@ export const commonEn = {
       editor: 'Open Editor',
       flow: 'Open Story Flow',
       items: 'Open Custom Items',
+      mobs: 'Open Custom Mobs',
+      dungeons: 'Open Dungeons',
       jobs: 'Open Jobs',
       advancements: 'Open Advancements',
       commands: 'Open Commands',
@@ -144,6 +148,15 @@ export const commonEn = {
     vanillaHint: 'Custom items are matched by their internal tag, not display name.',
     noCustomItems: 'No custom items yet. Open the Custom Items tab to create one.',
     noCustomItemsShort: 'No custom items yet. Open the Custom Items tab.',
+  },
+
+  mobSource: {
+    label: 'Mob source',
+    vanilla: 'Vanilla mob',
+    custom: 'Custom mob',
+    noCustomMobs: 'No custom mobs yet. Open the Custom Mobs tab to create one.',
+    noCustomMobsShort: 'No custom mobs yet. Open the Custom Mobs tab.',
+    selectMob: 'Select a mob…',
   },
 
   professions: {

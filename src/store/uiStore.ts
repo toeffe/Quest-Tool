@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type ActiveView = 'editor' | 'flow' | 'items' | 'jobs' | 'advancements' | 'commands' | 'export';
+export type ActiveView = 'editor' | 'flow' | 'items' | 'mobs' | 'dungeons' | 'jobs' | 'advancements' | 'commands' | 'export';
 
 interface UIStore {
   activeView: ActiveView;

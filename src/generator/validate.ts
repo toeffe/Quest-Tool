@@ -1,5 +1,6 @@
 import { type Project, type Quest } from '../types/quest';
 import { TYPED_JOB_ACTIONS } from '../types/job';
+import { normalizeBounds, type BoundingBox } from '../types/dungeon';
 import { isRewardSupported } from './platform';
 import { toIdentifier } from '../types/ids';
 import { type AppLocale } from '../i18n/types';
@@ -20,6 +21,8 @@ export interface ValidationIssue {
   questName?: string;
   jobId?: string;
   jobName?: string;
+  dungeonId?: string;
+  dungeonRoomId?: string;
   /** Field path for editor tab routing and focus (e.g. npc.name, objectives, chain.requires). */
   field?: string;
 }
@@ -45,7 +48,7 @@ function objectiveIssues(quest: Quest, locale: AppLocale): string[] {
       case 'delivery':
       case 'daily':
         if (quest.type === 'kill') {
-          if (!o.target) out.push(tValidation('missingTargetMob', { where }, locale));
+          if (!o.target && !o.eliteMobId) out.push(tValidation('missingTargetMob', { where }, locale));
         } else if (!o.target && !o.customItemId) {
           out.push(tValidation('missingTargetItem', { where }, locale));
         }
@@ -198,6 +201,283 @@ function customItemIssues(project: Project, locale: AppLocale): ValidationIssue[
       issues.push({
         level: 'error',
         message: tValidation('duplicateItemTag', { tag, count }, locale),
+      });
+    }
+  }
+
+  return issues;
+}
+
+function customMobIssues(project: Project, locale: AppLocale): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const mobs = project.customMobs ?? [];
+  const tagCounts = new Map<string, number>();
+  const referenced = new Set<string>();
+
+  for (const quest of project.quests) {
+    if (quest.type !== 'kill') continue;
+    for (const o of quest.objectives) {
+      if (o.eliteMobId) referenced.add(o.eliteMobId);
+    }
+  }
+
+  for (const mob of mobs) {
+    const tag = toIdentifier(mob.tag);
+    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+    if (!mob.name.trim()) {
+      issues.push({
+        level: 'error',
+        message: tValidation('customMobNoName', { name: mob.name || mob.tag }, locale),
+      });
+    }
+    if (!tag) {
+      issues.push({
+        level: 'error',
+        message: tValidation('customMobNoTag', { name: mob.name }, locale),
+      });
+    }
+    if (!mob.baseEntity.trim()) {
+      issues.push({
+        level: 'error',
+        message: tValidation('customMobNoBaseEntity', { name: mob.name }, locale),
+      });
+    }
+    if (!referenced.has(mob.id)) {
+      issues.push({
+        level: 'warning',
+        message: tValidation('customMobUnused', { name: mob.name }, locale),
+      });
+    }
+    if (mob.health != null && mob.health > 500) {
+      issues.push({
+        level: 'warning',
+        message: tValidation('customMobHighHealth', { name: mob.name, health: mob.health }, locale),
+      });
+    }
+    if ((mob.drops ?? []).length > 0) {
+      const usedInSpawnZone = project.quests.some(
+        (q) =>
+          q.type === 'kill' &&
+          q.objectives.some((o) => o.eliteMobId === mob.id && o.spawnZone),
+      );
+      if (!usedInSpawnZone) {
+        issues.push({
+          level: 'warning',
+          message: tValidation('customMobDropsNoSpawnZone', { name: mob.name }, locale),
+        });
+      }
+    }
+
+    const phases = mob.phases ?? [];
+    if (phases.length >= 2) {
+      let prevThreshold = 100;
+      for (let i = 0; i < phases.length; i++) {
+        const phase = phases[i];
+        if (i === 0) continue;
+        const pct = phase.atHealthPercent;
+        const phaseLabel = phase.name || String(i + 1);
+        if (pct == null) {
+          issues.push({
+            level: 'error',
+            message: tValidation(
+              'customMobPhaseThresholdMissing',
+              { name: mob.name, phase: phaseLabel },
+              locale,
+            ),
+          });
+          continue;
+        }
+        if (pct < 1 || pct > 99) {
+          issues.push({
+            level: 'error',
+            message: tValidation(
+              'customMobPhaseThresholdInvalid',
+              { name: mob.name, phase: phaseLabel },
+              locale,
+            ),
+          });
+        }
+        if (pct >= prevThreshold) {
+          issues.push({
+            level: 'error',
+            message: tValidation(
+              'customMobPhaseThresholdOrder',
+              { name: mob.name, phase: phaseLabel },
+              locale,
+            ),
+          });
+        }
+        prevThreshold = pct;
+      }
+    }
+  }
+
+  for (const [tag, count] of tagCounts) {
+    if (count > 1) {
+      issues.push({
+        level: 'error',
+        message: tValidation('duplicateMobTag', { tag, count }, locale),
+      });
+    }
+  }
+
+  return issues;
+}
+
+function boxesOverlap(a: BoundingBox, b: BoundingBox): boolean {
+  const na = normalizeBounds(a);
+  const nb = normalizeBounds(b);
+  return (
+    na.x1 <= nb.x2 &&
+    na.x2 >= nb.x1 &&
+    na.y1 <= nb.y2 &&
+    na.y2 >= nb.y1 &&
+    na.z1 <= nb.z2 &&
+    na.z2 >= nb.z1
+  );
+}
+
+function dungeonIssues(project: Project, locale: AppLocale): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const dungeons = project.dungeons ?? [];
+  const questNames = new Set(project.quests.map((q) => q.name));
+  const customMobIds = new Set((project.customMobs ?? []).map((m) => m.id));
+  const tagCounts = new Map<string, number>();
+
+  for (const dungeon of dungeons) {
+    const tag = toIdentifier(dungeon.tag);
+    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+
+    if (!dungeon.name.trim()) {
+      issues.push({
+        level: 'error',
+        message: tValidation('dungeonNoName', undefined, locale),
+        dungeonId: dungeon.id,
+        field: `dungeons.${dungeon.id}.name`,
+      });
+    }
+    if (!tag) {
+      issues.push({
+        level: 'error',
+        message: tValidation('dungeonNoTag', { name: dungeon.name }, locale),
+        dungeonId: dungeon.id,
+        field: `dungeons.${dungeon.id}.tag`,
+      });
+    }
+    if (dungeon.rooms.length === 0) {
+      issues.push({
+        level: 'error',
+        message: tValidation('dungeonNoRooms', { name: dungeon.name }, locale),
+        dungeonId: dungeon.id,
+      });
+    }
+
+    let hasQuestRef = false;
+
+    for (const room of dungeon.rooms) {
+      if (!room.name.trim()) {
+        issues.push({
+          level: 'error',
+          message: tValidation('dungeonRoomNoName', { dungeon: dungeon.name }, locale),
+          dungeonId: dungeon.id,
+          dungeonRoomId: room.id,
+          field: `dungeons.${dungeon.id}.rooms.${room.id}.name`,
+        });
+      }
+
+      if (room.questGate) {
+        hasQuestRef = true;
+        if (!questNames.has(room.questGate.questName)) {
+          issues.push({
+            level: 'error',
+            message: tValidation('dungeonGateMissingQuest', {
+              room: room.name,
+              quest: room.questGate.questName,
+            }, locale),
+            dungeonId: dungeon.id,
+            dungeonRoomId: room.id,
+          });
+        }
+      }
+
+      for (const spawn of room.spawns) {
+        if (spawn.sourceType === 'customMob' && spawn.customMobId && !customMobIds.has(spawn.customMobId)) {
+          issues.push({
+            level: 'error',
+            message: tValidation('dungeonSpawnMissingMob', { room: room.name }, locale),
+            dungeonId: dungeon.id,
+            dungeonRoomId: room.id,
+          });
+        }
+      }
+
+      for (const trigger of room.triggers) {
+        if (trigger.action.type === 'set_quest_state') {
+          hasQuestRef = true;
+          if (!questNames.has(trigger.action.questName)) {
+            issues.push({
+              level: 'error',
+              message: tValidation('dungeonTriggerMissingQuest', {
+                room: room.name,
+                quest: trigger.action.questName,
+              }, locale),
+              dungeonId: dungeon.id,
+              dungeonRoomId: room.id,
+            });
+          }
+        }
+      }
+
+      const hasOnAllKilled = room.triggers.some((t) => t.event === 'on_all_mobs_killed');
+      const hasNonRespawnSpawns = room.spawns.some((s) => !s.respawn && s.count > 0);
+      if (hasNonRespawnSpawns && !hasOnAllKilled && room.spawns.length > 0) {
+        issues.push({
+          level: 'warning',
+          message: tValidation('dungeonSpawnsNoOutcome', { room: room.name }, locale),
+          dungeonId: dungeon.id,
+          dungeonRoomId: room.id,
+        });
+      }
+      if (room.type === 'boss_room' && !hasOnAllKilled) {
+        issues.push({
+          level: 'warning',
+          message: tValidation('dungeonBossNoTrigger', { room: room.name }, locale),
+          dungeonId: dungeon.id,
+          dungeonRoomId: room.id,
+        });
+      }
+    }
+
+    for (let i = 0; i < dungeon.rooms.length; i++) {
+      for (let j = i + 1; j < dungeon.rooms.length; j++) {
+        if (boxesOverlap(dungeon.rooms[i].bounds, dungeon.rooms[j].bounds)) {
+          issues.push({
+            level: 'warning',
+            message: tValidation('dungeonOverlappingRooms', {
+              a: dungeon.rooms[i].name,
+              b: dungeon.rooms[j].name,
+              dungeon: dungeon.name,
+            }, locale),
+            dungeonId: dungeon.id,
+          });
+        }
+      }
+    }
+
+    if (!hasQuestRef && dungeon.rooms.length > 0) {
+      issues.push({
+        level: 'warning',
+        message: tValidation('dungeonUnreferenced', { name: dungeon.name }, locale),
+        dungeonId: dungeon.id,
+      });
+    }
+  }
+
+  for (const [tag, count] of tagCounts) {
+    if (count > 1) {
+      issues.push({
+        level: 'error',
+        message: tValidation('duplicateDungeonTag', { tag, count }, locale),
       });
     }
   }
@@ -419,9 +699,12 @@ export function validateProject(project: Project, locale?: AppLocale): Validatio
   }
 
   issues.push(...customItemIssues(project, effectiveLocale));
+  issues.push(...customMobIssues(project, effectiveLocale));
+  issues.push(...dungeonIssues(project, effectiveLocale));
   issues.push(...jobIssues(project, effectiveLocale));
 
   const customItemIds = new Set((project.customItems ?? []).map((i) => i.id));
+  const customMobIds = new Set((project.customMobs ?? []).map((m) => m.id));
 
   const nameCounts = new Map<string, number>();
   const npcTagCounts = new Map<string, number>();
@@ -445,6 +728,9 @@ export function validateProject(project: Project, locale?: AppLocale): Validatio
     for (const o of quest.objectives) {
       if (o.customItemId && !customItemIds.has(o.customItemId)) {
         add('error', tValidation('objectiveMissingCustomItem', undefined, effectiveLocale), quest);
+      }
+      if (o.eliteMobId && !customMobIds.has(o.eliteMobId)) {
+        add('error', tValidation('objectiveMissingCustomMob', undefined, effectiveLocale), quest);
       }
       for (const d of o.zoneDrops ?? []) {
         if (d.customItemId && !customItemIds.has(d.customItemId)) {

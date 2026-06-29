@@ -74,6 +74,15 @@ export const defaultsDa = {
     baseItem: 'minecraft:paper',
   },
 
+  customMob: {
+    name: 'Ny mob',
+  },
+
+  dungeon: {
+    name: 'Nyt dungeon',
+    defaultRoom: 'Indgangsrum',
+  },
+
   job: {
     defaultName: 'Fiskeri',
     milestoneCommand: 'say {player} nåede en job-milestone!',

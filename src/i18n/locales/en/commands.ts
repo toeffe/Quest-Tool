@@ -23,6 +23,14 @@ export const commandsEn = {
       description:
         'Jobs run automatically every tick. Track levels under Esc → Advancements → your pack namespace tab.',
     },
+    customMobs: {
+      title: 'Custom mobs',
+      description: 'Spawn project-defined custom mobs for testing or world placement.',
+    },
+    dungeons: {
+      title: 'Dungeons',
+      description: 'Initialize, reset, and manually control dungeon rooms.',
+    },
   },
 
   entries: {
@@ -48,5 +56,11 @@ export const commandsEn = {
     syncJob: 'Sync "{{jobName}}" advancement tree to current levels.',
     passiveJob:
       '{{xpPerAction}} XP per fish caught, max level {{maxLevel}}',
+    giveCustomMobs: 'Spawn one of each custom mob in front of you (testing).',
+    spawnCustomMob: 'Spawn custom mob "{{mobName}}" at your location.',
+    debugCustomMobPhases:
+      'Debug phase state for "{{mobName}}" (HP%, phase index, thresholds).',
+    dungeonInit: 'Initialize dungeon "{{name}}" — scoreboards and init spawns.',
+    dungeonReset: 'Reset dungeon "{{name}}" — kill mobs and clear room state.',
   },
 } as const;

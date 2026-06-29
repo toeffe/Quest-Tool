@@ -5,8 +5,16 @@ import {
   questObjectives,
 } from './context';
 import { type Quest } from '../types/quest';
+import { type CustomMob } from '../types/customMob';
 import { killQuestMobsCommand, spawnOneInZone, zonePopulationCap, containMobsInZone } from './npc';
 import { normalizeEntityId } from '../data/mobs';
+import {
+  findCustomMob,
+  buildCustomMobKillAdvancement,
+  spawnCustomMobInZone,
+  resolveCustomMobDeathLootTable,
+  customMobDisplayLabel,
+} from './customMobs';
 import { rewardCommands } from './platform';
 import { resolveObjectiveStack, itemDisplayLabel } from './items';
 import {
@@ -53,6 +61,10 @@ interface ObjectiveInfo {
   killed: string;
   reached: string;
   mobTag: string;
+  /** Entity tag used for spawn-zone filtering (quest mob tag or custom mob tag). */
+  entityTag: string;
+  /** Resolved custom mob when eliteMobId is set on a kill objective. */
+  customMob?: CustomMob;
   timerHolder: string;
   liveHolder: string;
   /** Remove this objective's items from inventory on turn-in. */
@@ -67,9 +79,38 @@ function questSupportsSpawnZone(type: Quest['type']): boolean {
   return type === 'kill' || type === 'gather';
 }
 
-function spawnZoneEntity(quest: Quest, o: Quest['objectives'][number]): string {
-  if (quest.type === 'kill') return namespaced(o.target ?? 'minecraft:zombie');
+function spawnZoneEntity(
+  ctx: CompileContext,
+  quest: Quest,
+  o: Quest['objectives'][number],
+): string {
+  if (quest.type === 'kill') {
+    if (o.eliteMobId) {
+      const mob = findCustomMob(ctx.project, o.eliteMobId);
+      if (mob) return normalizeEntityId(mob.baseEntity);
+    }
+    return namespaced(o.target ?? 'minecraft:zombie');
+  }
   return namespaced(o.zoneMob ?? 'minecraft:cow');
+}
+
+function objectiveEntityTag(
+  ctx: CompileContext,
+  quest: Quest,
+  o: Quest['objectives'][number],
+  j: number,
+  qc: QuestContext,
+): string {
+  if (quest.type === 'kill' && o.eliteMobId) {
+    const mob = findCustomMob(ctx.project, o.eliteMobId);
+    if (mob) return mob.tag;
+  }
+  return qc.objectives[j].mobTag;
+}
+
+function killObjectiveLabel(ctx: CompileContext, o: Quest['objectives'][number]): string {
+  if (o.eliteMobId) return customMobDisplayLabel(ctx.project, o.eliteMobId);
+  return itemDisplayLabel(ctx.project, o);
 }
 
 function objectiveInfos(ctx: CompileContext, qc: QuestContext): ObjectiveInfo[] {
@@ -77,13 +118,23 @@ function objectiveInfos(ctx: CompileContext, qc: QuestContext): ObjectiveInfo[] 
     const amount = Math.max(1, o.amount ?? 1);
     const item =
       resolveObjectiveStack(ctx.project, o) ?? namespaced(o.target ?? 'minecraft:stone');
-    const entity = spawnZoneEntity(qc.quest, o);
+    const customMob = o.eliteMobId ? findCustomMob(ctx.project, o.eliteMobId) : undefined;
+    const entity = spawnZoneEntity(ctx, qc.quest, o);
     const zoneDropMode = o.spawnZone ? (o.zoneDropMode ?? 'vanilla') : undefined;
+    const mobTag = qc.objectives[j].mobTag;
+    const entityTag = objectiveEntityTag(ctx, qc.quest, o, j, qc);
+    let deathLootTable = zoneDropMode
+      ? resolveDeathLootTableRef(zoneDropMode, ctx.namespace, qc.fnBase, j)
+      : undefined;
+    if (customMob) {
+      deathLootTable =
+        resolveCustomMobDeathLootTable(customMob, ctx.namespace) ?? deathLootTable;
+    }
     return {
       amount,
       item,
       entity,
-      label: itemDisplayLabel(ctx.project, o),
+      label: killObjectiveLabel(ctx, o),
       desc: o.description ?? qc.quest.name,
       x: o.location?.x ?? 0,
       y: o.location?.y ?? 64,
@@ -94,15 +145,15 @@ function objectiveInfos(ctx: CompileContext, qc: QuestContext): ObjectiveInfo[] 
       progress: qc.objectives[j].progress,
       killed: qc.objectives[j].killed,
       reached: qc.objectives[j].reached,
-      mobTag: qc.objectives[j].mobTag,
+      mobTag,
+      entityTag,
+      customMob,
       timerHolder: qc.objectives[j].timerHolder,
       liveHolder: qc.objectives[j].liveHolder,
       consumeOnTurnIn:
         qc.quest.type === 'delivery' || !!(o.consumeOnTurnIn && usesItemTarget(qc.quest.type)),
       zoneDropMode,
-      deathLootTable: zoneDropMode
-        ? resolveDeathLootTableRef(zoneDropMode, ctx.namespace, qc.fnBase, j)
-        : undefined,
+      deathLootTable,
     };
   });
 }
@@ -142,18 +193,37 @@ export function buildKillZoneAdvancement(
   };
 }
 
-/** Advancement file paths for zoned kill objectives. */
+/** Advancement file paths for tag-based kill objectives (spawn zones and custom mobs). */
 export function buildKillZoneAdvancementFiles(
   ctx: CompileContext,
   qc: QuestContext,
 ): Record<string, string> {
   const files: Record<string, string> = {};
   if (qc.quest.type !== 'kill') return files;
+  const objectives = questObjectives(qc.quest);
   const infos = objectiveInfos(ctx, qc);
   for (let j = 0; j < infos.length; j++) {
-    if (!infos[j].spawnZone) continue;
+    const o = objectives[j];
+    if (!o.spawnZone && !o.eliteMobId) continue;
     const path = `data/${ctx.namespace}/advancement/${qc.fnBase}/kill_${j}.json`;
-    files[path] = JSON.stringify(buildKillZoneAdvancement(ctx, qc, j, infos[j].item, infos[j].mobTag), null, 2) + '\n';
+    if (o.eliteMobId && infos[j].customMob) {
+      files[path] =
+        JSON.stringify(
+          buildCustomMobKillAdvancement(
+            infos[j].customMob!,
+            ctx.namespace,
+            `${qc.fnBase}/kill_credit_${j}`,
+          ),
+          null,
+          2,
+        ) + '\n';
+    } else if (o.spawnZone) {
+      files[path] = JSON.stringify(
+        buildKillZoneAdvancement(ctx, qc, j, infos[j].entity, infos[j].entityTag),
+        null,
+        2,
+      ) + '\n';
+    }
   }
   return files;
 }
@@ -182,13 +252,13 @@ function cleanupSpawnZoneLines(ctx: CompileContext, qc: QuestContext): string[] 
   if (!questSupportsSpawnZone(qc.quest.type)) return [];
   const lines: string[] = [];
   for (const info of objectiveInfos(ctx, qc)) {
-    if (info.spawnZone) lines.push(killQuestMobsCommand(info.mobTag));
+    if (info.spawnZone) lines.push(killQuestMobsCommand(info.entityTag));
   }
   return lines;
 }
 
 function resetSpawnZoneLines(info: ObjectiveInfo): string[] {
-  return resetSpawnZoneByScore(info.mobTag, info.timerHolder);
+  return resetSpawnZoneByScore(info.entityTag, info.timerHolder);
 }
 
 function resetSpawnZoneByScore(mobTag: string, timerHolder: string): string[] {
@@ -202,12 +272,12 @@ function countLiveMobsInZone(info: ObjectiveInfo): string[] {
   return [
     `scoreboard players set ${info.liveHolder} ${SYS_OBJECTIVE} 0`,
     // Count all tagged quest mobs (not distance-filtered) so wanderers don't break the cap.
-    `execute as @e[type=${info.entity},tag=${info.mobTag}] run scoreboard players add ${info.liveHolder} ${SYS_OBJECTIVE} 1`,
+    `execute as @e[type=${info.entity},tag=${info.entityTag}] run scoreboard players add ${info.liveHolder} ${SYS_OBJECTIVE} 1`,
   ];
 }
 
 function containZoneMobs(info: ObjectiveInfo): string[] {
-  return containMobsInZone(info.entity, info.mobTag, info.x, info.y, info.z, info.radius);
+  return containMobsInZone(info.entity, info.entityTag, info.x, info.y, info.z, info.radius);
 }
 
 function buildZoneTickLines(ctx: CompileContext, qc: QuestContext, infos: ObjectiveInfo[]): string[] {
@@ -233,22 +303,33 @@ function buildZoneTickLines(ctx: CompileContext, qc: QuestContext, infos: Object
   return lines;
 }
 
-function buildSpawnMobFunction(info: ObjectiveInfo): string {
+function buildSpawnMobFunction(info: ObjectiveInfo, namespace?: string): string {
   const cap = info.cap;
-  return (
-    [
-      `# Spawn one quest mob in the zone (max ${cap} live)`,
-      ...countLiveMobsInZone(info),
-      `execute if score ${info.liveHolder} ${SYS_OBJECTIVE} matches ${cap}.. run return 0`,
-      ...spawnOneInZone(
-        info.entity,
-        info.mobTag,
+  const spawnLines = info.customMob
+    ? spawnCustomMobInZone(
+        info.customMob,
         info.x,
         info.y,
         info.z,
         info.radius,
         info.deathLootTable,
-      ),
+        namespace,
+      )
+    : spawnOneInZone(
+        info.entity,
+        info.entityTag,
+        info.x,
+        info.y,
+        info.z,
+        info.radius,
+        info.deathLootTable,
+      );
+  return (
+    [
+      `# Spawn one quest mob in the zone (max ${cap} live)`,
+      ...countLiveMobsInZone(info),
+      `execute if score ${info.liveHolder} ${SYS_OBJECTIVE} matches ${cap}.. run return 0`,
+      ...spawnLines,
       `execute store result score ${info.timerHolder} ${SYS_OBJECTIVE} run random value 60..160`,
     ].join('\n') + '\n'
   );
@@ -393,8 +474,10 @@ function completionBody(ctx: CompileContext, qc: QuestContext): string[] {
         switch (next.quest.type) {
           case 'kill': {
             lines.push(`scoreboard players set @s ${score.killed} 0`);
-            if (nextObjs[oi]?.spawnZone) {
-              lines.push(...resetSpawnZoneByScore(score.mobTag, score.timerHolder));
+            const nextObj = nextObjs[oi];
+            if (nextObj?.spawnZone) {
+              const entityTag = objectiveEntityTag(ctx, next.quest, nextObj, oi, next);
+              lines.push(...resetSpawnZoneByScore(entityTag, score.timerHolder));
             }
             break;
           }
@@ -663,10 +746,12 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
   turnin.push(...completionBody(ctx, qc));
   files[`${qc.fnBase}/turnin.mcfunction`] = turnin.join('\n') + '\n';
 
+  const objectives = questObjectives(quest);
   for (let j = 0; j < infos.length; j++) {
-    if (!infos[j].spawnZone) continue;
-    files[`${qc.fnBase}/spawn_mob_${j}.mcfunction`] = buildSpawnMobFunction(infos[j]);
-    if (quest.type === 'kill') {
+    if (infos[j].spawnZone) {
+      files[`${qc.fnBase}/spawn_mob_${j}.mcfunction`] = buildSpawnMobFunction(infos[j], ctx.namespace);
+    }
+    if (quest.type === 'kill' && (infos[j].spawnZone || objectives[j].eliteMobId)) {
       files[`${qc.fnBase}/kill_credit_${j}.mcfunction`] = buildKillCreditFunction(
         ctx,
         qc,

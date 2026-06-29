@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createProject, createQuest, createCustomItem } from '../types/factory';
+import { createProject, createQuest, createCustomItem, createCustomMob } from '../types/factory';
 import { type Objective } from '../types/quest';
 import { validateProject, hasBlockingErrors } from './validate';
 
@@ -242,5 +242,38 @@ describe('validation', () => {
     ];
     const issues = validateProject(project, en);
     expect(issues.some((i) => /milestone references a custom item/.test(i.message))).toBe(true);
+  });
+
+  it('flags missing custom mob references on kill objectives', () => {
+    const project = createProject('BrokenMob', en);
+    const quest = createQuest('Kill', 'kill', en);
+    quest.objectives = [{ eliteMobId: 'missing-id', amount: 1 }];
+    project.quests = [quest];
+    const issues = validateProject(project, en);
+    expect(issues.some((i) => /custom mob that was deleted/.test(i.message))).toBe(true);
+  });
+
+  it('flags duplicate custom mob tags', () => {
+    const project = createProject('DupMobs', en);
+    const a = createCustomMob('Captain A', en);
+    const b = createCustomMob('Captain B', en);
+    a.tag = 'same_mob_tag';
+    b.tag = 'same_mob_tag';
+    project.customMobs = [a, b];
+    project.quests = [createQuest('Q', 'kill', en)];
+    project.quests[0].objectives = [{ eliteMobId: a.id, amount: 1 }];
+    const issues = validateProject(project, en);
+    expect(issues.some((i) => /Duplicate custom mob tag/.test(i.message))).toBe(true);
+  });
+
+  it('accepts kill quest with custom mob reference', () => {
+    const project = createProject('GoodMob', en);
+    const mob = createCustomMob('Elite Zombie', en);
+    project.customMobs = [mob];
+    const quest = createQuest('Kill', 'kill', en);
+    quest.objectives = [{ eliteMobId: mob.id, amount: 3 }];
+    project.quests = [quest];
+    const issues = validateProject(project, en);
+    expect(hasBlockingErrors(issues)).toBe(false);
   });
 });

@@ -1,10 +1,27 @@
 import { type CompileContext, questObjectives, statId } from './context';
+import { findCustomMob } from './customMobs';
 import { buildJobLoadLines, buildJobResetLines } from './jobFunctions';
+import { buildCustomMobBossBarSetupLines, buildCustomMobBossBarTickHook } from './customMobBossBar';
+import { buildCustomMobPhaseSetupLines, buildCustomMobPhaseTickHook } from './customMobPhases';
 import { buildJobBossBarSetupLines, buildHideJobBossBarLines, jobsUseProgressBar } from './jobBossBar';
+import { buildDungeonLoadLines, buildDungeonInitCalls } from './dungeons';
 import { NOW_HOLDER, SYS_OBJECTIVE } from './sys';
 import { escapeSnbtString } from './text';
 
 export { NOW_HOLDER, SYS_OBJECTIVE } from './sys';
+
+function spawnZoneEntityTag(
+  ctx: CompileContext,
+  qc: CompileContext['quests'][number],
+  o: ReturnType<typeof questObjectives>[number],
+  j: number,
+): string {
+  if (qc.quest.type === 'kill' && o.eliteMobId) {
+    const mob = findCustomMob(ctx.project, o.eliteMobId);
+    if (mob) return mob.tag;
+  }
+  return qc.objectives[j].mobTag;
+}
 
 /**
  * The load function: declares every scoreboard objective the pack needs and
@@ -35,7 +52,7 @@ export function buildLoadFunction(ctx: CompileContext): string {
       const score = qc.objectives[j];
       switch (qc.quest.type) {
         case 'kill': {
-          if (o.spawnZone) {
+          if (o.spawnZone || o.eliteMobId) {
             lines.push(`scoreboard objectives add ${score.killed} dummy`);
           } else {
             const mob = statId(o.target ?? 'minecraft:zombie');
@@ -65,6 +82,9 @@ export function buildLoadFunction(ctx: CompileContext): string {
   }
 
   lines.push(...buildJobBossBarSetupLines(ctx));
+  lines.push(...buildCustomMobBossBarSetupLines(ctx));
+  lines.push(...buildCustomMobPhaseSetupLines(ctx));
+  lines.push(...buildDungeonLoadLines(ctx));
 
   if (jobsUseProgressBar(ctx)) {
     lines.push(`execute as @a run function ${ctx.namespace}:jobs/ensure_pid`);
@@ -74,6 +94,10 @@ export function buildLoadFunction(ctx: CompileContext): string {
     lines.push(
       `execute as @a run function ${ctx.namespace}:${jc.fnBase}/sync_advancements`,
     );
+  }
+
+  for (const initCall of buildDungeonInitCalls(ctx)) {
+    lines.push(initCall);
   }
 
   lines.push(`tellraw @a {"text":"${escapeSnbtString(STR.packLoaded(ctx.project.name))}","color":"green"}`);
@@ -95,6 +119,11 @@ export function buildTickFunction(ctx: CompileContext): string {
   if (ctx.jobs.length > 0) {
     lines.push(`function ${ctx.namespace}:jobs/tick`);
   }
+  if ((ctx.project.dungeons ?? []).length > 0) {
+    lines.push(`function ${ctx.namespace}:dungeons/tick`);
+  }
+  lines.push(...buildCustomMobBossBarTickHook(ctx));
+  lines.push(...buildCustomMobPhaseTickHook(ctx));
   return lines.join('\n') + '\n';
 }
 
@@ -128,14 +157,14 @@ export function buildResetFunction(ctx: CompileContext): string {
         case 'kill':
           lines.push(`scoreboard players set @s ${score.killed} 0`);
           if (o.spawnZone) {
-            lines.push(`kill @e[tag=${score.mobTag}]`);
+            lines.push(`kill @e[tag=${spawnZoneEntityTag(ctx, qc, o, j)}]`);
             lines.push(`scoreboard players set ${score.timerHolder} ${SYS_OBJECTIVE} 0`);
           }
           break;
         case 'gather':
           lines.push(`scoreboard players set @s ${score.progress} 0`);
           if (o.spawnZone) {
-            lines.push(`kill @e[tag=${score.mobTag}]`);
+            lines.push(`kill @e[tag=${spawnZoneEntityTag(ctx, qc, o, j)}]`);
             lines.push(`scoreboard players set ${score.timerHolder} ${SYS_OBJECTIVE} 0`);
           }
           break;

@@ -7,6 +7,8 @@ const VIEW_IDS: ActiveView[] = [
   'editor',
   'flow',
   'items',
+  'mobs',
+  'dungeons',
   'jobs',
   'advancements',
   'commands',

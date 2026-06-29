@@ -52,6 +52,7 @@ export const flowEn = {
     unlocks: 'Unlocks',
     autoStarts: 'Auto-starts',
     missingQuest: 'Missing quest',
+    gates: 'Quest gate',
     popoverTitle: 'Chain link',
     popoverAria: 'Chain link options',
     popoverRoute: '{{source}} → {{target}}',
@@ -94,6 +95,15 @@ export const flowEn = {
     title: 'Missing quest: {{name}}',
   },
 
+  dungeonNode: {
+    untitled: 'Untitled dungeon',
+    typeLabel: 'Dungeon',
+    handleInTitle: 'Drop a quest link here to set quest gate on all rooms',
+    roomCount: '{{count}} room',
+    roomCount_plural: '{{count}} rooms',
+    missingMobTitle: 'A room spawn references a deleted custom mob',
+  },
+
   generateNode: {
     pack: 'PACK',
     title: 'Generate & Export',
@@ -132,6 +142,8 @@ export const flowEn = {
     missingNext: 'Missing next quest "{{name}}"',
     cooldownHours: 'Available again after {{hours}}h',
     cooldownMinutes: 'Available again after {{minutes}}m',
+    dungeonGate: 'Dungeon "{{dungeon}}" room "{{room}}" activates when this quest is active',
+    dungeonStateChange: 'Dungeon "{{dungeon}}" / "{{room}}" may set quest state to {{state}}',
     kill: 'Kill {{amount}} {{target}}',
     gather: 'Gather {{amount}} {{target}}',
     deliver: 'Deliver {{amount}} {{target}}',

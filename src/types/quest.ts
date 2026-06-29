@@ -116,6 +116,8 @@ export interface Objective {
   target?: string;
   /** When set on gather/delivery/daily, matches a project custom item instead of target. */
   customItemId?: string;
+  /** When set on kill objectives, matches a project custom mob instead of target. */
+  eliteMobId?: string;
   /** Required amount (kills or items). */
   amount?: number;
   /** Human-readable label shown to the player. */
@@ -205,7 +207,9 @@ export interface Quest {
 }
 
 import { type CustomItem } from './item';
+import { type CustomMob } from './customMob';
 import { type Job } from './job';
+import { type Dungeon } from './dungeon';
 
 export interface Project {
   id: string;
@@ -220,7 +224,11 @@ export interface Project {
   jobs?: Job[];
   /** Reusable custom item definitions for rewards and objectives. */
   customItems?: CustomItem[];
-  /** Manual Story Flow node positions, keyed by quest id (plus the Generate node). */
+  /** Reusable custom mob definitions for kill objectives. */
+  customMobs?: CustomMob[];
+  /** Dungeon definitions with rooms, spawns, and triggers. */
+  dungeons?: Dungeon[];
+  /** Manual Story Flow node positions, keyed by quest/dungeon id (plus the Generate node). */
   flowPositions?: Record<string, { x: number; y: number }>;
   /** Schema version for migrations. */
   version: number;

@@ -20,3 +20,8 @@ proj.md
 QuestToolMC.jsx
 scripts/ingame/output/
 .gitignore
+docs/custom-mobs-strategy.md
+docs/dungeon-editor-strategy.md
+.gitignore
+.gitignore
+.cursor/rules/minecraft-1.21.11-commands.mdc

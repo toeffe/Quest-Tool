@@ -1,7 +1,9 @@
 import { type Project, type Quest } from '../types/quest';
 import { type CustomItem } from '../types/item';
+import { type CustomMob } from '../types/customMob';
 import { type Job } from '../types/job';
-import { createProject, createCustomItem, createJob, mergeStarterJobs, PROJECT_SCHEMA_VERSION } from '../types/factory';
+import { type Dungeon, type DungeonRoom, createDungeon, createDungeonRoom } from '../types/dungeon';
+import { createProject, createCustomItem, createCustomMob, createJob, mergeStarterJobs, PROJECT_SCHEMA_VERSION } from '../types/factory';
 import { uid } from '../types/ids';
 
 import JSZip from 'jszip';
@@ -42,6 +44,9 @@ function migrate(project: Project): Project {
   if (!Array.isArray(next.customItems)) {
     next.customItems = [];
   }
+  if (!Array.isArray(next.customMobs)) {
+    next.customMobs = [];
+  }
   if (!Array.isArray(next.jobs)) {
     next.jobs = [];
   }
@@ -70,6 +75,15 @@ function migrate(project: Project): Project {
       jobs[0] = { ...jobs[0], starterKey: 'starter_fishing' };
     }
     next.jobs = mergeStarterJobs(jobs, next.locale ?? 'da');
+  }
+  if (fromVersion < 7) {
+    next.customMobs = next.customMobs ?? [];
+  }
+  if (fromVersion < 8) {
+    next.dungeons = next.dungeons ?? [];
+  }
+  if (!Array.isArray(next.dungeons)) {
+    next.dungeons = [];
   }
   if (!next.locale) {
     next.locale = 'da';
@@ -241,6 +255,64 @@ export function createAndAddCustomItem(
   return { project: addCustomItem(project, item), item };
 }
 
+// ---- Custom mob operations ----
+
+export function addCustomMob(project: Project, mob: CustomMob): Project {
+  const mobs = project.customMobs ?? [];
+  return { ...project, customMobs: [...mobs, mob] };
+}
+
+export function updateCustomMob(project: Project, mob: CustomMob): Project {
+  const mobs = project.customMobs ?? [];
+  return {
+    ...project,
+    customMobs: mobs.map((m) => (m.id === mob.id ? mob : m)),
+  };
+}
+
+export function deleteCustomMob(project: Project, mobId: string): Project {
+  const mobs = (project.customMobs ?? []).filter((m) => m.id !== mobId);
+  const quests = project.quests.map((q) => ({
+    ...q,
+    objectives: q.objectives.map((o) =>
+      o.eliteMobId === mobId ? { ...o, eliteMobId: undefined } : o,
+    ),
+  }));
+  const dungeons = (project.dungeons ?? []).map((d) => ({
+    ...d,
+    rooms: d.rooms.map((r) => ({
+      ...r,
+      spawns: r.spawns.map((s) =>
+        s.customMobId === mobId ? { ...s, customMobId: undefined } : s,
+      ),
+    })),
+  }));
+  return { ...project, customMobs: mobs, quests, dungeons };
+}
+
+export function duplicateCustomMob(project: Project, mobId: string): Project {
+  const original = (project.customMobs ?? []).find((m) => m.id === mobId);
+  if (!original) return project;
+  const copy: CustomMob = {
+    ...structuredClone(original),
+    id: uid(),
+    name: `${original.name} (copy)`,
+    tag: `${original.tag}_copy`,
+  };
+  const mobs = [...(project.customMobs ?? [])];
+  const index = mobs.findIndex((m) => m.id === mobId);
+  mobs.splice(index + 1, 0, copy);
+  return { ...project, customMobs: mobs };
+}
+
+export function createAndAddCustomMob(
+  project: Project,
+): { project: Project; mob: CustomMob } {
+  const n = (project.customMobs ?? []).length + 1;
+  const mob = createCustomMob(`Mob ${n}`, project.locale ?? 'da');
+  return { project: addCustomMob(project, mob), mob };
+}
+
 // ---- Job operations ----
 
 export function addJob(project: Project, job: Job): Project {
@@ -290,4 +362,91 @@ export function createAndAddJob(project: Project): { project: Project; job: Job 
   const n = (project.jobs ?? []).length + 1;
   const job = createJob(`Job ${n}`);
   return { project: addJob(project, job), job };
+}
+
+// ---- Dungeon operations ----
+
+export function addDungeon(project: Project, dungeon: Dungeon): Project {
+  const dungeons = project.dungeons ?? [];
+  return { ...project, dungeons: [...dungeons, dungeon] };
+}
+
+export function updateDungeon(project: Project, dungeon: Dungeon): Project {
+  const dungeons = project.dungeons ?? [];
+  return {
+    ...project,
+    dungeons: dungeons.map((d) => (d.id === dungeon.id ? dungeon : d)),
+  };
+}
+
+export function deleteDungeon(project: Project, dungeonId: string): Project {
+  const dungeons = (project.dungeons ?? []).filter((d) => d.id !== dungeonId);
+  return { ...project, dungeons };
+}
+
+export function duplicateDungeon(project: Project, dungeonId: string): Project {
+  const original = (project.dungeons ?? []).find((d) => d.id === dungeonId);
+  if (!original) return project;
+  const copy: Dungeon = {
+    ...structuredClone(original),
+    id: uid(),
+    name: `${original.name} (copy)`,
+    tag: `${original.tag}_copy`,
+    rooms: original.rooms.map((r) => ({ ...structuredClone(r), id: uid() })),
+  };
+  const dungeons = [...(project.dungeons ?? [])];
+  const index = dungeons.findIndex((d) => d.id === dungeonId);
+  dungeons.splice(index + 1, 0, copy);
+  return { ...project, dungeons };
+}
+
+export function addRoom(project: Project, dungeonId: string, room?: DungeonRoom): Project {
+  const dungeons = project.dungeons ?? [];
+  const newRoom = room ?? createDungeonRoom();
+  return {
+    ...project,
+    dungeons: dungeons.map((d) =>
+      d.id === dungeonId ? { ...d, rooms: [...d.rooms, newRoom] } : d,
+    ),
+  };
+}
+
+export function updateRoom(
+  project: Project,
+  dungeonId: string,
+  roomId: string,
+  patch: Partial<DungeonRoom>,
+): Project {
+  const dungeons = project.dungeons ?? [];
+  return {
+    ...project,
+    dungeons: dungeons.map((d) =>
+      d.id === dungeonId
+        ? {
+            ...d,
+            rooms: d.rooms.map((r) => (r.id === roomId ? { ...r, ...patch } : r)),
+          }
+        : d,
+    ),
+  };
+}
+
+export function deleteRoom(project: Project, dungeonId: string, roomId: string): Project {
+  const dungeons = project.dungeons ?? [];
+  return {
+    ...project,
+    dungeons: dungeons.map((d) =>
+      d.id === dungeonId
+        ? { ...d, rooms: d.rooms.filter((r) => r.id !== roomId) }
+        : d,
+    ),
+  };
+}
+
+export function createAndAddDungeon(
+  project: Project,
+): { project: Project; dungeon: Dungeon } {
+  const n = (project.dungeons ?? []).length + 1;
+  const dungeon = createDungeon(`Dungeon ${n}`, project.locale ?? 'da');
+  return { project: addDungeon(project, dungeon), dungeon };
 }
