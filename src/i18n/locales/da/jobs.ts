@@ -62,12 +62,12 @@ export const jobsDa = {
   },
 
   statPresets: {
-    ores: 'Almindelige malme',
+    ores: 'Værdifulde malme',
     logs: 'Alle trætyper',
-    crops: 'Almindelige afgrøder',
+    crops: 'Landbrugsafgrøder',
     hostile_mobs: 'Fjendtlige mobs',
     animals: 'Passive dyr',
-    basic_crafts: 'Grundlæggende håndværk',
+    basic_crafts: 'Betydelige håndværk',
     single: 'Enkelt mål',
   },
 

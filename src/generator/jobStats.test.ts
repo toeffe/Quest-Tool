@@ -4,6 +4,7 @@ import {
   resolveJobStatCriteria,
   jobUsesMultiStat,
   defaultPresetForAction,
+  JOB_STAT_PRESETS,
 } from './jobStats';
 
 function job(partial: Partial<Job> & { action: JobAction }): Job {
@@ -30,9 +31,11 @@ describe('jobStats', () => {
   it('resolves mining ores preset to multiple mined criteria', () => {
     const j = job({ action: 'mine', statPreset: 'ores' });
     const criteria = resolveJobStatCriteria(j);
-    expect(criteria.length).toBeGreaterThan(5);
+    expect(criteria.length).toBe(JOB_STAT_PRESETS.ores.length);
     expect(criteria[0]).toMatch(/^minecraft\.mined:minecraft\./);
-    expect(criteria).toContain('minecraft.mined:minecraft.coal_ore');
+    expect(criteria).toContain('minecraft.mined:minecraft.iron_ore');
+    expect(criteria).not.toContain('minecraft.mined:minecraft.coal_ore');
+    expect(criteria).not.toContain('minecraft.mined:minecraft.copper_ore');
     expect(criteria.some((c) => c.includes('minecraft:minecraft:'))).toBe(false);
     expect(jobUsesMultiStat(j)).toBe(true);
   });
@@ -43,9 +46,21 @@ describe('jobStats', () => {
 
     const farm = resolveJobStatCriteria(job({ action: 'farm', statPreset: 'crops' }));
     expect(farm[0]).toBe('minecraft.mined:minecraft.wheat');
+    expect(farm).not.toContain('minecraft.mined:minecraft.sugar_cane');
 
     const craft = resolveJobStatCriteria(job({ action: 'craft', statPreset: 'basic_crafts' }));
     expect(craft[0]).toBe('minecraft.crafted:minecraft.bread');
+    expect(craft).not.toContain('minecraft.crafted:minecraft.stick');
+    expect(craft).not.toContain('minecraft.crafted:minecraft.torch');
+  });
+
+  it('excludes easy-farm targets from preset lists', () => {
+    expect(JOB_STAT_PRESETS.ores).not.toContain('minecraft:coal_ore');
+    expect(JOB_STAT_PRESETS.ores).not.toContain('minecraft:nether_quartz_ore');
+    expect(JOB_STAT_PRESETS.crops).not.toContain('minecraft:sugar_cane');
+    expect(JOB_STAT_PRESETS.crops).not.toContain('minecraft:melon');
+    expect(JOB_STAT_PRESETS.hostile_mobs).not.toContain('minecraft:slime');
+    expect(JOB_STAT_PRESETS.basic_crafts).not.toContain('minecraft:oak_planks');
   });
 
   it('resolves single target hunt', () => {

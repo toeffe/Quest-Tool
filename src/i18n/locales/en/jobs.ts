@@ -62,12 +62,12 @@ export const jobsEn = {
   },
 
   statPresets: {
-    ores: 'Common ores',
+    ores: 'Valuable ores',
     logs: 'All log types',
-    crops: 'Common crops',
+    crops: 'Farm crops',
     hostile_mobs: 'Hostile mobs',
     animals: 'Passive animals',
-    basic_crafts: 'Basic crafts',
+    basic_crafts: 'Substantive crafts',
     single: 'Single target',
   },
 

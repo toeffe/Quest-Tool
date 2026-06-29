@@ -8,21 +8,21 @@ export interface BalancedJobDefaults {
 }
 
 const BALANCE: Record<JobAction, BalancedJobDefaults> = {
-  fish: { xpPerAction: 10, xpPerLevel: 100, maxLevel: 50 },
-  combat: { xpPerAction: 8, xpPerLevel: 120, maxLevel: 50 },
-  mine: { xpPerAction: 5, xpPerLevel: 100, maxLevel: 50 },
-  woodcut: { xpPerAction: 4, xpPerLevel: 80, maxLevel: 50 },
-  farm: { xpPerAction: 6, xpPerLevel: 90, maxLevel: 50 },
-  hunt: { xpPerAction: 10, xpPerLevel: 120, maxLevel: 50 },
-  craft: { xpPerAction: 8, xpPerLevel: 100, maxLevel: 50 },
-  use: { xpPerAction: 5, xpPerLevel: 100, maxLevel: 50 },
-  breeding: { xpPerAction: 15, xpPerLevel: 150, maxLevel: 30 },
-  enchanting: { xpPerAction: 20, xpPerLevel: 200, maxLevel: 30 },
-  trading: { xpPerAction: 25, xpPerLevel: 250, maxLevel: 30 },
-  pvp: { xpPerAction: 50, xpPerLevel: 500, maxLevel: 20 },
-  walk: { xpPerAction: 1, xpPerLevel: 100, maxLevel: 50, distanceUnit: 1000 },
-  sprint: { xpPerAction: 1, xpPerLevel: 100, maxLevel: 50, distanceUnit: 1000 },
-  custom: { xpPerAction: 10, xpPerLevel: 100, maxLevel: 50 },
+  fish: { xpPerAction: 8, xpPerLevel: 1000, maxLevel: 50 },
+  combat: { xpPerAction: 6, xpPerLevel: 1000, maxLevel: 50 },
+  mine: { xpPerAction: 4, xpPerLevel: 1200, maxLevel: 50 },
+  woodcut: { xpPerAction: 3, xpPerLevel: 1000, maxLevel: 50 },
+  farm: { xpPerAction: 4, xpPerLevel: 1600, maxLevel: 50 },
+  hunt: { xpPerAction: 8, xpPerLevel: 1000, maxLevel: 50 },
+  craft: { xpPerAction: 6, xpPerLevel: 1000, maxLevel: 50 },
+  use: { xpPerAction: 4, xpPerLevel: 1000, maxLevel: 50 },
+  breeding: { xpPerAction: 12, xpPerLevel: 2000, maxLevel: 40 },
+  enchanting: { xpPerAction: 15, xpPerLevel: 2500, maxLevel: 35 },
+  trading: { xpPerAction: 20, xpPerLevel: 3000, maxLevel: 35 },
+  pvp: { xpPerAction: 35, xpPerLevel: 2500, maxLevel: 25 },
+  walk: { xpPerAction: 1, xpPerLevel: 700, maxLevel: 50, distanceUnit: 2100 },
+  sprint: { xpPerAction: 1, xpPerLevel: 700, maxLevel: 50, distanceUnit: 2500 },
+  custom: { xpPerAction: 8, xpPerLevel: 1000, maxLevel: 50 },
 };
 
 /** Balanced XP curve defaults for a job action. */
@@ -46,6 +46,11 @@ export function applyBalancedDefaults(job: Job): Job {
 export function actionsToReachLevel(job: Job, level: number): number {
   if (job.xpPerAction < 1 || level < 1) return 0;
   return Math.ceil(totalXpForLevel(job, level) / job.xpPerAction);
+}
+
+/** Estimated actions (or distance units) to reach max level. */
+export function actionsToReachMaxLevel(job: Job): number {
+  return actionsToReachLevel(job, job.maxLevel);
 }
 
 /** Suggested milestone levels for starter jobs (empty rewards). */

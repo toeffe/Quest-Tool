@@ -72,7 +72,7 @@ describe('datapack structure', () => {
     const files = buildDatapackFiles(project);
     const load = files['data/jobpack/function/load.mcfunction'];
     expect(load).not.toContain('minecraft:minecraft:');
-    expect(load).toContain('minecraft.mined:minecraft.coal_ore');
+    expect(load).toContain('minecraft.mined:minecraft.iron_ore');
     expect(load).toContain('minecraft.custom:minecraft.fish_caught');
     expect(load).toContain('minecraft.custom:minecraft.player_kills');
     for (let i = 0; i < 11; i++) {

@@ -6,12 +6,12 @@ import {
 import { namespaced, statId } from './context';
 
 export const JOB_STAT_PRESET_LABELS: Record<string, string> = {
-  ores: 'Common ores',
+  ores: 'Valuable ores',
   logs: 'All log types',
-  crops: 'Common crops',
+  crops: 'Farm crops',
   hostile_mobs: 'Hostile mobs',
   animals: 'Passive animals',
-  basic_crafts: 'Basic crafts',
+  basic_crafts: 'Substantive crafts',
   single: 'Single target',
 };
 
@@ -26,12 +26,8 @@ export const ACTION_PRESETS: Partial<Record<JobAction, string[]>> = {
 };
 
 const ORES = [
-  'minecraft:coal_ore',
-  'minecraft:deepslate_coal_ore',
   'minecraft:iron_ore',
   'minecraft:deepslate_iron_ore',
-  'minecraft:copper_ore',
-  'minecraft:deepslate_copper_ore',
   'minecraft:gold_ore',
   'minecraft:deepslate_gold_ore',
   'minecraft:redstone_ore',
@@ -42,8 +38,6 @@ const ORES = [
   'minecraft:deepslate_diamond_ore',
   'minecraft:emerald_ore',
   'minecraft:deepslate_emerald_ore',
-  'minecraft:nether_gold_ore',
-  'minecraft:nether_quartz_ore',
   'minecraft:ancient_debris',
 ];
 
@@ -66,11 +60,7 @@ const CROPS = [
   'minecraft:potatoes',
   'minecraft:beetroots',
   'minecraft:nether_wart',
-  'minecraft:sugar_cane',
   'minecraft:cocoa',
-  'minecraft:melon',
-  'minecraft:pumpkin',
-  'minecraft:sweet_berry_bush',
 ];
 
 const HOSTILE_MOBS = [
@@ -80,7 +70,6 @@ const HOSTILE_MOBS = [
   'minecraft:spider',
   'minecraft:enderman',
   'minecraft:witch',
-  'minecraft:slime',
   'minecraft:phantom',
   'minecraft:drowned',
   'minecraft:husk',
@@ -120,10 +109,7 @@ const ANIMALS = [
 
 const BASIC_CRAFTS = [
   'minecraft:bread',
-  'minecraft:torch',
-  'minecraft:stick',
   'minecraft:iron_ingot',
-  'minecraft:oak_planks',
   'minecraft:crafting_table',
   'minecraft:furnace',
   'minecraft:chest',
