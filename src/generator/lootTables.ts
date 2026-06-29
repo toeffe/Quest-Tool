@@ -59,6 +59,14 @@ export function customItemComponentsJson(item: CustomItem): Record<string, unkno
   }
   if (item.unbreakable) components['minecraft:unbreakable'] = {};
 
+  if (item.enchantments?.length) {
+    components['minecraft:enchantments'] = {
+      levels: Object.fromEntries(
+        item.enchantments.map((e) => [namespaced(e.enchantmentId), e.level]),
+      ),
+    };
+  }
+
   if (item.food) {
     const f = item.food;
     const food: Record<string, unknown> = {

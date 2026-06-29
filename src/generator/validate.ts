@@ -5,6 +5,11 @@ import { toIdentifier } from '../types/ids';
 import { type AppLocale } from '../i18n/types';
 import { getAppLocale } from '../i18n';
 import { tValidation } from '../i18n/translate';
+import {
+  getEnchantmentMaxLevel,
+  isKnownEnchantment,
+  normalizeEnchantmentId,
+} from '../data/enchantments';
 
 export type IssueLevel = 'error' | 'warning';
 
@@ -133,6 +138,58 @@ function customItemIssues(project: Project, locale: AppLocale): ValidationIssue[
         level: 'warning',
         message: tValidation('customItemUnused', { name: item.name }, locale),
       });
+    }
+
+    const enchantIds = new Set<string>();
+    for (const enchant of item.enchantments ?? []) {
+      const normId = normalizeEnchantmentId(enchant.enchantmentId);
+      if (!normId) continue;
+
+      if (enchant.level < 1) {
+        issues.push({
+          level: 'error',
+          message: tValidation(
+            'customItemEnchantmentLevel',
+            { name: item.name, enchant: normId },
+            locale,
+          ),
+        });
+      }
+
+      const maxLevel = getEnchantmentMaxLevel(normId);
+      if (maxLevel != null && enchant.level > maxLevel) {
+        issues.push({
+          level: 'warning',
+          message: tValidation(
+            'customItemEnchantmentMaxLevel',
+            { name: item.name, enchant: normId, max: maxLevel },
+            locale,
+          ),
+        });
+      }
+
+      if (!isKnownEnchantment(normId)) {
+        issues.push({
+          level: 'warning',
+          message: tValidation(
+            'customItemUnknownEnchantment',
+            { name: item.name, enchant: normId },
+            locale,
+          ),
+        });
+      }
+
+      if (enchantIds.has(normId)) {
+        issues.push({
+          level: 'error',
+          message: tValidation(
+            'customItemDuplicateEnchantment',
+            { name: item.name, enchant: normId },
+            locale,
+          ),
+        });
+      }
+      enchantIds.add(normId);
     }
   }
 

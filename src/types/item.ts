@@ -41,6 +41,11 @@ export interface CustomItemTool {
   rules: CustomItemToolRule[];
 }
 
+export interface CustomItemEnchantment {
+  enchantmentId: string;
+  level: number;
+}
+
 export interface CustomItem {
   id: string;
   /** Editor label. */
@@ -59,4 +64,5 @@ export interface CustomItem {
   food?: CustomItemFood;
   consumable?: CustomItemConsumable;
   tool?: CustomItemTool;
+  enchantments?: CustomItemEnchantment[];
 }

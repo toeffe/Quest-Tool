@@ -79,6 +79,13 @@ export const itemsDa = {
   advanced: {
     title: 'Avanceret',
     glint: 'Fortryllelsesglans',
+    enchantments: 'Fortryllelser',
+    enchantmentId: 'Fortryllelse',
+    enchantmentIdHint: 'Vanilla-fortryllelses-id.',
+    enchantmentPlaceholder: 'minecraft:unbreaking',
+    enchantmentLevel: 'Niveau',
+    enchantmentLevelHint: 'Vanilla maks.: {{max}}',
+    addEnchantment: '+ Tilføj fortryllelse',
     rarity: 'Sjældenhed',
     maxStackSize: 'Maks. stakstørrelse',
     maxStackSizeHint: 'Lad stå på 64 for standard, eller sæt 1 for unikke genstande.',

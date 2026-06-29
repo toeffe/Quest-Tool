@@ -64,6 +64,26 @@ describe('custom item commands', () => {
     );
   });
 
+  it('includes enchantments component when set', () => {
+    const toolItem = createCustomItem('tool', 'Enchanted Pick');
+    toolItem.tag = 'ench_pick';
+    toolItem.enchantments = [
+      { enchantmentId: 'minecraft:efficiency', level: 5 },
+      { enchantmentId: 'minecraft:unbreaking', level: 3 },
+    ];
+    const stack = buildItemStackArg(toolItem);
+    expect(stack).toContain(
+      'enchantments={levels:{"minecraft:efficiency":5,"minecraft:unbreaking":3}}',
+    );
+
+    const collectible = createCustomItem('collectible', 'Enchanted Trophy');
+    collectible.tag = 'ench_trophy';
+    collectible.enchantments = [{ enchantmentId: 'minecraft:mending', level: 1 }];
+    expect(buildItemStackArg(collectible)).toContain(
+      'enchantments={levels:{"minecraft:mending":1}}',
+    );
+  });
+
   it('escapes special characters in display strings', () => {
     const item = createCustomItem('general', 'Quote Test');
     item.displayName = 'Say "hello"';

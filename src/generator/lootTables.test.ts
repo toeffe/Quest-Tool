@@ -59,6 +59,31 @@ describe('lootTables', () => {
     expect(components['minecraft:item_name']).toBe('Quest Token');
   });
 
+  it('includes enchantments in custom item drop components', () => {
+    const project = createProject('P');
+    const item = createCustomItem('tool', 'Enchanted Shovel');
+    item.tag = 'ench_shovel';
+    item.enchantments = [
+      { enchantmentId: 'minecraft:efficiency', level: 4 },
+      { enchantmentId: 'minecraft:fortune', level: 2 },
+    ];
+    project.customItems = [item];
+    const table = buildZoneDropLootTable(project, [
+      { customItemId: item.id, amount: 1 },
+    ]);
+    const pools = table.pools as Record<string, unknown>[];
+    const entry = (pools[0].entries as Record<string, unknown>[])[0];
+    const fns = entry.functions as Record<string, unknown>[];
+    const setComponents = fns.find((f) => f.function === 'minecraft:set_components');
+    const components = setComponents!.components as Record<string, unknown>;
+    expect(components['minecraft:enchantments']).toEqual({
+      levels: {
+        'minecraft:efficiency': 4,
+        'minecraft:fortune': 2,
+      },
+    });
+  });
+
   it('uses one pool per drop entry', () => {
     const project = createProject('P');
     const table = buildZoneDropLootTable(project, [

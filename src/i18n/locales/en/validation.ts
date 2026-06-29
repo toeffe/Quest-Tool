@@ -19,6 +19,14 @@ export const validationEn = {
   customItemNoBaseItem: 'Custom item "{{name}}" has no base item.',
   customItemUnused: 'Custom item "{{name}}" is not used in any quest.',
   duplicateItemTag: 'Duplicate custom item tag "{{tag}}" (used {{count}} times).',
+  customItemEnchantmentLevel:
+    'Custom item "{{name}}" enchantment "{{enchant}}" level must be at least 1.',
+  customItemEnchantmentMaxLevel:
+    'Custom item "{{name}}" enchantment "{{enchant}}" exceeds vanilla max level ({{max}}).',
+  customItemUnknownEnchantment:
+    'Custom item "{{name}}" uses unknown enchantment "{{enchant}}".',
+  customItemDuplicateEnchantment:
+    'Custom item "{{name}}" has duplicate enchantment "{{enchant}}".',
   jobEmptyName: 'A job has an empty name.',
   jobXpPerActionMin: 'Job "{{name}}" XP per action must be at least 1.',
   jobXpPerLevelMin: 'Job "{{name}}" XP per level must be at least 1.',

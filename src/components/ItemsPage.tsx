@@ -19,6 +19,7 @@ import {
   DataListInput,
 } from './ui/Field';
 import { BASE_ITEM_OPTIONS } from '../data/baseItems';
+import { ENCHANTMENT_OPTIONS, getEnchantmentMaxLevel } from '../data/enchantments';
 import { buildGiveCommand } from '../generator/items';
 
 interface Props {
@@ -466,6 +467,70 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
                     onChange={(v) => updateItem({ glint: v === 'yes' })}
                   />
                 </Field>
+                <h4 style={{ margin: '16px 0 8px' }}>{t('advanced.enchantments')}</h4>
+                {(selected.enchantments ?? []).map((enchant, i) => {
+                  const maxLevel = getEnchantmentMaxLevel(enchant.enchantmentId);
+                  return (
+                    <div key={i} className="list-row" style={{ marginBottom: 8 }}>
+                      <DataListInput
+                        label={t('advanced.enchantmentId')}
+                        hint={t('advanced.enchantmentIdHint')}
+                        value={enchant.enchantmentId}
+                        options={ENCHANTMENT_OPTIONS}
+                        onChange={(enchantmentId) => {
+                          const enchantments = [...(selected.enchantments ?? [])];
+                          enchantments[i] = { ...enchantments[i], enchantmentId };
+                          updateItem({ enchantments });
+                        }}
+                        placeholder={t('advanced.enchantmentPlaceholder')}
+                      />
+                      <NumberInput
+                        label={t('advanced.enchantmentLevel')}
+                        hint={
+                          maxLevel != null
+                            ? t('advanced.enchantmentLevelHint', { max: maxLevel })
+                            : undefined
+                        }
+                        min={1}
+                        value={enchant.level}
+                        onChange={(level) => {
+                          const enchantments = [...(selected.enchantments ?? [])];
+                          enchantments[i] = { ...enchantments[i], level };
+                          updateItem({ enchantments });
+                        }}
+                      />
+                      <button
+                        className="btn small danger"
+                        onClick={() => {
+                          const enchantments = (selected.enchantments ?? []).filter(
+                            (_, idx) => idx !== i,
+                          );
+                          updateItem({
+                            enchantments: enchantments.length ? enchantments : undefined,
+                          });
+                        }}
+                      >
+                        {tc('actions.remove')}
+                      </button>
+                    </div>
+                  );
+                })}
+                <button
+                  className="btn small"
+                  onClick={() => {
+                    const enchantments = [
+                      ...(selected.enchantments ?? []),
+                      { enchantmentId: 'minecraft:unbreaking', level: 1 },
+                    ];
+                    const patch: Partial<CustomItem> = { enchantments };
+                    if (!selected.glint && !(selected.enchantments ?? []).length) {
+                      patch.glint = true;
+                    }
+                    updateItem(patch);
+                  }}
+                >
+                  {t('advanced.addEnchantment')}
+                </button>
                 <Select
                   label={t('advanced.rarity')}
                   value={selected.rarity ?? 'common'}

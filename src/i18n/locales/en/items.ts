@@ -79,6 +79,13 @@ export const itemsEn = {
   advanced: {
     title: 'Advanced',
     glint: 'Enchantment glint',
+    enchantments: 'Enchantments',
+    enchantmentId: 'Enchantment',
+    enchantmentIdHint: 'Vanilla enchantment id.',
+    enchantmentPlaceholder: 'minecraft:unbreaking',
+    enchantmentLevel: 'Level',
+    enchantmentLevelHint: 'Vanilla max: {{max}}',
+    addEnchantment: '+ Add enchantment',
     rarity: 'Rarity',
     maxStackSize: 'Max stack size',
     maxStackSizeHint: 'Leave at 64 for default, or set 1 for unique items.',

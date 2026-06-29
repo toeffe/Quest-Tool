@@ -36,6 +36,13 @@ export function buildItemStackArg(item: CustomItem): string {
   }
   if (item.unbreakable) parts.push('unbreakable={}');
 
+  if (item.enchantments?.length) {
+    const levels = item.enchantments
+      .map((e) => `"${namespaced(e.enchantmentId)}":${e.level}`)
+      .join(',');
+    parts.push(`enchantments={levels:{${levels}}}`);
+  }
+
   if (item.food) {
     const f = item.food;
     const foodParts = [

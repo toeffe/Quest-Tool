@@ -81,6 +81,25 @@ describe('validation', () => {
     expect(issues.some((i) => /Duplicate custom item tag/.test(i.message))).toBe(true);
   });
 
+  it('flags invalid custom item enchantments', () => {
+    const project = createProject('Enchants', en);
+    const item = createCustomItem('tool', 'Bad Enchants');
+    item.enchantments = [
+      { enchantmentId: 'minecraft:efficiency', level: 0 },
+      { enchantmentId: 'minecraft:efficiency', level: 5 },
+    ];
+    project.customItems = [item];
+    project.quests = [createQuest('Q', 'kill', en)];
+    project.quests[0].rewards = [{ type: 'item', customItemId: item.id, amount: 1 }];
+    const issues = validateProject(project, en);
+    expect(
+      issues.some((i) => i.level === 'error' && /level must be at least 1/.test(i.message)),
+    ).toBe(true);
+    expect(
+      issues.some((i) => i.level === 'error' && /duplicate enchantment/i.test(i.message)),
+    ).toBe(true);
+  });
+
   function spawnZoneObjective(patch: Partial<Objective> = {}): Objective {
     return {
       target: 'minecraft:zombie',

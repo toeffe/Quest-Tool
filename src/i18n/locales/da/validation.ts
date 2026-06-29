@@ -19,6 +19,14 @@ export const validationDa = {
   customItemNoBaseItem: 'Brugerdefineret genstand "{{name}}" har ingen basis-genstand.',
   customItemUnused: 'Brugerdefineret genstand "{{name}}" bruges ikke i nogen quest.',
   duplicateItemTag: 'Dubleret genstands-tag "{{tag}}" (brugt {{count}} gange).',
+  customItemEnchantmentLevel:
+    'Brugerdefineret genstand "{{name}}" fortryllelse "{{enchant}}" skal have niveau mindst 1.',
+  customItemEnchantmentMaxLevel:
+    'Brugerdefineret genstand "{{name}}" fortryllelse "{{enchant}}" overstiger vanilla maks. niveau ({{max}}).',
+  customItemUnknownEnchantment:
+    'Brugerdefineret genstand "{{name}}" bruger ukendt fortryllelse "{{enchant}}".',
+  customItemDuplicateEnchantment:
+    'Brugerdefineret genstand "{{name}}" har dubleret fortryllelse "{{enchant}}".',
   jobEmptyName: 'Et job har et tomt navn.',
   jobXpPerActionMin: 'Job "{{name}}" XP pr. handling skal være mindst 1.',
   jobXpPerLevelMin: 'Job "{{name}}" XP pr. niveau skal være mindst 1.',
