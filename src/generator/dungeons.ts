@@ -9,6 +9,7 @@ import { toIdentifier } from '../types/ids';
 import { normalizeEntityId } from '../data/mobs';
 import { summonCustomMob, customMobLootTableId } from './customMobs';
 import { tellraw, escapeSnbtString } from './text';
+import { scopeCommandInDimension } from './coordinates';
 
 export type FileMap = Record<string, string>;
 
@@ -51,6 +52,10 @@ export function boundsCenter(box: BoundingBox): { x: number; y: number; z: numbe
     y: (b.y1 + b.y2) / 2,
     z: (b.z1 + b.z2) / 2,
   };
+}
+
+function scopeDungeonCommand(ctx: CompileContext, dungeon: Dungeon, command: string): string {
+  return scopeCommandInDimension(ctx, dungeon.dimensionId, command);
 }
 
 function roomSelector(rc: DungeonRoomContext): string {
@@ -114,14 +119,26 @@ function buildTriggerActionLines(
     case 'set_quest_state': {
       const stateObj = questStateObjective(ctx, action.questName);
       if (!stateObj) return [`# Missing quest: ${action.questName}`];
-      return [`scoreboard players set ${roomSel} ${stateObj} ${action.state}`];
+      return [
+        scopeDungeonCommand(
+          ctx,
+          rc.dungeon,
+          `scoreboard players set ${roomSel} ${stateObj} ${action.state}`,
+        ),
+      ];
     }
     case 'dialogue': {
       const target = action.targets === 'all' ? '@a' : roomSel;
       return [tellraw(target, [{ text: action.message, color: 'yellow' }])];
     }
     case 'unlock_chest':
-      return [`data merge block ${action.x} ${action.y} ${action.z} {Lock:""}`];
+      return [
+        scopeDungeonCommand(
+          ctx,
+          rc.dungeon,
+          `data merge block ${action.x} ${action.y} ${action.z} {Lock:""}`,
+        ),
+      ];
     case 'custom_command': {
       const cmd = action.command.replace(/\{player\}/g, roomSel);
       return [cmd.startsWith('/') ? cmd.slice(1) : cmd];
@@ -189,16 +206,24 @@ export function buildRoomSpawnFunction(ctx: CompileContext, rc: DungeonRoomConte
     }
 
     lines.push(
-      `execute store result score ${holder} ${rc.mobsObjective} run execute if entity @e[tag=${rc.mobTag},type=${entityType}]`,
-      `execute if score ${holder} ${rc.mobsObjective} matches ..${spawn.count - 1} run ${summonLine}`,
+      scopeDungeonCommand(
+        ctx,
+        rc.dungeon,
+        `execute store result score ${holder} ${rc.mobsObjective} run execute if entity @e[tag=${rc.mobTag},type=${entityType}]`,
+      ),
+      scopeDungeonCommand(
+        ctx,
+        rc.dungeon,
+        `execute if score ${holder} ${rc.mobsObjective} matches ..${spawn.count - 1} run ${summonLine}`,
+      ),
     );
   }
 
   return lines.join('\n') + '\n';
 }
 
-export function buildRoomDespawnFunction(rc: DungeonRoomContext): string {
-  return `kill @e[tag=${rc.mobTag}]\n`;
+export function buildRoomDespawnFunction(ctx: CompileContext, rc: DungeonRoomContext): string {
+  return scopeDungeonCommand(ctx, rc.dungeon, `kill @e[tag=${rc.mobTag}]`) + '\n';
 }
 
 export function buildRoomOnEntryFunction(
@@ -237,12 +262,20 @@ export function buildRoomTickFunction(ctx: CompileContext, rc: DungeonRoomContex
   const lines: string[] = [
     `# Tick for ${rc.room.name}`,
     `scoreboard players set #prev ${rc.occObjective} 0`,
-    `execute if entity @a[x=${s.x},y=${s.y},z=${s.z},dx=${s.dx},dy=${s.dy},dz=${s.dz}] run scoreboard players set #prev ${rc.occObjective} 1`,
+    scopeDungeonCommand(
+      ctx,
+      rc.dungeon,
+      `execute if entity @a[x=${s.x},y=${s.y},z=${s.z},dx=${s.dx},dy=${s.dy},dz=${s.dz}] run scoreboard players set #prev ${rc.occObjective} 1`,
+    ),
     `execute if score #occ ${rc.occObjective} matches 0 if score #prev ${rc.occObjective} matches 1 run function ${ns}:${rc.fnBase}/on_entry`,
     `execute if score #occ ${rc.occObjective} matches 1 if score #prev ${rc.occObjective} matches 0 run function ${ns}:${rc.fnBase}/on_exit`,
     `scoreboard players operation #occ ${rc.occObjective} = #prev ${rc.occObjective}`,
     `execute if score #occ ${rc.occObjective} matches 1 run function ${ns}:${rc.fnBase}/spawn`,
-    `execute store result score #alive ${rc.mobsObjective} run execute if entity @e[tag=${rc.mobTag}]`,
+    scopeDungeonCommand(
+      ctx,
+      rc.dungeon,
+      `execute store result score #alive ${rc.mobsObjective} run execute if entity @e[tag=${rc.mobTag}]`,
+    ),
     `execute if score #alive ${rc.mobsObjective} matches 0 if score #occ ${rc.occObjective} matches 1 run function ${ns}:${rc.fnBase}/on_all_killed`,
   ];
 
@@ -273,9 +306,17 @@ function buildRoomTickCall(ctx: CompileContext, rc: DungeonRoomContext): string 
   if (gate) {
     const stateObj = questStateObjective(ctx, gate.questName);
     if (!stateObj) return `function ${ns}:${rc.fnBase}/tick`;
-    return `execute as @a if score @s ${stateObj} matches ${gate.requiredState} if entity @s[x=${s.x},y=${s.y},z=${s.z},dx=${s.dx},dy=${s.dy},dz=${s.dz}] run function ${ns}:${rc.fnBase}/tick`;
+    return scopeDungeonCommand(
+      ctx,
+      rc.dungeon,
+      `execute as @a if score @s ${stateObj} matches ${gate.requiredState} if entity @s[x=${s.x},y=${s.y},z=${s.z},dx=${s.dx},dy=${s.dy},dz=${s.dz}] run function ${ns}:${rc.fnBase}/tick`,
+    );
   }
-  return `execute if entity @a[x=${s.x},y=${s.y},z=${s.z},dx=${s.dx},dy=${s.dy},dz=${s.dz}] run function ${ns}:${rc.fnBase}/tick`;
+  return scopeDungeonCommand(
+    ctx,
+    rc.dungeon,
+    `execute if entity @a[x=${s.x},y=${s.y},z=${s.z},dx=${s.dx},dy=${s.dy},dz=${s.dz}] run function ${ns}:${rc.fnBase}/tick`,
+  );
 }
 
 export function buildDungeonsTickFunction(ctx: CompileContext): string {
@@ -331,7 +372,7 @@ export function compileDungeons(ctx: CompileContext): FileMap {
     const base = `${fnRoot}/${rc.fnBase}`;
     files[`${base}/tick.mcfunction`] = buildRoomTickFunction(ctx, rc);
     files[`${base}/spawn.mcfunction`] = buildRoomSpawnFunction(ctx, rc);
-    files[`${base}/despawn.mcfunction`] = buildRoomDespawnFunction(rc);
+    files[`${base}/despawn.mcfunction`] = buildRoomDespawnFunction(ctx, rc);
     files[`${base}/on_entry.mcfunction`] = buildRoomOnEntryFunction(ctx, rc);
     files[`${base}/on_exit.mcfunction`] = buildRoomOnExitFunction(ctx, rc);
     files[`${base}/on_all_killed.mcfunction`] = buildRoomOnAllKilledFunction(ctx, rc);

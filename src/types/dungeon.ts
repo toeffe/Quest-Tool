@@ -83,6 +83,8 @@ export interface Dungeon {
   /** Slug for generated function paths, e.g. "undead_crypt". */
   tag: string;
   description?: string;
+  /** When set, all room bounds are interpreted in this custom dimension. */
+  dimensionId?: string;
   rooms: DungeonRoom[];
 }
 

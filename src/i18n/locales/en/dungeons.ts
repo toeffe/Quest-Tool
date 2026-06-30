@@ -18,6 +18,8 @@ export const dungeonsEn = {
     dungeonName: 'Dungeon name',
     dungeonTag: 'Function tag',
     description: 'Description (optional)',
+    dimension: 'Dimension',
+    dimensionHint: 'Room bounds are relative to the selected dimension (Overworld or a custom void dimension).',
     roomName: 'Room name',
     roomType: 'Room type',
     customTypeLabel: 'Custom type label',

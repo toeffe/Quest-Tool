@@ -20,6 +20,8 @@ import { type ValidationIssue } from '../../generator/validate';
 import { type EditorTab } from '../editor/ValidationBar';
 import { QuestNode } from './QuestNode';
 import { DungeonNode } from './DungeonNode';
+import { DimensionNode } from './DimensionNode';
+import { PadNode } from './PadNode';
 import { GenerateNode } from './GenerateNode';
 import { BrokenRefNode } from './BrokenRefNode';
 import { InspectorPanel, type InspectorTarget } from './InspectorPanel';
@@ -39,8 +41,12 @@ import {
   getConnectFailureReason,
   isBrokenNodeId,
   isDungeonNodeId,
+  isDimensionNodeId,
+  isPadNodeId,
+  isAuxiliaryFlowNodeId,
   questsToEdges,
 } from './chainEdges';
+import { useUIStore } from '../../store/uiStore';
 import { layeredLayout, placeBrokenStubs, type XY } from './layout';
 import { ChainEdgePopover, isChainStoryEdge } from './ChainEdgePopover';
 import { registerFlowShortcuts } from '../../hooks/flowShortcuts';
@@ -57,6 +63,8 @@ interface Props {
 const nodeTypes: NodeTypes = {
   quest: QuestNode,
   dungeon: DungeonNode,
+  dimension: DimensionNode,
+  pad: PadNode,
   generate: GenerateNode,
   broken: BrokenRefNode,
 } as unknown as NodeTypes;
@@ -72,6 +80,8 @@ function seedPositions(project: Project, edges: Edge[]): Map<string, XY> {
   const ids = [
     ...project.quests.map((q) => q.id),
     ...(project.dungeons ?? []).map((d) => d.id),
+    ...(project.dimensions ?? []).map((d) => d.id),
+    ...(project.teleportPads ?? []).map((p) => p.id),
     ...stubs.map((s) => s.id),
     GENERATE_NODE_ID,
   ];
@@ -99,6 +109,9 @@ function FlowCanvasInner({
 }: Props) {
   const { t } = useTranslation('flow');
   const { fitView } = useReactFlow();
+  const setActiveView = useUIStore((s) => s.setActiveView);
+  const setDimensionsFocus = useUIStore((s) => s.setDimensionsFocus);
+  const setDungeonsFocus = useUIStore((s) => s.setDungeonsFocus);
   const storyEdges = useMemo(() => questsToEdges(project.quests), [project.quests]);
   const dungeonEdges = useMemo(() => dungeonFlowEdges(project), [project]);
   const edges = useMemo<Edge[]>(
@@ -136,6 +149,8 @@ function FlowCanvasInner({
       const needed = [
         ...project.quests.map((q) => q.id),
         ...(project.dungeons ?? []).map((d) => d.id),
+        ...(project.dimensions ?? []).map((d) => d.id),
+        ...(project.teleportPads ?? []).map((p) => p.id),
         ...brokenStubs.map((s) => s.id),
         GENERATE_NODE_ID,
       ];
@@ -266,10 +281,10 @@ function FlowCanvasInner({
       },
     };
 
-    const dungeonNodes: Node[] = (project.dungeons ?? []).map((dungeon) => ({
+    const dungeonNodes: Node[] = (project.dungeons ?? []).map((dungeon, i) => ({
       id: dungeon.id,
       type: 'dungeon',
-      position: positions.get(dungeon.id) ?? { x: 400, y: 200 },
+      position: positions.get(dungeon.id) ?? { x: 400, y: 80 + i * 140 },
       hidden: errorsOnly && !issues.some((i) => i.dungeonId === dungeon.id && i.level === 'error'),
       data: {
         dungeon,
@@ -279,7 +294,34 @@ function FlowCanvasInner({
       },
     }));
 
-    return [...questNodes, ...dungeonNodes, ...stubNodes, generateNode];
+    const dimensionNodes: Node[] = (project.dimensions ?? []).map((dimension, i) => ({
+      id: dimension.id,
+      type: 'dimension',
+      position: positions.get(dimension.id) ?? { x: 720, y: 80 + i * 120 },
+      hidden:
+        errorsOnly && !issues.some((i) => i.dimensionId === dimension.id && i.level === 'error'),
+      data: {
+        dimension,
+        issues: issues.filter((i) => i.dimensionId === dimension.id && !i.teleportPadId),
+        isSelected: false,
+      },
+    }));
+
+    const padNodes: Node[] = (project.teleportPads ?? []).map((pad, i) => ({
+      id: pad.id,
+      type: 'pad',
+      position: positions.get(pad.id) ?? { x: 720, y: 320 + i * 120 },
+      hidden:
+        errorsOnly && !issues.some((i) => i.teleportPadId === pad.id && i.level === 'error'),
+      data: {
+        pad,
+        dimensions: project.dimensions ?? [],
+        issues: issues.filter((i) => i.teleportPadId === pad.id),
+        isSelected: false,
+      },
+    }));
+
+    return [...questNodes, ...dungeonNodes, ...dimensionNodes, ...padNodes, ...stubNodes, generateNode];
   }, [
     project,
     positions,
@@ -458,7 +500,16 @@ function FlowCanvasInner({
             }
             if (node.id === GENERATE_NODE_ID) {
               setInspector({ kind: 'generate' });
-            } else {
+            } else if (isDungeonNodeId(project, node.id)) {
+              setDungeonsFocus(node.id);
+              setActiveView('dungeons');
+            } else if (isDimensionNodeId(project, node.id)) {
+              setDimensionsFocus({ kind: 'dimension', id: node.id });
+              setActiveView('dimensions');
+            } else if (isPadNodeId(project, node.id)) {
+              setDimensionsFocus({ kind: 'pad', id: node.id });
+              setActiveView('dimensions');
+            } else if (!isAuxiliaryFlowNodeId(project, node.id)) {
               focusQuest(node.id);
             }
           }}

@@ -9,6 +9,7 @@ const VIEW_IDS: ActiveView[] = [
   'items',
   'mobs',
   'dungeons',
+  'dimensions',
   'jobs',
   'advancements',
   'commands',
@@ -21,6 +22,7 @@ export function CommandPalette() {
   const setOpen = useUIStore((s) => s.setCommandPaletteOpen);
   const setActiveView = useUIStore((s) => s.setActiveView);
   const setSelectedQuestId = useUIStore((s) => s.setSelectedQuestId);
+  const setDimensionsFocus = useUIStore((s) => s.setDimensionsFocus);
   const setSettingsOpen = useUIStore((s) => s.setSettingsOpen);
   const project = useProjectStore((s) => s.project);
   const [query, setQuery] = useState('');
@@ -88,6 +90,38 @@ export function CommandPalette() {
       }
     }
 
+    for (const dimension of project.dimensions ?? []) {
+      const name = dimension.name || t('commandPalette.untitledDimension');
+      if (!q || name.toLowerCase().includes(q) || 'dimension'.includes(q)) {
+        items.push({
+          id: `dimension-${dimension.id}`,
+          label: t('commandPalette.editDimension', { name }),
+          group: t('commandPalette.groups.dimensions'),
+          run: () => {
+            setDimensionsFocus({ kind: 'dimension', id: dimension.id });
+            setActiveView('dimensions');
+            setOpen(false);
+          },
+        });
+      }
+    }
+
+    for (const pad of project.teleportPads ?? []) {
+      const name = pad.name || t('commandPalette.untitledPad');
+      if (!q || name.toLowerCase().includes(q) || 'pad'.includes(q) || 'teleport'.includes(q)) {
+        items.push({
+          id: `pad-${pad.id}`,
+          label: t('commandPalette.editPad', { name }),
+          group: t('commandPalette.groups.pads'),
+          run: () => {
+            setDimensionsFocus({ kind: 'pad', id: pad.id });
+            setActiveView('dimensions');
+            setOpen(false);
+          },
+        });
+      }
+    }
+
     if (!q || 'settings'.includes(q) || 'import'.includes(q)) {
       items.push({
         id: 'settings',
@@ -113,7 +147,7 @@ export function CommandPalette() {
     }
 
     return items;
-  }, [query, project.quests, project.jobs, setActiveView, setOpen, setSelectedQuestId, setSettingsOpen, t]);
+  }, [query, project.quests, project.jobs, project.dimensions, project.teleportPads, setActiveView, setOpen, setSelectedQuestId, setDimensionsFocus, setSettingsOpen, t]);
 
   if (!open) return null;
 

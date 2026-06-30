@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createProject, createQuest, createCustomItem } from '../types/factory';
+import { createDimension } from '../types/dimension';
 import { buildContext } from './context';
 import { compileQuest, buildZoneLootTableFiles } from './questFunctions';
 
@@ -47,6 +48,43 @@ describe('quest tick generation', () => {
     const files = compileFirst('exploration');
     const tick = files['quests/0_q/tick.mcfunction'];
     expect(tick).toMatch(/execute positioned .* as @a\[scores=\{q0=1\},distance=\.\./);
+  });
+
+  it('scopes exploration and spawn zones to custom dimensions with execute in', () => {
+    const project = createProject('P', 'en');
+    project.namespace = 'p';
+    const dim = createDimension('Void Arena');
+    dim.tag = 'void_arena';
+    project.dimensions = [dim];
+    const q = createQuest('Explore', 'exploration');
+    q.objectives = [
+      {
+        location: { x: 0, y: 64, z: 0, dimensionId: dim.id },
+        radius: 8,
+        description: 'Find the center',
+      },
+    ];
+    project.quests = [q];
+    const ctx = buildContext(project);
+    const files = compileQuest(ctx, ctx.quests[0]);
+    const tick = files['quests/0_explore/tick.mcfunction'];
+    expect(tick).toContain('execute in p:void_arena run execute positioned 0 64 0');
+    const kill = createQuest('Hunt', 'kill');
+    kill.objectives = [
+      {
+        target: 'minecraft:zombie',
+        amount: 3,
+        description: 'Slay zombies',
+        spawnZone: true,
+        location: { x: 10, y: 64, z: 20, dimensionId: dim.id },
+        radius: 5,
+      },
+    ];
+    project.quests = [kill];
+    const killCtx = buildContext(project);
+    const killFiles = compileQuest(killCtx, killCtx.quests[0]);
+    const spawn = killFiles['quests/0_hunt/spawn_mob_0.mcfunction'];
+    expect(spawn).toContain('execute in p:void_arena run');
   });
 
   it('the offer function shows a clickable accept that uses /trigger', () => {

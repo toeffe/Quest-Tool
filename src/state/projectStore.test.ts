@@ -107,6 +107,55 @@ describe('projectStore migration', () => {
     expect(project.version).toBe(PROJECT_SCHEMA_VERSION);
     expect(project.dungeons).toEqual([]);
   });
+
+  it('backfills dimensions and teleportPads when upgrading from v8', () => {
+    const legacy = {
+      id: 'legacy-id',
+      name: 'Legacy',
+      namespace: 'legacy',
+      platform: 'vanilla',
+      quests: [createQuest('Q', 'kill')],
+      customItems: [],
+      customMobs: [],
+      dungeons: [],
+      version: 8,
+    };
+    const project = importProjectJson(JSON.stringify(legacy));
+    expect(project.version).toBe(PROJECT_SCHEMA_VERSION);
+    expect(project.dimensions).toEqual([]);
+    expect(project.teleportPads).toEqual([]);
+  });
+
+  it('migrates portal links to teleport pads when upgrading from v9', () => {
+    const legacy = {
+      id: 'legacy-id',
+      name: 'Legacy',
+      namespace: 'legacy',
+      platform: 'vanilla',
+      quests: [createQuest('Q', 'kill')],
+      customItems: [],
+      customMobs: [],
+      dungeons: [],
+      dimensions: [],
+      portalLinks: [
+        {
+          id: 'link-1',
+          name: 'Gate',
+          bidirectional: true,
+          from: { x: 0, y: 64, z: 0, radius: 2 },
+          to: { x: 10, y: 64, z: 10, radius: 2, dimensionId: 'dim-1' },
+        },
+      ],
+      teleportPads: [],
+      version: 9,
+    };
+    const project = importProjectJson(JSON.stringify(legacy));
+    expect(project.version).toBe(PROJECT_SCHEMA_VERSION);
+    expect(project.teleportPads).toHaveLength(2);
+    expect(project.teleportPads![0].name).toBe('Gate →');
+    expect(project.teleportPads![1].name).toBe('Gate ←');
+    expect(project.teleportPads![0].cooldownSeconds).toBe(1);
+  });
 });
 
 describe('custom item CRUD', () => {

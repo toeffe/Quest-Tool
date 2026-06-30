@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "ingame:fixture": "node scripts/ingame/run-export.mjs"
+    "ingame:fixture": "node scripts/ingame/run-export.mjs",
+    "ingame:dimensions": "node scripts/ingame/run-dimension-export.mjs"
   },
   "dependencies": {
     "@xyflow/react": "^12.11.0",

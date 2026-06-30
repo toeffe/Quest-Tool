@@ -17,7 +17,7 @@ import { defaultPresetForAction } from '../generator/jobStats';
 import { type AppLocale, DEFAULT_LOCALE } from '../i18n/types';
 import { defaultsT } from '../i18n/useLabels';
 
-export const PROJECT_SCHEMA_VERSION = 8;
+export const PROJECT_SCHEMA_VERSION = 10;
 
 export const STARTER_JOB_KEYS = [
   'starter_fishing',
@@ -290,6 +290,8 @@ export function createProject(name?: string, locale: AppLocale = DEFAULT_LOCALE)
     customItems: [],
     customMobs: [],
     dungeons: [],
+    dimensions: [],
+    teleportPads: [],
     version: PROJECT_SCHEMA_VERSION,
   };
 }

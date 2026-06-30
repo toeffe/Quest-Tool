@@ -3,6 +3,13 @@ import { type CustomItem } from '../types/item';
 import { type CustomMob } from '../types/customMob';
 import { type Job } from '../types/job';
 import { type Dungeon, type DungeonRoom, createDungeon, createDungeonRoom } from '../types/dungeon';
+import {
+  type Dimension,
+  type TeleportPad,
+  type LegacyPortalLink,
+  createDimension,
+  createTeleportPad,
+} from '../types/dimension';
 import { createProject, createCustomItem, createCustomMob, createJob, mergeStarterJobs, PROJECT_SCHEMA_VERSION } from '../types/factory';
 import { uid } from '../types/ids';
 
@@ -85,10 +92,67 @@ function migrate(project: Project): Project {
   if (!Array.isArray(next.dungeons)) {
     next.dungeons = [];
   }
+  if (fromVersion < 9) {
+    next.dimensions = next.dimensions ?? [];
+    next.teleportPads = next.teleportPads ?? [];
+  }
+  if (!Array.isArray(next.dimensions)) {
+    next.dimensions = [];
+  }
+  if (!Array.isArray(next.teleportPads)) {
+    next.teleportPads = [];
+  }
+  if (fromVersion < 10) {
+    next.teleportPads = migratePortalLinksToPads(next);
+  }
+  next.teleportPads = (next.teleportPads ?? []).map(normalizeTeleportPad);
   if (!next.locale) {
     next.locale = 'da';
   }
   return next;
+}
+
+/** Convert removed portal links (schema v9) into teleport pads. */
+function normalizeTeleportPad(pad: TeleportPad): TeleportPad {
+  return {
+    ...pad,
+    at: { ...pad.at, radius: pad.at.radius ?? 1 },
+    cooldownSeconds: pad.cooldownSeconds && pad.cooldownSeconds > 0 ? pad.cooldownSeconds : 1,
+  };
+}
+
+function migratePortalLinksToPads(project: Project): TeleportPad[] {
+  const pads = [...(project.teleportPads ?? [])];
+  const legacy = (project as Project & { portalLinks?: LegacyPortalLink[] }).portalLinks ?? [];
+  for (const link of legacy) {
+    pads.push({
+      id: uid(),
+      name: link.bidirectional ? `${link.name} →` : link.name,
+      at: { ...link.from },
+      to: {
+        dimensionId: link.to.dimensionId,
+        x: link.to.x,
+        y: link.to.y,
+        z: link.to.z,
+      },
+      cooldownSeconds: 1,
+    });
+    if (link.bidirectional) {
+      pads.push({
+        id: uid(),
+        name: `${link.name} ←`,
+        at: { ...link.to },
+        to: {
+          dimensionId: link.from.dimensionId,
+          x: link.from.x,
+          y: link.from.y,
+          z: link.from.z,
+        },
+        cooldownSeconds: 1,
+      });
+    }
+  }
+  return pads.map(normalizeTeleportPad);
 }
 
 /** Serialize the project for download. */
@@ -449,4 +513,149 @@ export function createAndAddDungeon(
   const n = (project.dungeons ?? []).length + 1;
   const dungeon = createDungeon(`Dungeon ${n}`, project.locale ?? 'da');
   return { project: addDungeon(project, dungeon), dungeon };
+}
+
+// ---- Dimension operations ----
+
+function clearDimensionRef(
+  dimensionId: string | undefined,
+  deletedId: string,
+): string | undefined {
+  return dimensionId === deletedId ? undefined : dimensionId;
+}
+
+export function addDimension(project: Project, dimension: Dimension): Project {
+  const dimensions = project.dimensions ?? [];
+  return { ...project, dimensions: [...dimensions, dimension] };
+}
+
+export function updateDimension(project: Project, dimension: Dimension): Project {
+  const dimensions = project.dimensions ?? [];
+  return {
+    ...project,
+    dimensions: dimensions.map((d) => (d.id === dimension.id ? dimension : d)),
+  };
+}
+
+export function deleteDimension(project: Project, dimensionId: string): Project {
+  const dimensions = (project.dimensions ?? []).filter((d) => d.id !== dimensionId);
+  const quests = project.quests.map((q) => ({
+    ...q,
+    npc: q.npc.coordinates
+      ? {
+          ...q.npc,
+          coordinates: {
+            ...q.npc.coordinates,
+            dimensionId: clearDimensionRef(q.npc.coordinates.dimensionId, dimensionId),
+          },
+        }
+      : q.npc,
+    targetNpc: q.targetNpc?.coordinates
+      ? {
+          ...q.targetNpc,
+          coordinates: {
+            ...q.targetNpc.coordinates,
+            dimensionId: clearDimensionRef(q.targetNpc.coordinates.dimensionId, dimensionId),
+          },
+        }
+      : q.targetNpc,
+    objectives: q.objectives.map((o) =>
+      o.location
+        ? {
+            ...o,
+            location: {
+              ...o.location,
+              dimensionId: clearDimensionRef(o.location.dimensionId, dimensionId),
+            },
+          }
+        : o,
+    ),
+  }));
+  const dungeons = (project.dungeons ?? []).map((d) => ({
+    ...d,
+    dimensionId: clearDimensionRef(d.dimensionId, dimensionId),
+  }));
+  const teleportPads = (project.teleportPads ?? []).map((pad) => ({
+    ...pad,
+    at: {
+      ...pad.at,
+      dimensionId: clearDimensionRef(pad.at.dimensionId, dimensionId),
+    },
+    to: {
+      ...pad.to,
+      dimensionId: clearDimensionRef(pad.to.dimensionId, dimensionId),
+    },
+  }));
+  return {
+    ...project,
+    dimensions,
+    quests,
+    dungeons,
+    teleportPads,
+  };
+}
+
+export function duplicateDimension(project: Project, dimensionId: string): Project {
+  const original = (project.dimensions ?? []).find((d) => d.id === dimensionId);
+  if (!original) return project;
+  const copy: Dimension = {
+    ...structuredClone(original),
+    id: uid(),
+    name: `${original.name} (copy)`,
+    tag: `${original.tag}_copy`,
+  };
+  const dimensions = [...(project.dimensions ?? [])];
+  const index = dimensions.findIndex((d) => d.id === dimensionId);
+  dimensions.splice(index + 1, 0, copy);
+  return { ...project, dimensions };
+}
+
+export function createAndAddDimension(
+  project: Project,
+): { project: Project; dimension: Dimension } {
+  const n = (project.dimensions ?? []).length + 1;
+  const dimension = createDimension(`Dimension ${n}`, project.locale ?? 'da');
+  return { project: addDimension(project, dimension), dimension };
+}
+
+// ---- Teleport pad operations ----
+
+export function addTeleportPad(project: Project, pad: TeleportPad): Project {
+  const teleportPads = project.teleportPads ?? [];
+  return { ...project, teleportPads: [...teleportPads, pad] };
+}
+
+export function updateTeleportPad(project: Project, pad: TeleportPad): Project {
+  const teleportPads = project.teleportPads ?? [];
+  return {
+    ...project,
+    teleportPads: teleportPads.map((p) => (p.id === pad.id ? pad : p)),
+  };
+}
+
+export function deleteTeleportPad(project: Project, padId: string): Project {
+  const teleportPads = (project.teleportPads ?? []).filter((p) => p.id !== padId);
+  return { ...project, teleportPads };
+}
+
+export function duplicateTeleportPad(project: Project, padId: string): Project {
+  const original = (project.teleportPads ?? []).find((p) => p.id === padId);
+  if (!original) return project;
+  const copy: TeleportPad = {
+    ...structuredClone(original),
+    id: uid(),
+    name: `${original.name} (copy)`,
+  };
+  const teleportPads = [...(project.teleportPads ?? [])];
+  const index = teleportPads.findIndex((p) => p.id === padId);
+  teleportPads.splice(index + 1, 0, copy);
+  return { ...project, teleportPads };
+}
+
+export function createAndAddTeleportPad(
+  project: Project,
+): { project: Project; pad: TeleportPad } {
+  const n = (project.teleportPads ?? []).length + 1;
+  const pad = createTeleportPad(`Pad ${n}`, project.locale ?? 'da');
+  return { project: addTeleportPad(project, pad), pad };
 }

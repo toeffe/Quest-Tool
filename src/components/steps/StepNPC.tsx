@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type Coordinates, type Quest, type SpawnMode } from '../../types/quest';
+import { type Coordinates, type Project, type Quest, type SpawnMode } from '../../types/quest';
+import { CoordsWithDimension } from './CoordsWithDimension';
+import { useDimensionOptions } from '../../hooks/useDimensionOptions';
 import { TextInput, TextArea, Select, NumberInput, DataListInput } from '../ui/Field';
 import { toIdentifier } from '../../types/ids';
 import { useMobOptions, isVillager } from '../../data/mobs';
@@ -9,6 +11,7 @@ import { QuestPreview } from '../preview/QuestPreview';
 
 interface Props {
   quest: Quest;
+  project: Project;
   onChange: (quest: Quest) => void;
 }
 
@@ -37,10 +40,11 @@ export function CoordsRow({
   );
 }
 
-export function StepNPC({ quest, onChange }: Props) {
+export function StepNPC({ quest, project, onChange }: Props) {
   const { t } = useTranslation('editor');
   const { t: tc } = useTranslation('common');
   const mobOptions = useMobOptions();
+  const dimensionOptions = useDimensionOptions(project);
   const npc = quest.npc;
   const update = (patch: Partial<typeof npc>) => onChange({ ...quest, npc: { ...npc, ...patch } });
   const updateDialogue = (patch: Partial<typeof npc.dialogue>) =>
@@ -158,9 +162,10 @@ export function StepNPC({ quest, onChange }: Props) {
           }
         />
         {npc.spawnMode === 'fixed' && (
-          <CoordsRow
+          <CoordsWithDimension
             value={npc.coordinates ?? { x: 0, y: 64, z: 0 }}
             onChange={(coordinates) => update({ coordinates })}
+            dimensionOptions={dimensionOptions}
           />
         )}
       </div>

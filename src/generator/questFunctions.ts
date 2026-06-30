@@ -24,6 +24,7 @@ import {
 } from './lootTables';
 import { type ZoneDropMode } from '../types/quest';
 import { NOW_HOLDER, SYS_OBJECTIVE } from './sys';
+import { scopeCommandInDimension } from './coordinates';
 import { escapeSnbtString, tellraw, type TextPart } from './text';
 
 const RANGE_ALL = '-2147483648..2147483647';
@@ -73,6 +74,37 @@ interface ObjectiveInfo {
   zoneDropMode?: ZoneDropMode;
   /** DeathLootTable id on summon, when not vanilla. */
   deathLootTable?: string;
+  /** Project dimension id when spawn zone / exploration uses a custom dimension. */
+  dimensionId?: string;
+}
+
+function giverDimensionId(qc: QuestContext): string | undefined {
+  const npc = qc.quest.npc;
+  if (npc.spawnMode !== 'fixed' || !npc.coordinates) return undefined;
+  return npc.coordinates.dimensionId;
+}
+
+function talkTargetDimensionId(qc: QuestContext): string | undefined {
+  const target = qc.quest.targetNpc;
+  if (!target || target.spawnMode !== 'fixed' || !target.coordinates) return undefined;
+  return target.coordinates.dimensionId;
+}
+
+function scopeWorldLine(
+  ctx: CompileContext,
+  projectDimensionId: string | undefined,
+  command: string,
+): string {
+  return scopeCommandInDimension(ctx, projectDimensionId, command);
+}
+
+function scopeWorldLines(
+  ctx: CompileContext,
+  projectDimensionId: string | undefined,
+  commands: string[],
+): string[] {
+  if (!projectDimensionId) return commands;
+  return commands.map((cmd) => scopeWorldLine(ctx, projectDimensionId, cmd));
 }
 
 function questSupportsSpawnZone(type: Quest['type']): boolean {
@@ -154,6 +186,7 @@ function objectiveInfos(ctx: CompileContext, qc: QuestContext): ObjectiveInfo[] 
         qc.quest.type === 'delivery' || !!(o.consumeOnTurnIn && usesItemTarget(qc.quest.type)),
       zoneDropMode,
       deathLootTable,
+      dimensionId: o.location?.dimensionId,
     };
   });
 }
@@ -252,20 +285,29 @@ function cleanupSpawnZoneLines(ctx: CompileContext, qc: QuestContext): string[] 
   if (!questSupportsSpawnZone(qc.quest.type)) return [];
   const lines: string[] = [];
   for (const info of objectiveInfos(ctx, qc)) {
-    if (info.spawnZone) lines.push(killQuestMobsCommand(info.entityTag));
+    if (info.spawnZone) {
+      lines.push(
+        scopeWorldLine(ctx, info.dimensionId, killQuestMobsCommand(info.entityTag)),
+      );
+    }
   }
   return lines;
 }
 
-function resetSpawnZoneLines(info: ObjectiveInfo): string[] {
-  return resetSpawnZoneByScore(info.entityTag, info.timerHolder);
-}
-
-function resetSpawnZoneByScore(mobTag: string, timerHolder: string): string[] {
+function resetSpawnZoneByScore(
+  ctx: CompileContext,
+  mobTag: string,
+  timerHolder: string,
+  dimensionId?: string,
+): string[] {
   return [
-    killQuestMobsCommand(mobTag),
+    scopeWorldLine(ctx, dimensionId, killQuestMobsCommand(mobTag)),
     `scoreboard players set ${timerHolder} ${SYS_OBJECTIVE} 0`,
   ];
+}
+
+function resetSpawnZoneLines(ctx: CompileContext, info: ObjectiveInfo): string[] {
+  return resetSpawnZoneByScore(ctx, info.entityTag, info.timerHolder, info.dimensionId);
 }
 
 function countLiveMobsInZone(info: ObjectiveInfo): string[] {
@@ -289,21 +331,29 @@ function buildZoneTickLines(ctx: CompileContext, qc: QuestContext, infos: Object
     const cap = info.cap;
     const capMinus1 = cap - 1;
     lines.push(`# Spawn zone objective ${j + 1} (max ${cap} live)`);
-    lines.push(...containZoneMobs(info));
-    lines.push(...countLiveMobsInZone(info));
+    lines.push(...scopeWorldLines(ctx, info.dimensionId, containZoneMobs(info)));
+    lines.push(...scopeWorldLines(ctx, info.dimensionId, countLiveMobsInZone(info)));
     // Count down respawn timer only while below cap and timer is still running.
     lines.push(
-      `execute if entity @a[scores={${qc.state}=1}] if score ${info.liveHolder} ${SYS_OBJECTIVE} matches ..${capMinus1} if score ${info.timerHolder} ${SYS_OBJECTIVE} matches 1.. run scoreboard players remove ${info.timerHolder} ${SYS_OBJECTIVE} 1`,
+      scopeWorldLine(
+        ctx,
+        info.dimensionId,
+        `execute if entity @a[scores={${qc.state}=1}] if score ${info.liveHolder} ${SYS_OBJECTIVE} matches ..${capMinus1} if score ${info.timerHolder} ${SYS_OBJECTIVE} matches 1.. run scoreboard players remove ${info.timerHolder} ${SYS_OBJECTIVE} 1`,
+      ),
     );
     // Spawn exactly once when timer hits 0 — not on every tick while timer <= 0.
     lines.push(
-      `execute if entity @a[scores={${qc.state}=1}] if score ${info.liveHolder} ${SYS_OBJECTIVE} matches ..${capMinus1} if score ${info.timerHolder} ${SYS_OBJECTIVE} matches 0 run function ${ns}:${qc.fnBase}/spawn_mob_${j}`,
+      scopeWorldLine(
+        ctx,
+        info.dimensionId,
+        `execute if entity @a[scores={${qc.state}=1}] if score ${info.liveHolder} ${SYS_OBJECTIVE} matches ..${capMinus1} if score ${info.timerHolder} ${SYS_OBJECTIVE} matches 0 run function ${ns}:${qc.fnBase}/spawn_mob_${j}`,
+      ),
     );
   }
   return lines;
 }
 
-function buildSpawnMobFunction(info: ObjectiveInfo, namespace?: string): string {
+function buildSpawnMobFunction(ctx: CompileContext, info: ObjectiveInfo, namespace?: string): string {
   const cap = info.cap;
   const spawnLines = info.customMob
     ? spawnCustomMobInZone(
@@ -324,15 +374,22 @@ function buildSpawnMobFunction(info: ObjectiveInfo, namespace?: string): string 
         info.radius,
         info.deathLootTable,
       );
-  return (
-    [
-      `# Spawn one quest mob in the zone (max ${cap} live)`,
-      ...countLiveMobsInZone(info),
+  const body = [
+    `# Spawn one quest mob in the zone (max ${cap} live)`,
+    ...scopeWorldLines(ctx, info.dimensionId, countLiveMobsInZone(info)),
+    scopeWorldLine(
+      ctx,
+      info.dimensionId,
       `execute if score ${info.liveHolder} ${SYS_OBJECTIVE} matches ${cap}.. run return 0`,
-      ...spawnLines,
+    ),
+    ...scopeWorldLines(ctx, info.dimensionId, spawnLines),
+    scopeWorldLine(
+      ctx,
+      info.dimensionId,
       `execute store result score ${info.timerHolder} ${SYS_OBJECTIVE} run random value 60..160`,
-    ].join('\n') + '\n'
-  );
+    ),
+  ];
+  return body.join('\n') + '\n';
 }
 
 function buildKillCreditFunction(ctx: CompileContext, qc: QuestContext, j: number, info: ObjectiveInfo): string {
@@ -477,14 +534,28 @@ function completionBody(ctx: CompileContext, qc: QuestContext): string[] {
             const nextObj = nextObjs[oi];
             if (nextObj?.spawnZone) {
               const entityTag = objectiveEntityTag(ctx, next.quest, nextObj, oi, next);
-              lines.push(...resetSpawnZoneByScore(entityTag, score.timerHolder));
+              lines.push(
+                ...resetSpawnZoneByScore(
+                  ctx,
+                  entityTag,
+                  score.timerHolder,
+                  nextObj.location?.dimensionId,
+                ),
+              );
             }
             break;
           }
           case 'gather':
             lines.push(`scoreboard players set @s ${score.progress} 0`);
             if (nextObjs[oi]?.spawnZone) {
-              lines.push(...resetSpawnZoneByScore(score.mobTag, score.timerHolder));
+              lines.push(
+                ...resetSpawnZoneByScore(
+                  ctx,
+                  score.mobTag,
+                  score.timerHolder,
+                  nextObjs[oi]?.location?.dimensionId,
+                ),
+              );
             }
             break;
           case 'delivery':
@@ -526,6 +597,9 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
       buildTryUnlockLines(ctx, qc).join('\n') + '\n';
   }
 
+  const giverDim = giverDimensionId(qc);
+  const targetDim = talkTargetDimensionId(qc);
+
   // ---- tick.mcfunction (dispatcher per quest) ----
   const tick: string[] = [
     `# ${quest.name} (${quest.type}) - tick`,
@@ -538,10 +612,22 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
     );
   }
   tick.push(
-    `execute as @a at @s unless entity @e[tag=${qc.giverTag},distance=..4] run scoreboard players set @s ${qc.near} 0`,
+    scopeWorldLine(
+      ctx,
+      giverDim,
+      `execute as @a at @s unless entity @e[tag=${qc.giverTag},distance=..4] run scoreboard players set @s ${qc.near} 0`,
+    ),
     `# AVAILABLE: offer + accept near giver`,
-    `execute as ${giver(qc)} at @s as @a[distance=..4,scores={${qc.state}=0}] at @s run function ${ns}:${qc.fnBase}/offer`,
-    `execute as ${giver(qc)} at @s as @a[distance=..6,scores={${qc.state}=0,${qc.trigger}=1..}] at @s run function ${ns}:${qc.fnBase}/accept`,
+    scopeWorldLine(
+      ctx,
+      giverDim,
+      `execute as ${giver(qc)} at @s as @a[distance=..4,scores={${qc.state}=0}] at @s run function ${ns}:${qc.fnBase}/offer`,
+    ),
+    scopeWorldLine(
+      ctx,
+      giverDim,
+      `execute as ${giver(qc)} at @s as @a[distance=..6,scores={${qc.state}=0,${qc.trigger}=1..}] at @s run function ${ns}:${qc.fnBase}/accept`,
+    ),
   );
 
   if (!isInstantTalk) {
@@ -551,7 +637,11 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
       // Talk completes by reaching the target NPC; a single objective only.
       tick.push(
         `execute as @a[scores={${qc.state}=1}] run title @s actionbar ["",{"text":"${escapeSnbtString(infos[0].desc)}","color":"yellow"}]`,
-        `execute as @e[tag=${qc.targetTag},limit=1] at @s as @a[distance=..4,scores={${qc.state}=1}] at @s run function ${ns}:${qc.fnBase}/complete`,
+        scopeWorldLine(
+          ctx,
+          targetDim,
+          `execute as @e[tag=${qc.targetTag},limit=1] at @s as @a[distance=..4,scores={${qc.state}=1}] at @s run function ${ns}:${qc.fnBase}/complete`,
+        ),
       );
     } else {
       // Count satisfied objectives into the `done` aggregate each tick.
@@ -576,7 +666,11 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
             break;
           case 'exploration':
             tick.push(
-              `execute positioned ${info.x} ${info.y} ${info.z} as @a[scores={${qc.state}=1},distance=..${info.radius}] run scoreboard players set @s ${info.reached} 1`,
+              scopeWorldLine(
+                ctx,
+                info.dimensionId,
+                `execute positioned ${info.x} ${info.y} ${info.z} as @a[scores={${qc.state}=1},distance=..${info.radius}] run scoreboard players set @s ${info.reached} 1`,
+              ),
               `execute as @a[scores={${qc.state}=1,${info.reached}=1..}] run scoreboard players add @s ${qc.done} 1`,
             );
             break;
@@ -602,9 +696,21 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
 
     tick.push(
       `# ACTIVE dialogue + READY turn-in near giver`,
-      `execute as ${giver(qc)} at @s as @a[distance=..4,scores={${qc.state}=1}] at @s run function ${ns}:${qc.fnBase}/active`,
-      `execute as ${giver(qc)} at @s as @a[distance=..4,scores={${qc.state}=2}] at @s run function ${ns}:${qc.fnBase}/ready`,
-      `execute as ${giver(qc)} at @s as @a[distance=..6,scores={${qc.state}=2,${qc.trigger}=1..}] at @s run function ${ns}:${qc.fnBase}/turnin`,
+      scopeWorldLine(
+        ctx,
+        giverDim,
+        `execute as ${giver(qc)} at @s as @a[distance=..4,scores={${qc.state}=1}] at @s run function ${ns}:${qc.fnBase}/active`,
+      ),
+      scopeWorldLine(
+        ctx,
+        giverDim,
+        `execute as ${giver(qc)} at @s as @a[distance=..4,scores={${qc.state}=2}] at @s run function ${ns}:${qc.fnBase}/ready`,
+      ),
+      scopeWorldLine(
+        ctx,
+        giverDim,
+        `execute as ${giver(qc)} at @s as @a[distance=..6,scores={${qc.state}=2,${qc.trigger}=1..}] at @s run function ${ns}:${qc.fnBase}/turnin`,
+      ),
     );
   }
 
@@ -653,11 +759,11 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
       switch (quest.type) {
         case 'kill':
           accept.push(`scoreboard players set @s ${info.killed} 0`);
-          if (info.spawnZone) accept.push(...resetSpawnZoneLines(info));
+          if (info.spawnZone) accept.push(...resetSpawnZoneLines(ctx, info));
           break;
         case 'gather':
           accept.push(`scoreboard players set @s ${info.progress} 0`);
-          if (info.spawnZone) accept.push(...resetSpawnZoneLines(info));
+          if (info.spawnZone) accept.push(...resetSpawnZoneLines(ctx, info));
           break;
         case 'delivery':
         case 'daily':
@@ -749,7 +855,7 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
   const objectives = questObjectives(quest);
   for (let j = 0; j < infos.length; j++) {
     if (infos[j].spawnZone) {
-      files[`${qc.fnBase}/spawn_mob_${j}.mcfunction`] = buildSpawnMobFunction(infos[j], ctx.namespace);
+      files[`${qc.fnBase}/spawn_mob_${j}.mcfunction`] = buildSpawnMobFunction(ctx, infos[j], ctx.namespace);
     }
     if (quest.type === 'kill' && (infos[j].spawnZone || objectives[j].eliteMobId)) {
       files[`${qc.fnBase}/kill_credit_${j}.mcfunction`] = buildKillCreditFunction(

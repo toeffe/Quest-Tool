@@ -4,6 +4,7 @@ import { type CustomItem, type CustomItemKind } from '../types/item';
 import { type CustomMob } from '../types/customMob';
 import { type Job } from '../types/job';
 import { type Dungeon, type DungeonRoom, createDungeonRoom } from '../types/dungeon';
+import { type Dimension, type TeleportPad } from '../types/dimension';
 import { createQuest } from '../types/factory';
 import {
   addQuest,
@@ -30,6 +31,12 @@ import {
   updateRoom,
   deleteRoom,
   createAndAddDungeon,
+  createAndAddDimension,
+  deleteDimension,
+  duplicateDimension,
+  createAndAddTeleportPad,
+  deleteTeleportPad,
+  duplicateTeleportPad,
 } from '../state/projectStore';
 
 interface ProjectStore {
@@ -61,6 +68,12 @@ interface ProjectStore {
   addRoom: (dungeonId: string) => DungeonRoom;
   updateRoom: (dungeonId: string, roomId: string, patch: Partial<DungeonRoom>) => void;
   deleteRoom: (dungeonId: string, roomId: string) => void;
+  addDimension: () => Dimension;
+  deleteDimension: (id: string) => void;
+  duplicateDimension: (id: string) => void;
+  addTeleportPad: () => TeleportPad;
+  deleteTeleportPad: (id: string) => void;
+  duplicateTeleportPad: (id: string) => void;
 }
 
 export const useProjectStore = create<ProjectStore>((set, get) => ({
@@ -228,6 +241,40 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   deleteRoom: (dungeonId, roomId) => {
     const { project } = get();
     set({ project: deleteRoom(project, dungeonId, roomId) });
+  },
+
+  addDimension: () => {
+    const { project } = get();
+    const { project: next, dimension } = createAndAddDimension(project);
+    set({ project: next });
+    return dimension;
+  },
+
+  deleteDimension: (id) => {
+    const { project } = get();
+    set({ project: deleteDimension(project, id) });
+  },
+
+  duplicateDimension: (id) => {
+    const { project } = get();
+    set({ project: duplicateDimension(project, id) });
+  },
+
+  addTeleportPad: () => {
+    const { project } = get();
+    const { project: next, pad } = createAndAddTeleportPad(project);
+    set({ project: next });
+    return pad;
+  },
+
+  deleteTeleportPad: (id) => {
+    const { project } = get();
+    set({ project: deleteTeleportPad(project, id) });
+  },
+
+  duplicateTeleportPad: (id) => {
+    const { project } = get();
+    set({ project: duplicateTeleportPad(project, id) });
   },
 }));
 

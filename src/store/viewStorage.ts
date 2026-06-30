@@ -8,6 +8,7 @@ const VALID_VIEWS: ActiveView[] = [
   'items',
   'mobs',
   'dungeons',
+  'dimensions',
   'jobs',
   'advancements',
   'commands',

@@ -11,6 +11,8 @@ import {
   isKnownEnchantment,
   normalizeEnchantmentId,
 } from '../data/enchantments';
+import { endpointToSelector } from './coordinates';
+import { type PortalEndpoint } from '../types/dimension';
 
 export type IssueLevel = 'error' | 'warning';
 
@@ -23,6 +25,8 @@ export interface ValidationIssue {
   jobName?: string;
   dungeonId?: string;
   dungeonRoomId?: string;
+  dimensionId?: string;
+  teleportPadId?: string;
   /** Field path for editor tab routing and focus (e.g. npc.name, objectives, chain.requires). */
   field?: string;
 }
@@ -372,6 +376,16 @@ function dungeonIssues(project: Project, locale: AppLocale): ValidationIssue[] {
       });
     }
 
+    const dimensionIds = new Set((project.dimensions ?? []).map((d) => d.id));
+    if (dungeon.dimensionId && !dimensionIds.has(dungeon.dimensionId)) {
+      issues.push({
+        level: 'error',
+        message: tValidation('dungeonDimensionMissing', { name: dungeon.name }, locale),
+        dungeonId: dungeon.id,
+        field: `dungeons.${dungeon.id}.dimensionId`,
+      });
+    }
+
     let hasQuestRef = false;
 
     for (const room of dungeon.rooms) {
@@ -478,6 +492,129 @@ function dungeonIssues(project: Project, locale: AppLocale): ValidationIssue[] {
       issues.push({
         level: 'error',
         message: tValidation('duplicateDungeonTag', { tag, count }, locale),
+      });
+    }
+  }
+
+  return issues;
+}
+
+function sameDimensionRef(a?: string, b?: string): boolean {
+  return (a ?? '') === (b ?? '');
+}
+
+function pointInEndpointBox(
+  px: number,
+  py: number,
+  pz: number,
+  endpoint: Pick<PortalEndpoint, 'x' | 'y' | 'z' | 'radius'>,
+): boolean {
+  const s = endpointToSelector(endpoint);
+  return (
+    px >= s.x &&
+    px <= s.x + s.dx &&
+    py >= s.y &&
+    py <= s.y + s.dy &&
+    pz >= s.z &&
+    pz <= s.z + s.dz
+  );
+}
+
+function dimensionIssues(project: Project, locale: AppLocale): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const dimensions = project.dimensions ?? [];
+  const dimensionIds = new Set(dimensions.map((d) => d.id));
+  const tagCounts = new Map<string, number>();
+
+  const checkDimensionRef = (
+    refId: string | undefined,
+    entityLabel: string,
+    field: string,
+    extra?: Partial<ValidationIssue>,
+  ) => {
+    if (refId && !dimensionIds.has(refId)) {
+      issues.push({
+        level: 'error',
+        message: tValidation('dimensionRefMissing', { entity: entityLabel }, locale),
+        field,
+        ...extra,
+      });
+    }
+  };
+
+  for (const dimension of dimensions) {
+    const tag = toIdentifier(dimension.tag);
+    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+
+    if (!dimension.name.trim()) {
+      issues.push({
+        level: 'error',
+        message: tValidation('dimensionNoName', undefined, locale),
+        dimensionId: dimension.id,
+        field: `dimensions.${dimension.id}.name`,
+      });
+    }
+    if (!tag) {
+      issues.push({
+        level: 'error',
+        message: tValidation('dimensionNoTag', { name: dimension.name }, locale),
+        dimensionId: dimension.id,
+        field: `dimensions.${dimension.id}.tag`,
+      });
+    }
+  }
+
+  for (const [tag, count] of tagCounts) {
+    if (count > 1) {
+      issues.push({
+        level: 'error',
+        message: tValidation('duplicateDimensionTag', { tag, count }, locale),
+      });
+    }
+  }
+
+  for (const pad of project.teleportPads ?? []) {
+    if (!pad.name.trim()) {
+      issues.push({
+        level: 'error',
+        message: tValidation('padNoName', undefined, locale),
+        teleportPadId: pad.id,
+        field: `teleportPads.${pad.id}.name`,
+      });
+    }
+    checkDimensionRef(pad.at.dimensionId, pad.name, `teleportPads.${pad.id}.at.dimensionId`, {
+      teleportPadId: pad.id,
+    });
+    checkDimensionRef(pad.to.dimensionId, pad.name, `teleportPads.${pad.id}.to.dimensionId`, {
+      teleportPadId: pad.id,
+    });
+    if (pad.cooldownSeconds != null && pad.cooldownSeconds < 1) {
+      issues.push({
+        level: 'warning',
+        message: tValidation('padCooldownTooShort', { name: pad.name }, locale),
+        teleportPadId: pad.id,
+        field: `teleportPads.${pad.id}.cooldownSeconds`,
+      });
+    }
+  }
+
+  const pads = project.teleportPads ?? [];
+  for (let i = 0; i < pads.length; i++) {
+    for (let j = 0; j < pads.length; j++) {
+      if (i === j) continue;
+      const from = pads[i];
+      const to = pads[j];
+      if (!sameDimensionRef(from.to.dimensionId, to.at.dimensionId)) continue;
+      if (!pointInEndpointBox(from.to.x, from.to.y, from.to.z, to.at)) continue;
+      issues.push({
+        level: 'warning',
+        message: tValidation(
+          'padDestinationOverlapsAt',
+          { from: from.name, to: to.name },
+          locale,
+        ),
+        teleportPadId: from.id,
+        field: `teleportPads.${from.id}.to`,
       });
     }
   }
@@ -701,10 +838,12 @@ export function validateProject(project: Project, locale?: AppLocale): Validatio
   issues.push(...customItemIssues(project, effectiveLocale));
   issues.push(...customMobIssues(project, effectiveLocale));
   issues.push(...dungeonIssues(project, effectiveLocale));
+  issues.push(...dimensionIssues(project, effectiveLocale));
   issues.push(...jobIssues(project, effectiveLocale));
 
   const customItemIds = new Set((project.customItems ?? []).map((i) => i.id));
   const customMobIds = new Set((project.customMobs ?? []).map((m) => m.id));
+  const dimensionIds = new Set((project.dimensions ?? []).map((d) => d.id));
 
   const nameCounts = new Map<string, number>();
   const npcTagCounts = new Map<string, number>();
@@ -746,6 +885,14 @@ export function validateProject(project: Project, locale?: AppLocale): Validatio
     if (quest.npc.spawnMode === 'fixed' && !quest.npc.coordinates) {
       add('error', tValidation('npcFixedNoCoords', undefined, effectiveLocale), quest, 'npc.coordinates');
     }
+    if (quest.npc.coordinates?.dimensionId && !dimensionIds.has(quest.npc.coordinates.dimensionId)) {
+      add(
+        'error',
+        tValidation('dimensionRefMissing', { entity: quest.npc.name || quest.name }, effectiveLocale),
+        quest,
+        'npc.coordinates.dimensionId',
+      );
+    }
 
     if (quest.type === 'talk' && quest.targetNpc) {
       if (!quest.targetNpc.name.trim()) {
@@ -757,6 +904,36 @@ export function validateProject(project: Project, locale?: AppLocale): Validatio
           tValidation('targetNpcFixedNoCoords', undefined, effectiveLocale),
           quest,
           'targetNpc.coordinates',
+        );
+      }
+      if (
+        quest.targetNpc.coordinates?.dimensionId &&
+        !dimensionIds.has(quest.targetNpc.coordinates.dimensionId)
+      ) {
+        add(
+          'error',
+          tValidation(
+            'dimensionRefMissing',
+            { entity: quest.targetNpc.name || quest.name },
+            effectiveLocale,
+          ),
+          quest,
+          'targetNpc.coordinates.dimensionId',
+        );
+      }
+    }
+
+    for (const [oi, o] of quest.objectives.entries()) {
+      if (o.location?.dimensionId && !dimensionIds.has(o.location.dimensionId)) {
+        add(
+          'error',
+          tValidation(
+            'dimensionRefMissing',
+            { entity: `${quest.name} objective ${oi + 1}` },
+            effectiveLocale,
+          ),
+          quest,
+          `objectives.${oi}.location.dimensionId`,
         );
       }
     }

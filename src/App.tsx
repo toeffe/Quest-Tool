@@ -14,6 +14,7 @@ import { ExportPanel } from './components/export/ExportPanel';
 import { ItemsPage } from './components/ItemsPage';
 import { CustomMobsPage } from './components/CustomMobsPage';
 import { DungeonsPage } from './components/DungeonsPage';
+import { DimensionsPage } from './components/DimensionsPage';
 import { JobsPage } from './components/JobsPage';
 import { AdvancementsPage } from './components/AdvancementsPage';
 import { HelpPanel } from './components/HelpPanel';
@@ -49,6 +50,12 @@ export default function App() {
   const duplicateDungeon = useProjectStore((s) => s.duplicateDungeon);
   const addRoom = useProjectStore((s) => s.addRoom);
   const deleteRoom = useProjectStore((s) => s.deleteRoom);
+  const addDimension = useProjectStore((s) => s.addDimension);
+  const deleteDimension = useProjectStore((s) => s.deleteDimension);
+  const duplicateDimension = useProjectStore((s) => s.duplicateDimension);
+  const addTeleportPad = useProjectStore((s) => s.addTeleportPad);
+  const deleteTeleportPad = useProjectStore((s) => s.deleteTeleportPad);
+  const duplicateTeleportPad = useProjectStore((s) => s.duplicateTeleportPad);
   const addJob = useProjectStore((s) => s.addJob);
   const deleteJob = useProjectStore((s) => s.deleteJob);
   const duplicateJob = useProjectStore((s) => s.duplicateJob);
@@ -185,6 +192,24 @@ export default function App() {
                     addRoom(dungeonId);
                   }}
                   onDeleteRoom={deleteRoom}
+                />
+              </div>
+            </div>
+          )}
+
+          {activeView === 'dimensions' && (
+            <div className="content">
+              <div className="content-inner">
+                <DimensionsPage
+                  project={project}
+                  issues={issues}
+                  onChange={setProject}
+                  onAddDimension={addDimension}
+                  onDuplicateDimension={duplicateDimension}
+                  onDeleteDimension={deleteDimension}
+                  onAddPad={addTeleportPad}
+                  onDuplicatePad={duplicateTeleportPad}
+                  onDeletePad={deleteTeleportPad}
                 />
               </div>
             </div>

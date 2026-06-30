@@ -1,12 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  type Objective,
-  type Quest,
-  type QuestType,
-  type SpawnMode,
-  type TargetNpc,
-} from '../../types/quest';
+import { type Project, type Quest, type QuestType, type SpawnMode, type TargetNpc, type Objective } from '../../types/quest';
 import {
   TextInput,
   TextArea,
@@ -18,7 +12,8 @@ import {
 } from '../ui/Field';
 import { defaultObjectiveFor, newObjectiveFor } from '../../types/factory';
 import { toIdentifier } from '../../types/ids';
-import { CoordsRow } from './StepNPC';
+import { CoordsWithDimension } from './CoordsWithDimension';
+import { useDimensionOptions } from '../../hooks/useDimensionOptions';
 import { useMobOptions, isVillager } from '../../data/mobs';
 import { VariantFields, BabySelect } from './VariantFields';
 import { type CustomItem } from '../../types/item';
@@ -29,6 +24,7 @@ import { SpawnZoneFields } from './SpawnZoneFields';
 
 interface Props {
   quest: Quest;
+  project: Project;
   customItems: CustomItem[];
   customMobs: CustomMob[];
   onChange: (quest: Quest) => void;
@@ -47,11 +43,12 @@ function objectiveMobSource(obj: Objective): MobSource {
 
 const usesItemTarget = (t: QuestType) => t === 'gather' || t === 'delivery' || t === 'daily';
 
-export function StepQuest({ quest, customItems, customMobs, onChange }: Props) {
+export function StepQuest({ quest, project, customItems, customMobs, onChange }: Props) {
   const { t } = useTranslation('editor');
   const { t: tc } = useTranslation('common');
   const questTypeLabels = useQuestTypeLabels();
   const mobOptions = useMobOptions();
+  const dimensionOptions = useDimensionOptions(project);
   const objectives: Objective[] = quest.objectives.length ? quest.objectives : [{}];
   const isMultiType = quest.type !== 'talk';
 
@@ -246,6 +243,7 @@ export function StepQuest({ quest, customItems, customMobs, onChange }: Props) {
                     variant="kill"
                     obj={obj}
                     customItems={customItems}
+                    dimensionOptions={dimensionOptions}
                     onChange={(patch) => setObjectiveAt(i, patch)}
                   />
                 </>
@@ -349,6 +347,7 @@ export function StepQuest({ quest, customItems, customMobs, onChange }: Props) {
                       variant="gather"
                       obj={obj}
                       customItems={customItems}
+                      dimensionOptions={dimensionOptions}
                       onChange={(patch) => setObjectiveAt(i, patch)}
                     />
                   )}
@@ -357,9 +356,10 @@ export function StepQuest({ quest, customItems, customMobs, onChange }: Props) {
 
               {quest.type === 'exploration' && (
                 <>
-                  <CoordsRow
+                  <CoordsWithDimension
                     value={obj.location ?? { x: 0, y: 64, z: 0 }}
                     onChange={(location) => setObjectiveAt(i, { location })}
+                    dimensionOptions={dimensionOptions}
                   />
                   <NumberInput
                     label={t('quest.discoveryRadius')}
@@ -486,9 +486,10 @@ export function StepQuest({ quest, customItems, customMobs, onChange }: Props) {
                 }
               />
               {quest.targetNpc.spawnMode === 'fixed' && (
-                <CoordsRow
+                <CoordsWithDimension
                   value={quest.targetNpc.coordinates ?? { x: 0, y: 64, z: 0 }}
                   onChange={(coordinates) => setTarget({ coordinates })}
+                  dimensionOptions={dimensionOptions}
                 />
               )}
             </>

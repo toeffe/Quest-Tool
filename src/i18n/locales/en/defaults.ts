@@ -83,6 +83,14 @@ export const defaultsEn = {
     defaultRoom: 'Entry Room',
   },
 
+  dimension: {
+    name: 'New Dimension',
+  },
+
+  pad: {
+    name: 'New Pad',
+  },
+
   job: {
     defaultName: 'Fishing',
     milestoneCommand: 'say {player} reached a job milestone!',

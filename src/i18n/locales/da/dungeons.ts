@@ -18,6 +18,8 @@ export const dungeonsDa = {
     dungeonName: 'Dungeon-navn',
     dungeonTag: 'Funktionstag',
     description: 'Beskrivelse (valgfri)',
+    dimension: 'Dimension',
+    dimensionHint: 'Rummenes afgrænsninger er relative til den valgte dimension (Overworld eller en brugerdefineret void-dimension).',
     roomName: 'Rumnavn',
     roomType: 'Rumtype',
     customTypeLabel: 'Brugerdefineret typelabel',

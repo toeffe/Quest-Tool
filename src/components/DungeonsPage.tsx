@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type Project } from '../types/quest';
 import {
@@ -18,6 +18,7 @@ import { toIdentifier } from '../types/ids';
 import { useMobOptions } from '../data/mobs';
 import { type ValidationIssue } from '../generator/validate';
 import { TextInput, NumberInput, Field, Select, PillSelect } from './ui/Field';
+import { useUIStore } from '../store/uiStore';
 
 interface Props {
   project: Project;
@@ -140,6 +141,7 @@ export function DungeonsPage({
   const mobOptions = useMobOptions();
   const dungeons = project.dungeons ?? [];
   const customMobs = project.customMobs ?? [];
+  const dimensions = project.dimensions ?? [];
   const quests = project.quests;
 
   const [selectedDungeonId, setSelectedDungeonId] = useState(() => dungeons[0]?.id ?? '');
@@ -148,6 +150,15 @@ export function DungeonsPage({
     () => new Set(dungeons[0]?.id ? [dungeons[0].id] : []),
   );
   const [tab, setTab] = useState<'spawns' | 'triggers'>('spawns');
+  const dungeonsFocus = useUIStore((s) => s.dungeonsFocus);
+  const setDungeonsFocus = useUIStore((s) => s.setDungeonsFocus);
+
+  useEffect(() => {
+    if (!dungeonsFocus) return;
+    setSelectedDungeonId(dungeonsFocus);
+    setExpandedDungeons((prev) => new Set([...prev, dungeonsFocus]));
+    setDungeonsFocus(null);
+  }, [dungeonsFocus, setDungeonsFocus]);
 
   const selectedDungeon = useMemo(
     () => dungeons.find((d) => d.id === selectedDungeonId) ?? dungeons[0],
@@ -190,6 +201,14 @@ export function DungeonsPage({
     issues.filter((i) => i.field?.includes(roomId) || i.dungeonRoomId === roomId);
 
   const questOptions = quests.map((q) => ({ value: q.name, label: q.name }));
+
+  const dimensionOptions = useMemo(
+    () => [
+      { value: '', label: tc('actions.noneDash') },
+      ...dimensions.map((d) => ({ value: d.id, label: d.name })),
+    ],
+    [dimensions, tc],
+  );
 
   const toggleExpanded = (id: string) => {
     setExpandedDungeons((prev) => {
@@ -370,6 +389,15 @@ export function DungeonsPage({
                 label={t('editor.description')}
                 value={selectedDungeon.description ?? ''}
                 onChange={(description) => updateDungeon({ description: description || undefined })}
+              />
+              <Select
+                label={t('editor.dimension')}
+                hint={t('editor.dimensionHint')}
+                value={selectedDungeon.dimensionId ?? ''}
+                options={dimensionOptions}
+                onChange={(dimensionId) =>
+                  updateDungeon({ dimensionId: dimensionId || undefined })
+                }
               />
               <p className="muted">{t('editor.selectRoom')}</p>
             </div>

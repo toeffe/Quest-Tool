@@ -1024,6 +1024,18 @@ textarea {
   border-left-width: 3px;
 }
 
+.flow-node-shell.flow-node-dimension .flow-node {
+  border-style: dashed;
+  border-left-color: #8b5cf6;
+  border-left-width: 3px;
+}
+
+.flow-node-shell.flow-node-pad .flow-node {
+  border-style: dotted;
+  border-left-color: #06b6d4;
+  border-left-width: 3px;
+}
+
 .flow-node-shell.selected .flow-node {
   border-color: var(--primary);
   box-shadow: 0 0 0 2px rgba(91, 140, 255, 0.35), var(--shadow);
@@ -1725,6 +1737,12 @@ textarea {
 
 .items-editor {
   min-width: 0;
+}
+
+.dimensions-sidebar-divider {
+  margin: 16px 0;
+  border: 0;
+  border-top: 1px solid var(--border);
 }
 
 .command-preview {

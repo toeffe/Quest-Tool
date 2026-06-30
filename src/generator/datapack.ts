@@ -26,6 +26,8 @@ import {
   buildSpawnMobFunctions,
 } from './customMobs';
 import { compileDungeons } from './dungeons';
+import { compileDimensions, dimensionResourceId } from './dimensions';
+import { compilePads } from './pads';
 import {
   buildEmptyEntityLootTable,
   emptyLootTablePath,
@@ -88,6 +90,36 @@ function setupGuideFunction(ctx: CompileContext): string {
         );
       }
     }
+  }
+  const dimensions = ctx.project.dimensions ?? [];
+  if (dimensions.length > 0) {
+    lines.push(
+      tellraw('@s', [{ text: 'Custom dimensions', color: 'gold', bold: true }]),
+      tellraw('@s', [
+        {
+          text: 'Restart the world after installing this pack (not just /reload).',
+          color: 'yellow',
+        },
+      ]),
+    );
+    for (const dim of dimensions) {
+      const id = dimensionResourceId(ctx, dim);
+      lines.push(
+        tellraw('@s', [
+          { text: `${dim.name} (${id}): `, color: 'yellow' },
+          {
+            text: `/execute in ${id} run tp @s 0 64 0`,
+            color: 'aqua',
+            suggestCommand: `/execute in ${id} run tp @s 0 64 0`,
+          },
+        ]),
+      );
+    }
+    lines.push(
+      tellraw('@s', [
+        { text: 'Build a small platform in void dimensions before testing dungeons or pads.', color: 'gray' },
+      ]),
+    );
   }
   lines.push(
     tellraw('@s', [
@@ -197,6 +229,21 @@ function readmeText(project: Project, ctx: CompileContext): string {
       lines.push(`- ${jc.job.name} (${jc.job.action}) - ${jc.job.xpPerAction} XP per action, max level ${jc.job.maxLevel}`);
     }
   }
+  const dimensions = project.dimensions ?? [];
+  if (dimensions.length > 0) {
+    lines.push(
+      ``,
+      `Custom dimensions`,
+      `=================`,
+      `- Restart the world after installing or updating this pack (not just /reload).`,
+      `- Dimension/worldgen changes require leaving and re-opening the world.`,
+      `- Build a small platform in void dimensions before testing dungeons or pads.`,
+    );
+    for (const dim of dimensions) {
+      const id = dimensionResourceId(ctx, dim);
+      lines.push(`- ${dim.name} (${id}) — test: /execute in ${id} run tp @s 0 64 0`);
+    }
+  }
   if (project.platform !== 'paper') {
     lines.push(
       ``,
@@ -242,7 +289,7 @@ export function buildDatapackFiles(project: Project): FileMap {
     for (const [rel, content] of Object.entries(questFiles)) {
       files[`${fnRoot}/${rel}`] = content;
     }
-    files[`${fnRoot}/${qc.spawnFn}.mcfunction`] = spawnFunctionLines(qc, ctx.str).join('\n') + '\n';
+    files[`${fnRoot}/${qc.spawnFn}.mcfunction`] = spawnFunctionLines(ctx, qc, ctx.str).join('\n') + '\n';
     Object.assign(files, buildKillZoneAdvancementFiles(ctx, qc));
     Object.assign(files, buildZoneLootTableFiles(ctx, qc));
   }
@@ -287,6 +334,8 @@ export function buildDatapackFiles(project: Project): FileMap {
   Object.assign(files, mapJobBossBarFiles(fnRoot, buildCustomMobBossBarSupportFiles(ctx)));
   Object.assign(files, mapJobBossBarFiles(fnRoot, buildCustomMobPhaseSupportFiles(ctx)));
 
+  Object.assign(files, compileDimensions(ctx));
+  Object.assign(files, compilePads(ctx));
   Object.assign(files, compileDungeons(ctx));
 
   files['install.txt'] = readmeText(project, ctx);

@@ -14,6 +14,7 @@ import { advancementsDa } from './advancements';
 import { validationDa } from './validation';
 import { customMobsDa } from './customMobs';
 import { dungeonsDa } from './dungeons';
+import { dimensionsDa } from './dimensions';
 import { mobsDa } from '../mobs.generated';
 
 export const daResources = {
@@ -26,6 +27,7 @@ export const daResources = {
   items: itemsDa,
   customMobs: customMobsDa,
   dungeons: dungeonsDa,
+  dimensions: dimensionsDa,
   quest: questDa,
   datapack: datapackDa,
   platform: platformDa,

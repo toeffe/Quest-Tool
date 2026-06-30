@@ -104,6 +104,17 @@ export const flowDa = {
     missingMobTitle: 'Et rum-spawn refererer til en slettet brugerdefineret mob',
   },
 
+  dimensionNode: {
+    untitled: 'Dimension uden titel',
+    typeLabel: 'Dimension',
+  },
+
+  padNode: {
+    untitled: 'Pude uden titel',
+    typeLabel: 'Teleportpude',
+    route: '{{from}} → {{to}}',
+  },
+
   generateNode: {
     pack: 'PAKKE',
     title: 'Generér & eksportér',

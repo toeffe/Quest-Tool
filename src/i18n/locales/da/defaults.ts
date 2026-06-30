@@ -83,6 +83,14 @@ export const defaultsDa = {
     defaultRoom: 'Indgangsrum',
   },
 
+  dimension: {
+    name: 'Ny dimension',
+  },
+
+  pad: {
+    name: 'Ny pad',
+  },
+
   job: {
     defaultName: 'Fiskeri',
     milestoneCommand: 'say {player} nåede en job-milestone!',

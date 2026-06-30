@@ -39,6 +39,8 @@ export interface Coordinates {
   x: number;
   y: number;
   z: number;
+  /** When set, coordinates are in this project dimension (undefined = overworld). */
+  dimensionId?: string;
 }
 
 export interface NpcDialogue {
@@ -210,6 +212,7 @@ import { type CustomItem } from './item';
 import { type CustomMob } from './customMob';
 import { type Job } from './job';
 import { type Dungeon } from './dungeon';
+import { type Dimension, type TeleportPad } from './dimension';
 
 export interface Project {
   id: string;
@@ -228,6 +231,10 @@ export interface Project {
   customMobs?: CustomMob[];
   /** Dungeon definitions with rooms, spawns, and triggers. */
   dungeons?: Dungeon[];
+  /** Custom void dimensions. */
+  dimensions?: Dimension[];
+  /** Teleport pads between dimensions (one-way; pair two for round trips). */
+  teleportPads?: TeleportPad[];
   /** Manual Story Flow node positions, keyed by quest/dungeon id (plus the Generate node). */
   flowPositions?: Record<string, { x: number; y: number }>;
   /** Schema version for migrations. */

@@ -104,6 +104,17 @@ export const flowEn = {
     missingMobTitle: 'A room spawn references a deleted custom mob',
   },
 
+  dimensionNode: {
+    untitled: 'Untitled dimension',
+    typeLabel: 'Dimension',
+  },
+
+  padNode: {
+    untitled: 'Untitled pad',
+    typeLabel: 'Teleport pad',
+    route: '{{from}} → {{to}}',
+  },
+
   generateNode: {
     pack: 'PACK',
     title: 'Generate & Export',

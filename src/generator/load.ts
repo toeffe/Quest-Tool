@@ -5,6 +5,7 @@ import { buildCustomMobBossBarSetupLines, buildCustomMobBossBarTickHook } from '
 import { buildCustomMobPhaseSetupLines, buildCustomMobPhaseTickHook } from './customMobPhases';
 import { buildJobBossBarSetupLines, buildHideJobBossBarLines, jobsUseProgressBar } from './jobBossBar';
 import { buildDungeonLoadLines, buildDungeonInitCalls } from './dungeons';
+import { buildPadLoadLines, buildPadsTickHook } from './pads';
 import { NOW_HOLDER, SYS_OBJECTIVE } from './sys';
 import { escapeSnbtString } from './text';
 
@@ -85,6 +86,7 @@ export function buildLoadFunction(ctx: CompileContext): string {
   lines.push(...buildCustomMobBossBarSetupLines(ctx));
   lines.push(...buildCustomMobPhaseSetupLines(ctx));
   lines.push(...buildDungeonLoadLines(ctx));
+  lines.push(...buildPadLoadLines(ctx));
 
   if (jobsUseProgressBar(ctx)) {
     lines.push(`execute as @a run function ${ctx.namespace}:jobs/ensure_pid`);
@@ -122,6 +124,8 @@ export function buildTickFunction(ctx: CompileContext): string {
   if ((ctx.project.dungeons ?? []).length > 0) {
     lines.push(`function ${ctx.namespace}:dungeons/tick`);
   }
+  const padsTick = buildPadsTickHook(ctx);
+  if (padsTick) lines.push(padsTick);
   lines.push(...buildCustomMobBossBarTickHook(ctx));
   lines.push(...buildCustomMobPhaseTickHook(ctx));
   return lines.join('\n') + '\n';

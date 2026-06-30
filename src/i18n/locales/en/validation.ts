@@ -45,6 +45,15 @@ export const validationEn = {
   dungeonBossNoTrigger: 'Boss room "{{room}}" has no on_all_mobs_killed trigger.',
   dungeonOverlappingRooms: 'Rooms "{{a}}" and "{{b}}" in "{{dungeon}}" have overlapping bounds.',
   dungeonUnreferenced: 'Dungeon "{{name}}" is not referenced by any quest gate or trigger.',
+  dungeonDimensionMissing: 'Dungeon "{{name}}" references a deleted dimension.',
+  dimensionNoName: 'A dimension has an empty name.',
+  dimensionNoTag: 'Dimension "{{name}}" has no tag.',
+  duplicateDimensionTag: 'Duplicate dimension tag "{{tag}}" (used {{count}} times).',
+  dimensionRefMissing: '"{{entity}}" references a deleted dimension.',
+  padNoName: 'A teleport pad has an empty name.',
+  padCooldownTooShort: 'Pad "{{name}}" cooldown should be at least 1 second.',
+  padDestinationOverlapsAt:
+    'Pad "{{from}}" teleports into the detection zone of "{{to}}". The pack adds anti-bounce grace, but consider offsetting destinations.',
   objectiveMissingCustomMob: 'Kill objective references a custom mob that was deleted.',
   customItemEnchantmentLevel:
     'Custom item "{{name}}" enchantment "{{enchant}}" level must be at least 1.',

@@ -217,6 +217,22 @@ export function isDungeonNodeId(project: Project, id: string): boolean {
   return (project.dungeons ?? []).some((d) => d.id === id);
 }
 
+export function isDimensionNodeId(project: Project, id: string): boolean {
+  return (project.dimensions ?? []).some((d) => d.id === id);
+}
+
+export function isPadNodeId(project: Project, id: string): boolean {
+  return (project.teleportPads ?? []).some((p) => p.id === id);
+}
+
+export function isAuxiliaryFlowNodeId(project: Project, id: string): boolean {
+  return (
+    isDungeonNodeId(project, id) ||
+    isDimensionNodeId(project, id) ||
+    isPadNodeId(project, id)
+  );
+}
+
 export function dungeonFlowEdges(project: Project): Edge[] {
   const edges: Edge[] = [];
   const seen = new Set<string>();

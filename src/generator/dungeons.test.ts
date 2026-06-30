@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createProject, createQuest } from '../types/factory';
 import { createDungeon, createDungeonRoom, createRoomSpawn, normalizeBounds } from '../types/dungeon';
+import { createDimension } from '../types/dimension';
 import {
   boundsToSelector,
   boundsCenter,
@@ -107,5 +108,31 @@ describe('dungeons generator', () => {
     const tick = buildDungeonsTickFunction(ctx);
     expect(tick).toContain('rooms/');
     expect(tick).toContain('/tick');
+  });
+
+  it('scopes dungeon room ticks to custom dimension when dimensionId is set', () => {
+    const project = createProject('Test');
+    project.namespace = 'questpack';
+    const dim = createDimension('Void Crypt');
+    dim.tag = 'void_crypt';
+    project.dimensions = [dim];
+
+    const dungeon = createDungeon('Crypt');
+    dungeon.dimensionId = dim.id;
+    dungeon.rooms = [
+      {
+        ...createDungeonRoom('Boss'),
+        bounds: { x1: 0, y1: 64, z1: 0, x2: 10, y2: 70, z2: 10 },
+      },
+    ];
+    project.dungeons = [dungeon];
+
+    const ctx = buildContext(project);
+    const tick = buildDungeonsTickFunction(ctx);
+    expect(tick).toContain('execute in questpack:void_crypt run execute if entity @a[x=0,y=64,z=0,dx=10,dy=6,dz=10]');
+
+    const rc = buildDungeonRoomContexts(ctx)[0];
+    const roomTick = buildRoomTickFunction(ctx, rc);
+    expect(roomTick).toContain('execute in questpack:void_crypt run execute if entity @a[x=0,y=64,z=0,dx=10,dy=6,dz=10]');
   });
 });

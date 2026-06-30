@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { type Project } from '../types/quest';
 import { createProject, createQuest, createCustomItem, createCustomMob, createStarterJobs } from '../types/factory';
+import { createDimension, createTeleportPad } from '../types/dimension';
 import JSZip from 'jszip';
 import { buildDatapackFiles, buildRawCommands, buildDatapackZip } from './datapack';
 import { PROJECT_BACKUP_FILENAME } from '../state/projectStore';
@@ -254,6 +255,35 @@ describe('datapack structure', () => {
     const files = buildDatapackFiles(sampleProject());
     const spawn = Object.entries(files).find(([p]) => /spawn\/0_/.test(p))?.[1] ?? '';
     expect(spawn).not.toContain('Age:');
+  });
+
+  it('exports dimension pad pack without dimension_type and with restart guidance', () => {
+    const project = createProject('Dim Pack', 'en');
+    project.namespace = 'dimpack';
+    const dim = createDimension('Void Arena');
+    dim.tag = 'void_arena';
+    project.dimensions = [dim];
+
+    const pad = createTeleportPad('To Void');
+    pad.at = { x: 0, y: 64, z: 0, radius: 2 };
+    pad.to = { dimensionId: dim.id, x: 10, y: 64, z: 10 };
+    pad.cooldownSeconds = 2;
+    project.teleportPads = [pad];
+
+    const files = buildDatapackFiles(project);
+    const paths = Object.keys(files);
+
+    expect(paths).toContain('data/dimpack/dimension/void_arena.json');
+    expect(paths.some((p) => p.includes('dimension_type/'))).toBe(false);
+    expect(JSON.parse(files['data/dimpack/dimension/void_arena.json']).type).toBe('minecraft:overworld');
+
+    expect(files['data/dimpack/function/pads/tick.mcfunction']).toContain('pad0_cd');
+    expect(files['data/dimpack/function/load.mcfunction']).toContain('pad0_cd');
+    expect(paths.some((p) => p.includes('/portals/'))).toBe(false);
+
+    expect(files['install.txt']).toContain('Restart the world');
+    expect(files['install.txt']).toContain('/execute in dimpack:void_arena run tp @s 0 64 0');
+    expect(files['data/dimpack/function/setup_guide.mcfunction']).toContain('dimpack:void_arena');
   });
 
   it('builds raw commands containing every file path', () => {

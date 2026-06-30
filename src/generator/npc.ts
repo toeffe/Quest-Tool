@@ -1,5 +1,6 @@
 import { type Coordinates, type Npc, type TargetNpc } from '../types/quest';
-import { type QuestContext, questObjectives } from './context';
+import { type CompileContext, type QuestContext, questObjectives } from './context';
+import { scopeCommandInDimension } from './coordinates';
 import { normalizeEntityId } from '../data/mobs';
 import { buildVariantNbt } from '../data/mobVariants';
 import { escapeSnbtString } from './text';
@@ -71,6 +72,14 @@ function faceExecutorCommand(tag: string, position: string): string {
   return `execute at @s rotated as @s run tp @e[tag=${tag},limit=1,sort=nearest] ${position} ~ ~`;
 }
 
+function scopeAtCoords(
+  ctx: CompileContext,
+  coords: Coordinates | undefined,
+  command: string,
+): string {
+  return scopeCommandInDimension(ctx, coords?.dimensionId, command);
+}
+
 /** Remove any existing copy of this quest's giver before spawning a fresh one. */
 export function killGiverCommand(qc: QuestContext): string {
   return `kill @e[tag=${qc.giverTag}]`;
@@ -119,23 +128,39 @@ export function spawnTargetCommand(qc: QuestContext): string[] | null {
   ];
 }
 
-/** Lines for the per-quest spawn function (giver + optional target). */
-export function spawnFunctionLines(qc: QuestContext, str: DatapackStrings): string[] {
+export function spawnFunctionLines(
+  ctx: CompileContext,
+  qc: QuestContext,
+  str: DatapackStrings,
+): string[] {
+  const npc = qc.quest.npc;
+  const giverCoords = npc.spawnMode === 'fixed' ? npc.coordinates : undefined;
   const lines = [
     `# Spawn NPC(s) for quest: ${qc.quest.name}`,
-    killGiverCommand(qc),
-    ...spawnGiverCommand(qc),
+    scopeAtCoords(ctx, giverCoords, killGiverCommand(qc)),
+    ...spawnGiverCommand(qc).map((cmd) => scopeAtCoords(ctx, giverCoords, cmd)),
   ];
   const target = spawnTargetCommand(qc);
   if (target) {
-    lines.push(killTargetCommand(qc), ...target);
+    const targetCoords =
+      qc.quest.targetNpc?.spawnMode === 'fixed' ? qc.quest.targetNpc.coordinates : undefined;
+    lines.push(
+      scopeAtCoords(ctx, targetCoords, killTargetCommand(qc)),
+      ...target.map((cmd) => scopeAtCoords(ctx, targetCoords, cmd)),
+    );
   }
   if (qc.quest.type === 'exploration') {
     for (const o of questObjectives(qc.quest)) {
       if (!o.location || !o.markerBlock?.trim()) continue;
       const block = o.markerBlock.trim();
       const { x, y, z } = o.location;
-      lines.push(`setblock ${x} ${y} ${z} ${block}`);
+      lines.push(
+        scopeCommandInDimension(
+          ctx,
+          o.location.dimensionId,
+          `setblock ${x} ${y} ${z} ${block}`,
+        ),
+      );
     }
   }
   lines.push(`say ${str.npcSpawned(qc.quest.name)}`);

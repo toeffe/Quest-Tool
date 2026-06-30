@@ -11,6 +11,7 @@ const VIEW_IDS: ActiveView[] = [
   'items',
   'mobs',
   'dungeons',
+  'dimensions',
   'jobs',
   'advancements',
   'commands',

@@ -6,7 +6,7 @@ import {
 } from '../../types/quest';
 import { type CustomItem } from '../../types/item';
 import { NumberInput, PillSelect, Field, DataListInput } from '../ui/Field';
-import { CoordsRow } from './StepNPC';
+import { CoordsWithDimension } from './CoordsWithDimension';
 import { useMobOptions } from '../../data/mobs';
 
 type ItemSource = 'vanilla' | 'custom';
@@ -27,10 +27,11 @@ interface Props {
   variant: 'kill' | 'gather';
   obj: Objective;
   customItems: CustomItem[];
+  dimensionOptions: { value: string; label: string }[];
   onChange: (patch: Partial<Objective>) => void;
 }
 
-export function SpawnZoneFields({ variant, obj, customItems, onChange }: Props) {
+export function SpawnZoneFields({ variant, obj, customItems, dimensionOptions, onChange }: Props) {
   const { t } = useTranslation('editor');
   const { t: tc } = useTranslation('common');
   const mobOptions = useMobOptions();
@@ -81,9 +82,10 @@ export function SpawnZoneFields({ variant, obj, customItems, onChange }: Props) 
             />
           )}
           <Field label={t('spawnZone.zoneCenter')} hint={t('spawnZone.zoneCenterHint')}>
-            <CoordsRow
+            <CoordsWithDimension
               value={obj.location ?? { x: 100, y: 64, z: 100 }}
               onChange={(location) => onChange({ location })}
+              dimensionOptions={dimensionOptions}
             />
           </Field>
           <NumberInput

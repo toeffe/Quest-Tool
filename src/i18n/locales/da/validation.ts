@@ -46,6 +46,15 @@ export const validationDa = {
   dungeonBossNoTrigger: 'Boss-rum "{{room}}" har ingen on_all_mobs_killed-trigger.',
   dungeonOverlappingRooms: 'Rum "{{a}}" og "{{b}}" i "{{dungeon}}" har overlappende afgrænsninger.',
   dungeonUnreferenced: 'Dungeon "{{name}}" refereres ikke af nogen quest-gate eller trigger.',
+  dungeonDimensionMissing: 'Dungeon "{{name}}" refererer til en slettet dimension.',
+  dimensionNoName: 'En dimension har et tomt navn.',
+  dimensionNoTag: 'Dimension "{{name}}" har ingen tag.',
+  duplicateDimensionTag: 'Dublet dimensionstag "{{tag}}" (brugt {{count}} gange).',
+  dimensionRefMissing: '"{{entity}}" refererer til en slettet dimension.',
+  padNoName: 'En teleportpad har et tomt navn.',
+  padCooldownTooShort: 'Pad "{{name}}" cooldown bør være mindst 1 sekund.',
+  padDestinationOverlapsAt:
+    'Pad "{{from}}" teleporterer ind i detektionszonen for "{{to}}". Pakken tilføjer anti-bounce grace, men overvej at forskyd destinationer.',
   objectiveMissingCustomMob: 'Dræb-mål refererer til en brugerdefineret mob der er slettet.',
   customItemEnchantmentLevel:
     'Brugerdefineret genstand "{{name}}" fortryllelse "{{enchant}}" skal have niveau mindst 1.',

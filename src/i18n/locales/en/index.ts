@@ -14,6 +14,7 @@ import { advancementsEn } from './advancements';
 import { validationEn } from './validation';
 import { customMobsEn } from './customMobs';
 import { dungeonsEn } from './dungeons';
+import { dimensionsEn } from './dimensions';
 import { mobsEn } from '../mobs.generated';
 
 export const enResources = {
@@ -26,6 +27,7 @@ export const enResources = {
   items: itemsEn,
   customMobs: customMobsEn,
   dungeons: dungeonsEn,
+  dimensions: dimensionsEn,
   quest: questEn,
   datapack: datapackEn,
   platform: platformEn,

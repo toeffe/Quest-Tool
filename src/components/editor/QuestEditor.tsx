@@ -78,12 +78,13 @@ export function QuestEditor({
         {tab === 'objectives' && (
           <StepQuest
             quest={quest}
+            project={project}
             customItems={project.customItems ?? []}
             customMobs={project.customMobs ?? []}
             onChange={onChange}
           />
         )}
-        {tab === 'npc' && <StepNPC quest={quest} onChange={onChange} />}
+        {tab === 'npc' && <StepNPC quest={quest} project={project} onChange={onChange} />}
         {tab === 'rewards' && (
           <StepRewards
             quest={quest}
