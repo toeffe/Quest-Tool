@@ -122,7 +122,10 @@ function maxQuestX(questPositions: Map<string, XY>): number {
 /**
  * Place dimension, dungeon, pad, and overworld nodes in a world column grouped by dimension.
  */
-export function worldClusterLayout(project: Project, questPositions: Map<string, XY>): Map<string, XY> {
+export function worldClusterLayout(
+  project: Project,
+  questPositions: Map<string, XY>,
+): Map<string, XY> {
   const world = new Map<string, XY>();
   const worldX = maxQuestX(questPositions) + COLUMN_WIDTH;
   let y = ORIGIN_Y;

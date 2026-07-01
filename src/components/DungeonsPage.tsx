@@ -279,9 +279,7 @@ export function DungeonsPage({
                       d.id === selectedDungeon.id
                         ? {
                             ...d,
-                            rooms: d.rooms.map((r) =>
-                              r.id === roomId ? { ...r, ...patch } : r,
-                            ),
+                            rooms: d.rooms.map((r) => (r.id === roomId ? { ...r, ...patch } : r)),
                           }
                         : d,
                     ),

@@ -247,8 +247,7 @@ export function needsOverworldAnchor(project: Project): boolean {
   const dungeons = project.dungeons ?? [];
   const pads = project.teleportPads ?? [];
   return (
-    dungeons.some((d) => !d.dimensionId) ||
-    pads.some((p) => !p.at.dimensionId || !p.to.dimensionId)
+    dungeons.some((d) => !d.dimensionId) || pads.some((p) => !p.at.dimensionId || !p.to.dimensionId)
   );
 }
 

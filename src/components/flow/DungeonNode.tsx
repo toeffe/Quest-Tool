@@ -2,9 +2,9 @@ import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ValidationIssue } from '../../generator/validate';
-import { dimensionLabel } from '../dimensions/dimensionEditors';
 import type { Dungeon } from '../../types/dungeon';
 import type { Project } from '../../types/quest';
+import { dimensionLabel } from '../dimensions/dimensionEditors';
 
 export interface DungeonNodeData {
   dungeon: Dungeon;

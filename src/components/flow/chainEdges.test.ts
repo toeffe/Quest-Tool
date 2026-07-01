@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createDungeon } from '../../types/dungeon';
 import { createDimension, createTeleportPad } from '../../types/dimension';
+import { createDungeon } from '../../types/dungeon';
 import { createProject, createQuest } from '../../types/factory';
 import {
   connectDungeonToDimension,

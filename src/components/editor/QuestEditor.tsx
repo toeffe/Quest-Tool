@@ -37,7 +37,7 @@ export function QuestEditor({
 
   useEffect(() => {
     if (initialTab) setTab(initialTab);
-  }, [initialTab, quest.id]);
+  }, [initialTab]);
   const questIssues = issues.filter((i) => i.questId === quest.id);
 
   const body = (

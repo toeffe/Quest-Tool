@@ -125,7 +125,10 @@ export function customItemComponentsJson(item: CustomItem): Record<string, unkno
 }
 
 /** Loot functions for a custom item drop. */
-export function customItemLootFunctions(item: CustomItem, amount: number): Record<string, unknown>[] {
+export function customItemLootFunctions(
+  item: CustomItem,
+  amount: number,
+): Record<string, unknown>[] {
   const functions: Record<string, unknown>[] = [
     { function: 'minecraft:set_count', count: amount },
     { function: 'minecraft:set_custom_data', tag: { questtool_id: item.tag } },

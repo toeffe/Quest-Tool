@@ -29,6 +29,7 @@ import {
   disconnectQuests,
   disconnectWorldEdge,
   dungeonFlowEdges,
+  type FlowEdgeData,
   GENERATE_NODE_ID,
   generateEdges,
   getConnectFailureReason,
@@ -42,7 +43,6 @@ import {
   needsOverworldAnchor,
   OVERWORLD_NODE_ID,
   questsToEdges,
-  type FlowEdgeData,
   worldFlowEdges,
 } from './chainEdges';
 import { DimensionNode } from './DimensionNode';
@@ -161,7 +161,9 @@ function FlowCanvasInner({
         return issues.some((i) => i.dungeonId === nodeId && i.level === 'error');
       }
       if (isDimensionNodeId(project, nodeId)) {
-        return issues.some((i) => i.dimensionId === nodeId && !i.teleportPadId && i.level === 'error');
+        return issues.some(
+          (i) => i.dimensionId === nodeId && !i.teleportPadId && i.level === 'error',
+        );
       }
       if (isPadNodeId(project, nodeId)) {
         return issues.some((i) => i.teleportPadId === nodeId && i.level === 'error');
@@ -460,12 +462,7 @@ function FlowCanvasInner({
         if (isBrokenNodeId(edge.source) || isBrokenNodeId(edge.target)) continue;
         if (isWorldStoryEdge(edge)) {
           const data = edge.data as FlowEdgeData | undefined;
-          next = disconnectWorldEdge(
-            next,
-            edge.source,
-            edge.target,
-            data?.worldEndpoint,
-          );
+          next = disconnectWorldEdge(next, edge.source, edge.target, data?.worldEndpoint);
           continue;
         }
         if (isDungeonNodeId(project, edge.target)) {

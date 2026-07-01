@@ -211,7 +211,9 @@ describe('datapack structure', () => {
     project.customMobs = [mob];
     const files = buildDatapackFiles(project);
     expect(files['data/droppack/loot_table/mobs/loot_boss.json']).toContain('slime_ball');
-    expect(files['data/droppack/loot_table/mobs/loot_boss.json']).toContain('"type": "minecraft:generic"');
+    expect(files['data/droppack/loot_table/mobs/loot_boss.json']).toContain(
+      '"type": "minecraft:generic"',
+    );
     expect(files['data/droppack/function/spawn_mob/loot_boss.mcfunction']).toContain(
       'DeathLootTable:"droppack:mobs/loot_boss"',
     );

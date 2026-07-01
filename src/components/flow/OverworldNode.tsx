@@ -14,9 +14,7 @@ export const OverworldNode = memo(function OverworldNode({ data }: NodeProps<Ove
   const { isSelected } = data;
 
   return (
-    <div
-      className={`flow-node-shell flow-node-overworld ${isSelected ? 'selected' : ''} ok`}
-    >
+    <div className={`flow-node-shell flow-node-overworld ${isSelected ? 'selected' : ''} ok`}>
       <Handle
         type="target"
         position={Position.Left}

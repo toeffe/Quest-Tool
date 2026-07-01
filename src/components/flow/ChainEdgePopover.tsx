@@ -1,12 +1,7 @@
 import type { Edge } from '@xyflow/react';
 import { useTranslation } from 'react-i18next';
 import type { Project } from '../../types/quest';
-import {
-  GENERATE_NODE_ID,
-  isBrokenNodeId,
-  isDungeonNodeId,
-  type FlowEdgeData,
-} from './chainEdges';
+import { type FlowEdgeData, GENERATE_NODE_ID, isBrokenNodeId, isDungeonNodeId } from './chainEdges';
 
 interface Props {
   edge: Edge;
@@ -35,7 +30,8 @@ export function ChainEdgePopover({
   const targetQuest = project.quests.find((q) => q.id === edge.target);
   const targetDungeon = (project.dungeons ?? []).find((d) => d.id === edge.target);
 
-  const isQuestChain = sourceQuest && targetQuest && !isBrokenNodeId(edge.source) && !isBrokenNodeId(edge.target);
+  const isQuestChain =
+    sourceQuest && targetQuest && !isBrokenNodeId(edge.source) && !isBrokenNodeId(edge.target);
   const isQuestGate = sourceQuest && targetDungeon && edgeData?.label === 'gates';
 
   if (!isQuestChain && !isQuestGate) return null;
@@ -148,11 +144,7 @@ export function isChainStoryEdge(edge: Edge): boolean {
 
 export function isGateStoryEdge(edge: Edge, project: Project): boolean {
   const data = edge.data as FlowEdgeData | undefined;
-  return (
-    edge.type === 'story' &&
-    data?.label === 'gates' &&
-    isDungeonNodeId(project, edge.target)
-  );
+  return edge.type === 'story' && data?.label === 'gates' && isDungeonNodeId(project, edge.target);
 }
 
 export function isEditableStoryEdge(edge: Edge, project: Project): boolean {

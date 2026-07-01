@@ -28,7 +28,11 @@ export function PadForm({ pad, dimensions, issues, onChange, compact }: Props) {
 
   return (
     <div className={compact ? 'flow-inspector-form' : undefined}>
-      <TextInput label={t('editor.padName')} value={pad.name} onChange={(name) => onChange({ name })} />
+      <TextInput
+        label={t('editor.padName')}
+        value={pad.name}
+        onChange={(name) => onChange({ name })}
+      />
       <NumberInput
         label={t('editor.cooldownSeconds')}
         hint={t('editor.cooldownHint')}

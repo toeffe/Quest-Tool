@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import type { Dungeon, DungeonRoom, QuestState } from '../../types/dungeon';
 import type { Quest } from '../../types/quest';
-import { QUEST_STATES } from './dungeonConstants';
 import { Field, Select } from '../ui/Field';
+import { QUEST_STATES } from './dungeonConstants';
 
 interface Props {
   dungeon: Dungeon;

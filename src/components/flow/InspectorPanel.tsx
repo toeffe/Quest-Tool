@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import type { ValidationIssue } from '../../generator/validate';
 import { useUIStore } from '../../store/uiStore';
-import type { Dungeon, DungeonRoom } from '../../types/dungeon';
 import type { Dimension, TeleportPad } from '../../types/dimension';
+import type { Dungeon, DungeonRoom } from '../../types/dungeon';
 import type { Project, Quest } from '../../types/quest';
 import { DimensionForm } from '../dimensions/DimensionForm';
 import { PadForm } from '../dimensions/PadForm';
@@ -10,8 +10,8 @@ import { DungeonForm } from '../dungeons/DungeonForm';
 import { DungeonRoomGateList } from '../dungeons/DungeonRoomGateList';
 import { QuestEditor } from '../editor/QuestEditor';
 import type { EditorTab } from '../editor/ValidationBar';
-import { ExportPanel } from '../export/ExportPanel';
 import { ValidationBar } from '../editor/ValidationBar';
+import { ExportPanel } from '../export/ExportPanel';
 import { ResizableInspector } from './ResizableInspector';
 
 export type InspectorTarget =
@@ -125,9 +125,7 @@ export function InspectorPanel({
   if (target.kind === 'dimension') {
     const dimension = (project.dimensions ?? []).find((d) => d.id === target.dimensionId);
     if (!dimension) return null;
-    const dimIssues = issues.filter(
-      (i) => i.dimensionId === dimension.id && !i.teleportPadId,
-    );
+    const dimIssues = issues.filter((i) => i.dimensionId === dimension.id && !i.teleportPadId);
 
     const updateDimension = (patch: Partial<Dimension>) => {
       onChangeProject({

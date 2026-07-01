@@ -152,7 +152,8 @@ function objectiveInfos(ctx: CompileContext, qc: QuestContext): ObjectiveInfo[] 
       ? resolveDeathLootTableRef(zoneDropMode, ctx.namespace, qc.fnBase, j)
       : undefined;
     if (customMob) {
-      deathLootTable = resolveCustomMobDeathLootTable(customMob, ctx.namespace, ctx.project) ?? deathLootTable;
+      deathLootTable =
+        resolveCustomMobDeathLootTable(customMob, ctx.namespace, ctx.project) ?? deathLootTable;
     }
     return {
       amount,
