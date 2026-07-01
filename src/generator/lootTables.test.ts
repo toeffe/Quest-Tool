@@ -1,15 +1,16 @@
-import { describe, it, expect } from 'vitest';
-import { createProject, createCustomItem } from '../types/factory';
+import { describe, expect, it } from 'vitest';
+import { createCustomItem, createProject } from '../types/factory';
 import {
   buildEmptyEntityLootTable,
   buildZoneDropLootTable,
+  QUEST_LOOT_TABLE_TYPE,
   resolveDeathLootTableRef,
 } from './lootTables';
 
 describe('lootTables', () => {
-  it('builds an empty entity loot table', () => {
+  it('builds an empty loot table', () => {
     expect(buildEmptyEntityLootTable()).toEqual({
-      type: 'minecraft:entity',
+      type: QUEST_LOOT_TABLE_TYPE,
       pools: [],
     });
   });
@@ -27,36 +28,50 @@ describe('lootTables', () => {
     const table = buildZoneDropLootTable(project, [
       { target: 'minecraft:bone', amount: 2, chance: 50 },
     ]);
-    expect(table.type).toBe('minecraft:entity');
+    expect(table.type).toBe(QUEST_LOOT_TABLE_TYPE);
     const pools = table.pools as Record<string, unknown>[];
     expect(pools).toHaveLength(1);
     const entry = (pools[0].entries as Record<string, unknown>[])[0];
     expect(entry.name).toBe('minecraft:bone');
-    expect(entry.conditions).toEqual([
-      { condition: 'minecraft:random_chance', chance: 0.5 },
-    ]);
+    expect(entry.conditions).toEqual([{ condition: 'minecraft:random_chance', chance: 0.5 }]);
     const fns = entry.functions as Record<string, unknown>[];
     expect(fns[0]).toEqual({ function: 'minecraft:set_count', count: 2 });
   });
 
-  it('builds a custom item drop with set_components', () => {
+  it('builds a custom item drop with dedicated loot functions', () => {
     const project = createProject('P');
     const item = createCustomItem('collectible', 'Token');
     item.tag = 'quest_token';
     item.displayName = 'Quest Token';
+    item.lore = ['Rare'];
+    item.glint = true;
+    item.rarity = 'rare';
     project.customItems = [item];
-    const table = buildZoneDropLootTable(project, [
-      { customItemId: item.id, amount: 1 },
-    ]);
+    const table = buildZoneDropLootTable(project, [{ customItemId: item.id, amount: 1 }]);
     const pools = table.pools as Record<string, unknown>[];
     const entry = (pools[0].entries as Record<string, unknown>[])[0];
     expect(entry.name).toBe('minecraft:paper');
     const fns = entry.functions as Record<string, unknown>[];
+    expect(fns[0]).toEqual({ function: 'minecraft:set_count', count: 1 });
+    expect(fns[1]).toEqual({
+      function: 'minecraft:set_custom_data',
+      tag: { questtool_id: 'quest_token' },
+    });
+    expect(fns[2]).toEqual({
+      function: 'minecraft:set_name',
+      name: { text: 'Quest Token', italic: false },
+      target: 'item_name',
+    });
+    expect(fns[3]).toEqual({
+      function: 'minecraft:set_lore',
+      lore: [{ text: 'Rare', italic: false }],
+      mode: 'replace_all',
+    });
     const setComponents = fns.find((f) => f.function === 'minecraft:set_components');
     expect(setComponents).toBeDefined();
     const components = setComponents!.components as Record<string, unknown>;
-    expect(components['minecraft:custom_data']).toEqual({ questtool_id: 'quest_token' });
-    expect(components['minecraft:item_name']).toBe('Quest Token');
+    expect(components['minecraft:enchantment_glint_override']).toBe(true);
+    expect(components['minecraft:rarity']).toBe('rare');
   });
 
   it('includes enchantments in custom item drop components', () => {
@@ -68,9 +83,7 @@ describe('lootTables', () => {
       { enchantmentId: 'minecraft:fortune', level: 2 },
     ];
     project.customItems = [item];
-    const table = buildZoneDropLootTable(project, [
-      { customItemId: item.id, amount: 1 },
-    ]);
+    const table = buildZoneDropLootTable(project, [{ customItemId: item.id, amount: 1 }]);
     const pools = table.pools as Record<string, unknown>[];
     const entry = (pools[0].entries as Record<string, unknown>[])[0];
     const fns = entry.functions as Record<string, unknown>[];
@@ -82,6 +95,7 @@ describe('lootTables', () => {
         'minecraft:fortune': 2,
       },
     });
+    expect(fns.some((f) => f.function === 'minecraft:set_custom_data')).toBe(true);
   });
 
   it('uses one pool per drop entry', () => {

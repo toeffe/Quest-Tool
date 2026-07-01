@@ -1,6 +1,6 @@
-import { type Project } from '../types/quest';
-import { type JobMilestoneReward } from '../types/job';
-import { type StarterJobKey } from '../types/factory';
+import type { StarterJobKey } from '../types/factory';
+import type { JobMilestoneReward } from '../types/job';
+import type { Project } from '../types/quest';
 
 const FAST_XP_PER_LEVEL = 15;
 

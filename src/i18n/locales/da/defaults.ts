@@ -7,6 +7,7 @@ export const defaultsDa = {
   quest: {
     name: 'Ny quest',
     firstQuestName: 'Første quest',
+    numberedName: 'Quest {{n}}',
     category: 'Generelt',
     description: 'En quest venter.',
   },
@@ -70,29 +71,35 @@ export const defaultsDa = {
 
   customItem: {
     name: 'Ny genstand',
+    numberedName: 'Genstand {{n}}',
     tag: 'item',
     baseItem: 'minecraft:paper',
   },
 
   customMob: {
     name: 'Ny mob',
+    numberedName: 'Mob {{n}}',
   },
 
   dungeon: {
     name: 'Nyt dungeon',
+    numberedName: 'Dungeon {{n}}',
     defaultRoom: 'Indgangsrum',
   },
 
   dimension: {
     name: 'Ny dimension',
+    numberedName: 'Dimension {{n}}',
   },
 
   pad: {
     name: 'Ny pad',
+    numberedName: 'Pad {{n}}',
   },
 
   job: {
     defaultName: 'Fiskeri',
+    numberedName: 'Job {{n}}',
     milestoneCommand: 'say {player} nåede en job-milestone!',
   },
 

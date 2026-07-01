@@ -1,6 +1,6 @@
+import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 
 export interface GenerateNodeData {
   questCount: number;
@@ -19,10 +19,7 @@ export const GenerateNode = memo(function GenerateNode({ data }: NodeProps<Gener
   const state = errorCount > 0 ? 'error' : warningCount > 0 ? 'warning' : 'ok';
 
   return (
-    <div
-      className={`flow-node generate ${isSelected ? 'selected' : ''} ${state}`}
-      onClick={onOpen}
-    >
+    <div className={`flow-node generate ${isSelected ? 'selected' : ''} ${state}`} onClick={onOpen}>
       <Handle type="target" position={Position.Left} className="flow-handle" />
       <div className="flow-generate-icon">{t('generateNode.pack')}</div>
       <div className="flow-generate-title">{t('generateNode.title')}</div>

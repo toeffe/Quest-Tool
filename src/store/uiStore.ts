@@ -1,6 +1,16 @@
 import { create } from 'zustand';
 
-export type ActiveView = 'editor' | 'flow' | 'items' | 'mobs' | 'dungeons' | 'dimensions' | 'jobs' | 'advancements' | 'commands' | 'export';
+export type ActiveView =
+  | 'editor'
+  | 'flow'
+  | 'items'
+  | 'mobs'
+  | 'dungeons'
+  | 'dimensions'
+  | 'jobs'
+  | 'advancements'
+  | 'commands'
+  | 'export';
 
 interface UIStore {
   activeView: ActiveView;
@@ -10,6 +20,7 @@ interface UIStore {
   commandPaletteOpen: boolean;
   settingsOpen: boolean;
   helpOpen: boolean;
+  saveError: string | null;
   setActiveView: (view: ActiveView) => void;
   setSelectedQuestId: (id: string | null) => void;
   setDimensionsFocus: (focus: { kind: 'dimension' | 'pad'; id: string } | null) => void;
@@ -17,6 +28,7 @@ interface UIStore {
   setCommandPaletteOpen: (open: boolean) => void;
   setSettingsOpen: (open: boolean) => void;
   setHelpOpen: (open: boolean) => void;
+  setSaveError: (message: string | null) => void;
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -27,6 +39,7 @@ export const useUIStore = create<UIStore>((set) => ({
   commandPaletteOpen: false,
   settingsOpen: false,
   helpOpen: false,
+  saveError: null,
   setActiveView: (activeView) => set({ activeView }),
   setSelectedQuestId: (selectedQuestId) => set({ selectedQuestId }),
   setDimensionsFocus: (dimensionsFocus) => set({ dimensionsFocus }),
@@ -34,4 +47,5 @@ export const useUIStore = create<UIStore>((set) => ({
   setCommandPaletteOpen: (commandPaletteOpen) => set({ commandPaletteOpen }),
   setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
   setHelpOpen: (helpOpen) => set({ helpOpen }),
+  setSaveError: (saveError) => set({ saveError }),
 }));

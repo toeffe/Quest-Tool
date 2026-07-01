@@ -1,12 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import { createJob } from '../types/factory';
+import type { Job, JobAction } from '../types/job';
 import {
-  getBalancedDefaults,
-  applyBalancedDefaults,
   actionsToReachLevel,
   actionsToReachMaxLevel,
+  applyBalancedDefaults,
+  getBalancedDefaults,
 } from './jobBalance';
-import { type Job, type JobAction } from '../types/job';
-import { createJob } from '../types/factory';
 
 function balancedJob(action: JobAction): Job {
   const d = getBalancedDefaults(action);

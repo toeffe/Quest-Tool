@@ -4,7 +4,7 @@
  * and the generator turns a Project into a Minecraft 1.21.11 datapack.
  */
 
-import { type AppLocale } from '../i18n/types';
+import type { AppLocale } from '../i18n/types';
 
 export type Platform = 'paper' | 'vanilla' | 'lan';
 
@@ -15,13 +15,7 @@ export const PLATFORM_LABELS: Record<Platform, string> = {
 };
 
 /** The kinds of quests the tool can generate. */
-export type QuestType =
-  | 'talk'
-  | 'kill'
-  | 'gather'
-  | 'delivery'
-  | 'exploration'
-  | 'daily';
+export type QuestType = 'talk' | 'kill' | 'gather' | 'delivery' | 'exploration' | 'daily';
 
 export const QUEST_TYPE_LABELS: Record<QuestType, string> = {
   talk: 'Talk to an NPC',
@@ -144,13 +138,7 @@ export interface Objective {
   markerBlock?: string;
 }
 
-export type RewardType =
-  | 'item'
-  | 'xp'
-  | 'money'
-  | 'permission'
-  | 'command'
-  | 'jobXp';
+export type RewardType = 'item' | 'xp' | 'money' | 'permission' | 'command' | 'jobXp';
 
 export const REWARD_TYPE_LABELS: Record<RewardType, string> = {
   item: 'Item',
@@ -208,11 +196,11 @@ export interface Quest {
   cooldownSeconds: number;
 }
 
-import { type CustomItem } from './item';
-import { type CustomMob } from './customMob';
-import { type Job } from './job';
-import { type Dungeon } from './dungeon';
-import { type Dimension, type TeleportPad } from './dimension';
+import type { CustomMob } from './customMob';
+import type { Dimension, TeleportPad } from './dimension';
+import type { Dungeon } from './dungeon';
+import type { CustomItem } from './item';
+import type { Job } from './job';
 
 export interface Project {
   id: string;
@@ -241,12 +229,6 @@ export interface Project {
   version: number;
 }
 
-export const WIZARD_STEPS = [
-  'npc',
-  'quest',
-  'rewards',
-  'chain',
-  'generate',
-] as const;
+export const WIZARD_STEPS = ['npc', 'quest', 'rewards', 'chain', 'generate'] as const;
 
 export type WizardStep = (typeof WIZARD_STEPS)[number];

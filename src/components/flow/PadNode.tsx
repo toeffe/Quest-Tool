@@ -1,8 +1,8 @@
+import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type Node, type NodeProps } from '@xyflow/react';
-import { type Dimension, type TeleportPad } from '../../types/dimension';
-import { type ValidationIssue } from '../../generator/validate';
+import type { ValidationIssue } from '../../generator/validate';
+import type { Dimension, TeleportPad } from '../../types/dimension';
 
 export interface PadNodeData {
   pad: TeleportPad;
@@ -31,6 +31,23 @@ export const PadNode = memo(function PadNode({ data }: NodeProps<PadFlowNode>) {
 
   return (
     <div className={`flow-node-shell flow-node-pad ${isSelected ? 'selected' : ''} ${nodeState}`}>
+      <Handle
+        id="at"
+        type="source"
+        position={Position.Left}
+        className="flow-handle flow-handle-in"
+        title={t('padNode.handleFromTitle')}
+        isConnectable
+      />
+      <Handle
+        id="to"
+        type="source"
+        position={Position.Right}
+        className="flow-handle flow-handle-out"
+        title={t('padNode.handleToTitle')}
+        isConnectable
+      />
+
       <div className="flow-node">
         <div className="flow-node-header">
           <div className="flow-node-header-main">

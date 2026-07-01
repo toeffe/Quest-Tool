@@ -1,6 +1,6 @@
-import { type Job, type JobAction } from '../types/job';
+import { type Job, type JobAction, totalXpForLevel } from '../types/job';
 import { type CompileContext, type JobContext, namespaced } from './context';
-import { totalXpForLevel } from '../types/job';
+import { sanitizeMcComment } from './text';
 
 export type JobAdvancementSegment = 'root' | `level_${number}`;
 
@@ -177,11 +177,7 @@ function buildRootAdvancement(jc: JobContext): object {
   };
 }
 
-function buildLevelAdvancement(
-  ctx: CompileContext,
-  jc: JobContext,
-  level: number,
-): object {
+function buildLevelAdvancement(ctx: CompileContext, jc: JobContext, level: number): object {
   const { job } = jc;
   const icon = namespaced(job.advancementIcon ?? defaultJobAdvancementIcon(job.action));
   const parent =
@@ -226,7 +222,7 @@ export function buildJobAdvancementFiles(
 /** mcfunction lines to grant advancements matching the player's current job level. */
 export function buildJobSyncAdvancementLines(ctx: CompileContext, jc: JobContext): string[] {
   const lines: string[] = [
-    `# Sync ${jc.job.name} advancements to current level`,
+    `# Sync ${sanitizeMcComment(jc.job.name)} advancements to current level`,
     // Root is always granted so the custom Advancements tab is visible (Minecraft hides tabs until one node is earned).
     `advancement grant @s only ${jobAdvancementId(ctx, jc, 'root')}`,
   ];
@@ -240,7 +236,5 @@ export function buildJobSyncAdvancementLines(ctx: CompileContext, jc: JobContext
 
 /** mcfunction lines to revoke all advancements for one job (used in reset). */
 export function buildJobRevokeAdvancementLines(ctx: CompileContext, jc: JobContext): string[] {
-  return [
-    `advancement revoke @s from ${jobAdvancementId(ctx, jc, 'root')}`,
-  ];
+  return [`advancement revoke @s from ${jobAdvancementId(ctx, jc, 'root')}`];
 }

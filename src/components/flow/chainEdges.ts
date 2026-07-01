@@ -1,21 +1,37 @@
-import { type Edge } from '@xyflow/react';
-import { type Project, type Quest } from '../../types/quest';
+import type { Edge } from '@xyflow/react';
+import { wouldCreateCycle } from '../../chain/chainGraph';
 import i18n, { getAppLocale } from '../../i18n';
-import { type AppLocale } from '../../i18n/types';
+import type { AppLocale } from '../../i18n/types';
+import type { Project, Quest } from '../../types/quest';
 
 /** Id of the synthetic terminal node every leaf quest flows into. */
 export const GENERATE_NODE_ID = '__generate__';
 
+/** Synthetic anchor for overworld (minecraft:overworld) when dimensionId is unset. */
+export const OVERWORLD_NODE_ID = '__overworld__';
+
 export const BROKEN_UNLOCK_PREFIX = '__broken_unlock__';
 export const BROKEN_REQUIRES_PREFIX = '__broken_requires__';
 
-export type FlowEdgeLabelKey = 'requires' | 'unlocks' | 'autoStarts' | 'missingQuest' | 'gates';
+export type FlowEdgeLabelKey =
+  | 'requires'
+  | 'unlocks'
+  | 'autoStarts'
+  | 'missingQuest'
+  | 'gates'
+  | 'inDimension'
+  | 'padFrom'
+  | 'padTo';
+
+export type WorldEdgeEndpoint = 'dungeon' | 'padAt' | 'padTo';
 
 export interface FlowEdgeData {
   label: FlowEdgeLabelKey;
   autoStart?: boolean;
   broken?: boolean;
   requiresOnly?: boolean;
+  world?: boolean;
+  worldEndpoint?: WorldEdgeEndpoint;
 }
 
 export interface BrokenStub {
@@ -169,9 +185,7 @@ export function questsToEdges(quests: Quest[]): Edge[] {
 
 export function leafQuestIds(quests: Quest[]): string[] {
   const edges = questsToEdges(quests);
-  const hasOutgoing = new Set(
-    edges.filter((e) => !isBrokenNodeId(e.target)).map((e) => e.source),
-  );
+  const hasOutgoing = new Set(edges.filter((e) => !isBrokenNodeId(e.target)).map((e) => e.source));
   return quests.filter((q) => !hasOutgoing.has(q.id)).map((q) => q.id);
 }
 
@@ -185,33 +199,15 @@ export function generateEdges(quests: Quest[]): Edge[] {
   }));
 }
 
-export function wouldCreateCycle(
-  quests: Quest[],
-  sourceId: string,
-  targetId: string,
-): boolean {
-  if (sourceId === targetId || isBrokenNodeId(sourceId) || isBrokenNodeId(targetId)) return true;
-  const edges = questsToEdges(quests);
-  const adjacency = new Map<string, string[]>();
-  for (const e of edges) {
-    if (isBrokenNodeId(e.target)) continue;
-    const list = adjacency.get(e.source) ?? [];
-    list.push(e.target);
-    adjacency.set(e.source, list);
-  }
-  const stack = [targetId];
-  const visited = new Set<string>();
-  while (stack.length) {
-    const current = stack.pop()!;
-    if (current === sourceId) return true;
-    if (visited.has(current)) continue;
-    visited.add(current);
-    for (const next of adjacency.get(current) ?? []) stack.push(next);
-  }
-  return false;
-}
+export { wouldCreateCycle } from '../../chain/chainGraph';
 
-export type ConnectFailureReason = 'self' | 'generate' | 'cycle' | 'missing' | 'broken';
+export type ConnectFailureReason =
+  | 'self'
+  | 'generate'
+  | 'cycle'
+  | 'missing'
+  | 'broken'
+  | 'worldTarget';
 
 export function isDungeonNodeId(project: Project, id: string): boolean {
   return (project.dungeons ?? []).some((d) => d.id === id);
@@ -225,12 +221,93 @@ export function isPadNodeId(project: Project, id: string): boolean {
   return (project.teleportPads ?? []).some((p) => p.id === id);
 }
 
+export function isOverworldNodeId(id: string): boolean {
+  return id === OVERWORLD_NODE_ID;
+}
+
+export function isWorldTargetNodeId(project: Project, id: string): boolean {
+  return isDimensionNodeId(project, id) || isOverworldNodeId(id);
+}
+
 export function isAuxiliaryFlowNodeId(project: Project, id: string): boolean {
   return (
     isDungeonNodeId(project, id) ||
     isDimensionNodeId(project, id) ||
-    isPadNodeId(project, id)
+    isPadNodeId(project, id) ||
+    isOverworldNodeId(id)
   );
+}
+
+/** Resolve a dimension ref to a flow node id (dimension id or overworld anchor). */
+export function dimensionRefToNodeId(dimensionId: string | undefined): string {
+  return dimensionId ?? OVERWORLD_NODE_ID;
+}
+
+export function needsOverworldAnchor(project: Project): boolean {
+  const dungeons = project.dungeons ?? [];
+  const pads = project.teleportPads ?? [];
+  return (
+    dungeons.some((d) => !d.dimensionId) ||
+    pads.some((p) => !p.at.dimensionId || !p.to.dimensionId)
+  );
+}
+
+export function worldFlowEdges(project: Project): Edge[] {
+  const edges: Edge[] = [];
+
+  for (const dungeon of project.dungeons ?? []) {
+    const target = dimensionRefToNodeId(dungeon.dimensionId);
+    edges.push({
+      id: `world:dungeon:${dungeon.id}->${target}`,
+      source: dungeon.id,
+      sourceHandle: 'dimension',
+      target,
+      type: 'story',
+      className: 'flow-edge world',
+      data: {
+        label: 'inDimension',
+        world: true,
+        worldEndpoint: 'dungeon',
+        requiresOnly: true,
+      } satisfies FlowEdgeData,
+    });
+  }
+
+  for (const pad of project.teleportPads ?? []) {
+    const atTarget = dimensionRefToNodeId(pad.at.dimensionId);
+    edges.push({
+      id: `world:pad:${pad.id}:at->${atTarget}`,
+      source: pad.id,
+      sourceHandle: 'at',
+      target: atTarget,
+      type: 'story',
+      className: 'flow-edge world',
+      data: {
+        label: 'padFrom',
+        world: true,
+        worldEndpoint: 'padAt',
+        requiresOnly: true,
+      } satisfies FlowEdgeData,
+    });
+
+    const toTarget = dimensionRefToNodeId(pad.to.dimensionId);
+    edges.push({
+      id: `world:pad:${pad.id}:to->${toTarget}`,
+      source: pad.id,
+      sourceHandle: 'to',
+      target: toTarget,
+      type: 'story',
+      className: 'flow-edge world',
+      data: {
+        label: 'padTo',
+        world: true,
+        worldEndpoint: 'padTo',
+        requiresOnly: true,
+      } satisfies FlowEdgeData,
+    });
+  }
+
+  return edges;
 }
 
 export function dungeonFlowEdges(project: Project): Edge[] {
@@ -260,10 +337,21 @@ export function getConnectFailureReason(
   project: Project,
   sourceId: string,
   targetId: string,
+  sourceHandle?: string | null,
 ): ConnectFailureReason | null {
   if (sourceId === targetId) return 'self';
   if (targetId === GENERATE_NODE_ID || isBrokenNodeId(targetId)) return 'generate';
   if (isBrokenNodeId(sourceId)) return 'broken';
+
+  if (isDungeonNodeId(project, sourceId) && sourceHandle === 'dimension') {
+    if (!isWorldTargetNodeId(project, targetId)) return 'worldTarget';
+    return null;
+  }
+
+  if (isPadNodeId(project, sourceId) && (sourceHandle === 'at' || sourceHandle === 'to')) {
+    if (!isWorldTargetNodeId(project, targetId)) return 'worldTarget';
+    return null;
+  }
 
   const source = project.quests.find((q) => q.id === sourceId);
   if (!source) return 'missing';
@@ -288,11 +376,25 @@ export function connectQuests(
   project: Project,
   sourceId: string,
   targetId: string,
+  sourceHandle?: string | null,
+  preferredDungeonRoomId?: string,
 ): Project {
-  if (getConnectFailureReason(project, sourceId, targetId)) return project;
+  if (getConnectFailureReason(project, sourceId, targetId, sourceHandle)) return project;
+
+  if (isDungeonNodeId(project, sourceId) && sourceHandle === 'dimension') {
+    return connectDungeonToDimension(project, sourceId, targetId);
+  }
+
+  if (isPadNodeId(project, sourceId) && sourceHandle === 'at') {
+    return connectPadEndpointToDimension(project, sourceId, 'at', targetId);
+  }
+
+  if (isPadNodeId(project, sourceId) && sourceHandle === 'to') {
+    return connectPadEndpointToDimension(project, sourceId, 'to', targetId);
+  }
 
   if (isDungeonNodeId(project, targetId)) {
-    return connectQuestToDungeon(project, sourceId, targetId);
+    return connectQuestToDungeon(project, sourceId, targetId, preferredDungeonRoomId);
   }
 
   const source = project.quests.find((q) => q.id === sourceId)!;
@@ -306,21 +408,66 @@ export function connectQuests(
   return { ...project, quests };
 }
 
+export function connectDungeonToDimension(
+  project: Project,
+  dungeonId: string,
+  dimensionNodeId: string,
+): Project {
+  const dimensionId = isOverworldNodeId(dimensionNodeId) ? undefined : dimensionNodeId;
+  const dungeons = (project.dungeons ?? []).map((d) =>
+    d.id === dungeonId ? { ...d, dimensionId } : d,
+  );
+  return { ...project, dungeons };
+}
+
+export function connectPadEndpointToDimension(
+  project: Project,
+  padId: string,
+  endpoint: 'at' | 'to',
+  dimensionNodeId: string,
+): Project {
+  const dimensionId = isOverworldNodeId(dimensionNodeId) ? undefined : dimensionNodeId;
+  const teleportPads = (project.teleportPads ?? []).map((p) => {
+    if (p.id !== padId) return p;
+    if (endpoint === 'at') {
+      return { ...p, at: { ...p.at, dimensionId } };
+    }
+    return { ...p, to: { ...p.to, dimensionId } };
+  });
+  return { ...project, teleportPads };
+}
+
+export function disconnectDungeonFromDimension(project: Project, dungeonId: string): Project {
+  return connectDungeonToDimension(project, dungeonId, OVERWORLD_NODE_ID);
+}
+
+export function disconnectPadEndpointFromDimension(
+  project: Project,
+  padId: string,
+  endpoint: 'at' | 'to',
+): Project {
+  return connectPadEndpointToDimension(project, padId, endpoint, OVERWORLD_NODE_ID);
+}
+
 export function connectQuestToDungeon(
   project: Project,
   questId: string,
   dungeonId: string,
+  preferredRoomId?: string,
 ): Project {
   const quest = project.quests.find((q) => q.id === questId);
   if (!quest) return project;
   const dungeons = (project.dungeons ?? []).map((d) => {
     if (d.id !== dungeonId) return d;
+    const gateRoomId = preferredRoomId ?? d.rooms[0]?.id;
+    if (!gateRoomId) return d;
     return {
       ...d,
-      rooms: d.rooms.map((r) => ({
-        ...r,
-        questGate: { questName: quest.name, requiredState: 1 as const },
-      })),
+      rooms: d.rooms.map((r) =>
+        r.id === gateRoomId
+          ? { ...r, questGate: { questName: quest.name, requiredState: 1 as const } }
+          : r,
+      ),
     };
   });
   return { ...project, dungeons };
@@ -345,11 +492,25 @@ export function disconnectQuestFromDungeon(
   return { ...project, dungeons };
 }
 
-export function disconnectQuests(
+export function disconnectWorldEdge(
   project: Project,
   sourceId: string,
-  targetId: string,
+  _targetId: string,
+  worldEndpoint?: WorldEdgeEndpoint,
 ): Project {
+  if (worldEndpoint === 'dungeon' && isDungeonNodeId(project, sourceId)) {
+    return disconnectDungeonFromDimension(project, sourceId);
+  }
+  if (worldEndpoint === 'padAt' && isPadNodeId(project, sourceId)) {
+    return disconnectPadEndpointFromDimension(project, sourceId, 'at');
+  }
+  if (worldEndpoint === 'padTo' && isPadNodeId(project, sourceId)) {
+    return disconnectPadEndpointFromDimension(project, sourceId, 'to');
+  }
+  return project;
+}
+
+export function disconnectQuests(project: Project, sourceId: string, targetId: string): Project {
   if (isDungeonNodeId(project, targetId)) {
     return disconnectQuestFromDungeon(project, sourceId, targetId);
   }
@@ -368,4 +529,9 @@ export function disconnectQuests(
     return q;
   });
   return { ...project, quests };
+}
+
+export function isWorldStoryEdge(edge: Edge): boolean {
+  const data = edge.data as FlowEdgeData | undefined;
+  return edge.type === 'story' && !!data?.world;
 }

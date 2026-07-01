@@ -1,6 +1,7 @@
 /// <reference types="vitest/config" />
-import { defineConfig } from 'vite';
+
 import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
   // Served from the site root in dev/preview; the GitHub Pages workflow sets
@@ -10,7 +11,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['src/**/*.test.ts', 'scripts/ingame/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'scripts/**/*.test.ts'],
     setupFiles: ['src/vitest.setup.ts'],
   },
 });

@@ -1,6 +1,7 @@
 export const dimensionsEn = {
   title: 'Dimensions',
-  subtitle: 'Void custom dimensions and teleport pads between worlds.',
+  subtitle: 'Void dimensions and teleport pads.',
+  subtitleHint: 'Create void worlds for dungeons and link them with cooldown-gated pads.',
 
   overworld: 'Overworld',
 

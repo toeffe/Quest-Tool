@@ -1,11 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { createCustomItem } from '../types/factory';
-import {
-  buildClearStackArg,
-  buildGiveCommand,
-  buildItemStackArg,
-  customDataSnbt,
-} from './items';
+import { buildClearStackArg, buildGiveCommand, buildItemStackArg, customDataSnbt } from './items';
 
 describe('custom item commands', () => {
   it('embeds questtool_id in custom_data', () => {

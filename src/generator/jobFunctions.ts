@@ -1,14 +1,14 @@
-import { jobIsDistance } from '../types/job';
-import { type CompileContext, type JobContext } from './context';
-import { totalXpForLevel } from '../types/job';
-import { SYS_OBJECTIVE } from './sys';
+import { jobIsDistance, totalXpForLevel } from '../types/job';
+import type { CompileContext, JobContext } from './context';
+import { buildJobRevokeAdvancementLines, buildJobSyncAdvancementLines } from './jobAdvancements';
 import {
-  buildJobRevokeAdvancementLines,
-  buildJobSyncAdvancementLines,
-} from './jobAdvancements';
+  buildBossBarApplyLines,
+  buildUpdateProgressBarLines,
+  jobsUseProgressBar,
+} from './jobBossBar';
 import { jobMilestoneRewardCommands, milestoneAnnouncement } from './jobMilestones';
-import { buildUpdateProgressBarLines, buildBossBarApplyLines, jobsUseProgressBar } from './jobBossBar';
-import { escapeSnbtString, tellraw } from './text';
+import { SYS_OBJECTIVE } from './sys';
+import { escapeSnbtString, sanitizeMcComment, tellraw } from './text';
 
 const SYS = SYS_OBJECTIVE;
 
@@ -39,9 +39,7 @@ export function buildJobLoadLines(_ctx: CompileContext, jc: JobContext): string[
   const { job } = jc;
   const lines: string[] = [];
   for (let i = 0; i < jc.statObjectives.length; i++) {
-    lines.push(
-      `scoreboard objectives add ${jc.statObjectives[i]} ${jc.statCriteria[i]}`,
-    );
+    lines.push(`scoreboard objectives add ${jc.statObjectives[i]} ${jc.statCriteria[i]}`);
   }
   if (jc.multiStat) {
     lines.push(`scoreboard objectives add ${jc.stat} dummy`);
@@ -80,7 +78,7 @@ export function buildJobResetLines(ctx: CompileContext, jc: JobContext): string[
 
 function buildSumStatLines(jc: JobContext): string[] {
   const lines = [
-    `# ${jc.job.name} - sum stat objectives into ${jc.stat}`,
+    `# ${sanitizeMcComment(jc.job.name)} - sum stat objectives into ${jc.stat}`,
     `scoreboard players set ${jc.sumHolder} ${SYS} 0`,
   ];
   for (const obj of jc.statObjectives) {
@@ -93,8 +91,7 @@ function buildSumStatLines(jc: JobContext): string[] {
 function buildUpdateStatTickLines(jc: JobContext, ns: string): string[] {
   if (jc.multiStat) {
     const lines = jc.statObjectives.map(
-      (obj) =>
-        `execute as @a store result score @s ${obj} run scoreboard players get @s ${obj}`,
+      (obj) => `execute as @a store result score @s ${obj} run scoreboard players get @s ${obj}`,
     );
     lines.push(`execute as @a run function ${ns}:${jc.fnBase}/sum_stat`);
     return lines;
@@ -108,8 +105,7 @@ function buildInitStatLines(jc: JobContext, ns: string): string[] {
   if (jc.multiStat) {
     return [
       ...jc.statObjectives.map(
-        (obj) =>
-          `execute store result score @s ${obj} run scoreboard players get @s ${obj}`,
+        (obj) => `execute store result score @s ${obj} run scoreboard players get @s ${obj}`,
       ),
       `function ${ns}:${jc.fnBase}/sum_stat`,
       `scoreboard players operation @s ${jc.last} = @s ${jc.stat}`,
@@ -140,7 +136,7 @@ function buildMilestoneFiles(ctx: CompileContext, jc: JobContext): Record<string
     (m) => m.rewards.length > 0 && m.level >= 1 && m.level <= jc.job.maxLevel,
   );
 
-  const rewardLines: string[] = [`# ${jc.job.name} - milestone rewards`];
+  const rewardLines: string[] = [`# ${sanitizeMcComment(jc.job.name)} - milestone rewards`];
   for (const m of milestones) {
     rewardLines.push(
       `execute if score @s ${jc.level} matches ${m.level} run function ${ns}:${jc.fnBase}/grant_milestone_${m.level}`,
@@ -150,7 +146,7 @@ function buildMilestoneFiles(ctx: CompileContext, jc: JobContext): Record<string
 
   for (const m of milestones) {
     const grant: string[] = [
-      `# ${jc.job.name} - milestone level ${m.level}`,
+      `# ${sanitizeMcComment(jc.job.name)} - milestone level ${m.level}`,
       milestoneAnnouncement(ctx.str, jc.job.name, m.level),
       ...jobMilestoneRewardCommands(ctx, m.rewards),
     ];
@@ -175,7 +171,7 @@ export function compileJob(ctx: CompileContext, jc: JobContext): Record<string, 
 
   files[`${jc.fnBase}/init.mcfunction`] =
     [
-      `# ${job.name} - sync stat baseline (no retroactive XP)`,
+      `# ${sanitizeMcComment(job.name)} - sync stat baseline (no retroactive XP)`,
       ...buildInitStatLines(jc, ns),
       `scoreboard players set @s ${jc.level} 0`,
       `scoreboard players set @s ${jc.init} 1`,
@@ -183,7 +179,7 @@ export function compileJob(ctx: CompileContext, jc: JobContext): Record<string, 
     ].join('\n') + '\n';
 
   const tickLines = [
-    `# ${job.name} - tick`,
+    `# ${sanitizeMcComment(job.name)} - tick`,
     ...buildUpdateStatTickLines(jc, ns),
     `execute as @a unless score @s ${jc.init} matches 1 run function ${ns}:${jc.fnBase}/init`,
     `execute as @a if score @s ${jc.stat} > @s ${jc.last} run function ${ns}:${jc.fnBase}/credit`,
@@ -191,7 +187,7 @@ export function compileJob(ctx: CompileContext, jc: JobContext): Record<string, 
   files[`${jc.fnBase}/tick.mcfunction`] = tickLines.join('\n') + '\n';
 
   const credit: string[] = [
-    `# ${job.name} - grant XP for new actions`,
+    `# ${sanitizeMcComment(job.name)} - grant XP for new actions`,
     ...buildCreditDeltaLines(jc),
     `scoreboard players operation ${jc.grantHolder} ${SYS} *= ${xpPerAction} ${SYS}`,
     `scoreboard players operation @s ${jc.xp} += ${jc.grantHolder} ${SYS}`,
@@ -216,13 +212,13 @@ export function compileJob(ctx: CompileContext, jc: JobContext): Record<string, 
     buildJobSyncAdvancementLines(ctx, jc).join('\n') + '\n';
 
   const checkLevel: string[] = [
-    `# ${job.name} - level up while XP meets next threshold`,
+    `# ${sanitizeMcComment(job.name)} - level up while XP meets next threshold`,
     ...buildCheckLevelLines(ctx, jc),
   ];
   files[`${jc.fnBase}/check_level.mcfunction`] = checkLevel.join('\n') + '\n';
 
   const levelUp: string[] = [
-    `# ${job.name} - level up`,
+    `# ${sanitizeMcComment(job.name)} - level up`,
     `scoreboard players add @s ${jc.level} 1`,
     `tellraw @s ["",` +
       `{"text":"${escapeSnbtString(STR.jobLevelUpPrefix)}","color":"gold"},` +
@@ -252,13 +248,11 @@ export function compileJob(ctx: CompileContext, jc: JobContext): Record<string, 
 
   files[`${jc.fnBase}/add_xp.mcfunction`] =
     [
-      `# ${job.name} - add bonus XP from quest reward`,
+      `# ${sanitizeMcComment(job.name)} - add bonus XP from quest reward`,
       `scoreboard players operation @s ${jc.xp} += ${jc.grantHolder} ${SYS}`,
       `function ${ns}:${jc.fnBase}/check_level`,
       `function ${ns}:${jc.fnBase}/sync_advancements`,
-      ...(job.showProgressBar !== false
-        ? [`function ${ns}:${jc.fnBase}/update_progress_bar`]
-        : []),
+      ...(job.showProgressBar !== false ? [`function ${ns}:${jc.fnBase}/update_progress_bar`] : []),
     ].join('\n') + '\n';
 
   Object.assign(files, buildMilestoneFiles(ctx, jc));

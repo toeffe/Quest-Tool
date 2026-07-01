@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createProject } from '../../src/types/factory';
-import { createDimension, createTeleportPad } from '../../src/types/dimension';
+import { describe, expect, it } from 'vitest';
 import { buildDatapackFiles, buildDatapackZip } from '../../src/generator/datapack';
+import { createDimension, createTeleportPad } from '../../src/types/dimension';
+import { createProject } from '../../src/types/factory';
 
 const outputDir = join(dirname(fileURLToPath(import.meta.url)), 'output');
 const NAMESPACE = 'dimqa';

@@ -1,8 +1,8 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import { enResources } from './locales/en';
+import { applyDocumentLocale, getSavedAppLocale } from './localeStorage';
 import { daResources } from './locales/da';
-import { getSavedAppLocale, applyDocumentLocale } from './localeStorage';
+import { enResources } from './locales/en';
 import { DEFAULT_LOCALE } from './types';
 
 const initialLocale = getSavedAppLocale();
@@ -19,6 +19,13 @@ void i18n.use(initReactI18next).init({
 });
 
 applyDocumentLocale(initialLocale);
+
+if (typeof document !== 'undefined') {
+  document.title = i18n.t('appTitle', { ns: 'common' });
+  i18n.on('languageChanged', () => {
+    document.title = i18n.t('appTitle', { ns: 'common' });
+  });
+}
 
 export function getAppLocale() {
   return (i18n.language === 'en' ? 'en' : 'da') as import('./types').AppLocale;

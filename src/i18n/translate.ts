@@ -1,6 +1,5 @@
-import i18n from '../i18n';
-import { type AppLocale } from '../i18n/types';
-import { getAppLocale } from '../i18n';
+import i18n, { getAppLocale } from '../i18n';
+import type { AppLocale } from '../i18n/types';
 
 export function tValidation(
   key: string,

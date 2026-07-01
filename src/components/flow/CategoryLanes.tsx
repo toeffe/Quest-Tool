@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
 import { useStore } from '@xyflow/react';
-import { type Quest } from '../../types/quest';
+import { useMemo } from 'react';
+import type { Quest } from '../../types/quest';
 import { brokenRequiresId, brokenUnlockId } from './chainEdges';
 import { NODE_HEIGHT_ESTIMATE, NODE_WIDTH, type XY } from './layout';
 

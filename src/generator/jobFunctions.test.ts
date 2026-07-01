@@ -1,15 +1,20 @@
-import { describe, it, expect } from 'vitest';
-import { createProject, createJob, createStarterJobs, mergeStarterJobs } from '../types/factory';
+import { describe, expect, it } from 'vitest';
+import {
+  createCustomItem,
+  createJob,
+  createProject,
+  createStarterJobs,
+  mergeStarterJobs,
+} from '../types/factory';
+import { totalXpForLevel } from '../types/job';
 import { buildContext } from './context';
 import {
-  compileJob,
-  buildJobLoadLines,
-  buildJobsTickFunction,
-  buildJobResetLines,
   buildCheckLevelLines,
+  buildJobLoadLines,
+  buildJobResetLines,
+  buildJobsTickFunction,
+  compileJob,
 } from './jobFunctions';
-import { totalXpForLevel } from '../types/job';
-import { createCustomItem } from '../types/factory';
 
 describe('jobFunctions', () => {
   it('registers fishing stat and dummy objectives in load', () => {
@@ -50,7 +55,9 @@ describe('jobFunctions', () => {
 
     expect(files['jobs/0_fishing/tick.mcfunction']).toContain('function j:jobs/0_fishing/credit');
     expect(files['jobs/0_fishing/credit.mcfunction']).toContain('j0xp');
-    expect(files['jobs/0_fishing/credit.mcfunction']).toContain('function j:jobs/0_fishing/check_level');
+    expect(files['jobs/0_fishing/credit.mcfunction']).toContain(
+      'function j:jobs/0_fishing/check_level',
+    );
     expect(files['jobs/0_fishing/add_xp.mcfunction']).toContain('#j0grant');
     expect(files['jobs/0_fishing/init.mcfunction']).toContain('j0last');
     expect(files['jobs/0_fishing/init.mcfunction']).toContain('j0lvl 0');
@@ -132,7 +139,9 @@ describe('jobFunctions', () => {
     const ctx = buildContext(project);
     const lines = buildJobLoadLines(ctx, ctx.jobs[0]);
     expect(lines.some((l) => l.includes('distance_unit'))).toBe(true);
-    expect(compileJob(ctx, ctx.jobs[0])['jobs/0_walk/credit.mcfunction']).toContain('distance_unit');
+    expect(compileJob(ctx, ctx.jobs[0])['jobs/0_walk/credit.mcfunction']).toContain(
+      'distance_unit',
+    );
   });
 });
 

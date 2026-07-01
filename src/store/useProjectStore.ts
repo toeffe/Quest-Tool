@@ -1,48 +1,52 @@
 import { create } from 'zustand';
-import { type Project, type Quest } from '../types/quest';
-import { type CustomItem, type CustomItemKind } from '../types/item';
-import { type CustomMob } from '../types/customMob';
-import { type Job } from '../types/job';
-import { type Dungeon, type DungeonRoom, createDungeonRoom } from '../types/dungeon';
-import { type Dimension, type TeleportPad } from '../types/dimension';
-import { createQuest } from '../types/factory';
+import type { AppLocale } from '../i18n/types';
+import { defaultsT } from '../i18n/useLabels';
 import {
   addQuest,
+  addRoom,
+  createAndAddCustomItem,
+  createAndAddCustomMob,
+  createAndAddDimension,
+  createAndAddDungeon,
+  createAndAddJob,
+  createAndAddTeleportPad,
+  deleteCustomItem,
+  deleteCustomMob,
+  deleteDimension,
+  deleteDungeon,
+  deleteJob,
   deleteQuest,
+  deleteRoom,
+  deleteTeleportPad,
+  duplicateCustomItem,
+  duplicateCustomMob,
+  duplicateDimension,
+  duplicateDungeon,
+  duplicateJob,
   duplicateQuest,
+  duplicateTeleportPad,
   importProjectJson,
   loadProject,
   renameQuestReferences,
-  updateQuest,
-  createAndAddCustomItem,
-  deleteCustomItem,
-  duplicateCustomItem,
-  createAndAddCustomMob,
-  deleteCustomMob,
-  duplicateCustomMob,
-  updateJob,
-  deleteJob,
-  duplicateJob,
-  createAndAddJob,
   updateDungeon,
-  deleteDungeon,
-  duplicateDungeon,
-  addRoom,
+  updateJob,
+  updateQuest,
   updateRoom,
-  deleteRoom,
-  createAndAddDungeon,
-  createAndAddDimension,
-  deleteDimension,
-  duplicateDimension,
-  createAndAddTeleportPad,
-  deleteTeleportPad,
-  duplicateTeleportPad,
 } from '../state/projectStore';
+import type { CustomMob } from '../types/customMob';
+import type { Dimension, TeleportPad } from '../types/dimension';
+import { createDungeonRoom, type Dungeon, type DungeonRoom } from '../types/dungeon';
+import { createQuest } from '../types/factory';
+import type { CustomItem, CustomItemKind } from '../types/item';
+import type { Job } from '../types/job';
+import type { Project, Quest } from '../types/quest';
 
 interface ProjectStore {
   project: Project;
   setProject: (project: Project) => void;
-  setProjectMeta: (patch: Partial<Pick<Project, 'name' | 'namespace' | 'platform' | 'locale'>>) => void;
+  setProjectMeta: (
+    patch: Partial<Pick<Project, 'name' | 'namespace' | 'platform' | 'locale'>>,
+  ) => void;
   addQuest: () => Quest;
   updateQuest: (quest: Quest) => void;
   duplicateQuest: (id: string) => void;
@@ -81,12 +85,14 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
   setProject: (project) => set({ project }),
 
-  setProjectMeta: (patch) =>
-    set((s) => ({ project: { ...s.project, ...patch } })),
+  setProjectMeta: (patch) => set((s) => ({ project: { ...s.project, ...patch } })),
 
   addQuest: () => {
     const { project } = get();
-    const quest = createQuest(`Quest ${project.quests.length + 1}`, 'kill', project.locale ?? 'da');
+    const locale = (project.locale === 'en' ? 'en' : 'da') as AppLocale;
+    const t = defaultsT(locale);
+    const n = project.quests.length + 1;
+    const quest = createQuest(t('quest.numberedName', { n }), 'kill', locale);
     set({ project: addQuest(project, quest) });
     return quest;
   },

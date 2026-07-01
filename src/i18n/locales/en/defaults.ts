@@ -7,6 +7,7 @@ export const defaultsEn = {
   quest: {
     name: 'New Quest',
     firstQuestName: 'First Quest',
+    numberedName: 'Quest {{n}}',
     category: 'General',
     description: 'A quest awaits.',
   },
@@ -70,29 +71,35 @@ export const defaultsEn = {
 
   customItem: {
     name: 'New Item',
+    numberedName: 'Item {{n}}',
     tag: 'item',
     baseItem: 'minecraft:paper',
   },
 
   customMob: {
     name: 'New Mob',
+    numberedName: 'Mob {{n}}',
   },
 
   dungeon: {
     name: 'New Dungeon',
+    numberedName: 'Dungeon {{n}}',
     defaultRoom: 'Entry Room',
   },
 
   dimension: {
     name: 'New Dimension',
+    numberedName: 'Dimension {{n}}',
   },
 
   pad: {
     name: 'New Pad',
+    numberedName: 'Pad {{n}}',
   },
 
   job: {
     defaultName: 'Fishing',
+    numberedName: 'Job {{n}}',
     milestoneCommand: 'say {player} reached a job milestone!',
   },
 

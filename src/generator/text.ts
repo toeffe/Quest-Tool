@@ -9,9 +9,22 @@
  */
 
 export type Color =
-  | 'black' | 'dark_blue' | 'dark_green' | 'dark_aqua' | 'dark_red'
-  | 'dark_purple' | 'gold' | 'gray' | 'dark_gray' | 'blue' | 'green'
-  | 'aqua' | 'red' | 'light_purple' | 'yellow' | 'white';
+  | 'black'
+  | 'dark_blue'
+  | 'dark_green'
+  | 'dark_aqua'
+  | 'dark_red'
+  | 'dark_purple'
+  | 'gold'
+  | 'gray'
+  | 'dark_gray'
+  | 'blue'
+  | 'green'
+  | 'aqua'
+  | 'red'
+  | 'light_purple'
+  | 'yellow'
+  | 'white';
 
 export interface TextPart {
   text: string;
@@ -37,6 +50,11 @@ export function escapeSnbtString(value: string): string {
     .replace(/\t/g, '\\t');
 }
 
+/** Safe for # comment lines in .mcfunction — strips literal newlines that would escape the comment. */
+export function sanitizeMcComment(value: string): string {
+  return value.replace(/[\r\n]/g, ' ');
+}
+
 /** Serialize a single text part to a 1.21.5+ SNBT/JSON text component object. */
 export function partToComponent(part: TextPart): string {
   const fields: string[] = [`"text":"${escapeSnbtString(part.text)}"`];
@@ -56,9 +74,7 @@ export function partToComponent(part: TextPart): string {
   }
 
   if (part.hover) {
-    fields.push(
-      `"hover_event":{"action":"show_text","value":"${escapeSnbtString(part.hover)}"}`,
-    );
+    fields.push(`"hover_event":{"action":"show_text","value":"${escapeSnbtString(part.hover)}"}`);
   }
 
   return `{${fields.join(',')}}`;

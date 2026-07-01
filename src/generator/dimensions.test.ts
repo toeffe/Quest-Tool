@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { createProject } from '../types/factory';
+import { describe, expect, it } from 'vitest';
 import { createDimension } from '../types/dimension';
+import { createProject } from '../types/factory';
 import { buildContext } from './context';
 import { buildVoidDimensionJson, compileDimensions } from './dimensions';
 
@@ -25,9 +25,7 @@ describe('dimensions generator', () => {
     expect(dimJson.generator.settings.biome).toBe('minecraft:the_void');
     expect(dimJson.generator.settings.features).toBe(true);
     expect(dimJson.generator.settings.lakes).toBe(false);
-    expect(dimJson.generator.settings.layers).toEqual([
-      { block: 'minecraft:air', height: 1 },
-    ]);
+    expect(dimJson.generator.settings.layers).toEqual([{ block: 'minecraft:air', height: 1 }]);
     expect(dimJson.generator.settings.structure_overrides).toEqual([]);
   });
 });

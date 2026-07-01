@@ -1,17 +1,22 @@
-import { type CompileContext } from './context';
-import {
-  type CustomMob,
-  type CustomMobBossBarColor,
-  type CustomMobEquipmentSlot,
-  type CustomMobPhaseEffect,
-} from '../types/customMob';
-import { type Project } from '../types/quest';
-import { buildVariantNbt } from '../data/mobVariants';
 import { normalizeEntityId } from '../data/mobs';
-import { CUSTOM_MOB_REGISTRY_TAG, MC_ATTR_ATTACK_DAMAGE, MC_ATTR_MAX_HEALTH } from './customMobs';
-import { namespaced } from './context';
+import { buildVariantNbt } from '../data/mobVariants';
+import type {
+  CustomMob,
+  CustomMobBossBarColor,
+  CustomMobEquipmentSlot,
+  CustomMobPhaseEffect,
+} from '../types/customMob';
+import type { Project } from '../types/quest';
+import { type CompileContext, namespaced } from './context';
+import {
+  CUSTOM_MOB_REGISTRY_TAG,
+  MC_ATTR_ATTACK_DAMAGE,
+  MC_ATTR_MAX_HEALTH,
+  MC_ATTR_SCALE,
+} from './customMobs';
+import { shouldUseDataDrivenVariant, variantSummonSnbtForMob } from './mobSkins';
 import { SYS_OBJECTIVE } from './sys';
-import { escapeSnbtString } from './text';
+import { escapeSnbtString, sanitizeMcComment } from './text';
 
 const SYS = SYS_OBJECTIVE;
 const SCALE100 = '#qt_mphase_scale100';
@@ -39,9 +44,11 @@ export interface ResolvedPhaseConfig {
   displayName: string;
   health?: number;
   damage?: number;
+  scale?: number;
   glowing?: boolean;
   bossBarColor?: CustomMobBossBarColor;
   variants?: Record<string, string>;
+  skinTexture?: string;
   equipment?: CustomMob['equipment'];
   effects: CustomMobPhaseEffect[];
   announceMessage?: string;
@@ -72,15 +79,24 @@ function uninittedMobSelector(tag: string, extra = ''): string {
   return `@e[tag=${CUSTOM_MOB_REGISTRY_TAG},tag=${tag},tag=!${PHASE_INIT_TAG}${extra}]`;
 }
 
+/** Scale for phase apply: phase 0 uses mob default; later phases only when explicitly set. */
+export function resolvePhaseScale(mob: CustomMob, phaseIndex: number): number | undefined {
+  const phase = mob.phases?.[phaseIndex];
+  if (phaseIndex === 0) return phase?.scale ?? mob.scale;
+  return phase?.scale;
+}
+
 export function resolvePhaseConfig(mob: CustomMob, phaseIndex: number): ResolvedPhaseConfig {
   const phase = mob.phases?.[phaseIndex];
   return {
     displayName: phase?.displayName ?? mob.displayName ?? mob.name,
     health: phase?.health ?? mob.health,
     damage: phase?.damage ?? mob.damage,
+    scale: resolvePhaseScale(mob, phaseIndex),
     glowing: phase?.glowing ?? mob.glowing,
     bossBarColor: phase?.bossBarColor,
     variants: phase?.variants ?? mob.variants,
+    skinTexture: phase?.skinTexture ?? mob.skinTexture,
     equipment: phase?.equipment ?? mob.equipment,
     effects: phase?.effects ?? [],
     announceMessage: phase?.announceMessage,
@@ -133,12 +149,16 @@ function buildHealthPercentLines(mobTag: string): string[] {
   ];
 }
 
-function buildApplyPhaseLines(mob: CustomMob, phaseIndex: number): string[] {
+function buildApplyPhaseLines(mob: CustomMob, phaseIndex: number, namespace?: string): string[] {
   const config = resolvePhaseConfig(mob, phaseIndex);
   const entity = normalizeEntityId(mob.baseEntity);
-  const lines: string[] = [`# Apply phase ${phaseIndex + 1}: ${mob.phases?.[phaseIndex]?.name ?? 'default'}`];
+  const lines: string[] = [
+    `# Apply phase ${phaseIndex + 1}: ${sanitizeMcComment(mob.phases?.[phaseIndex]?.name ?? 'default')}`,
+  ];
 
-  lines.push(`data merge entity @s {CustomName:${displayNameSnbt(config.displayName)},CustomNameVisible:1b}`);
+  lines.push(
+    `data merge entity @s {CustomName:${displayNameSnbt(config.displayName)},CustomNameVisible:1b}`,
+  );
 
   if (config.glowing) {
     lines.push('data merge entity @s {Glowing:1b}');
@@ -146,13 +166,25 @@ function buildApplyPhaseLines(mob: CustomMob, phaseIndex: number): string[] {
     lines.push('data merge entity @s {Glowing:0b}');
   }
 
-  const variantFields = buildVariantNbt(entity, config.variants);
-  if (variantFields.length) {
-    lines.push(`data merge entity @s {${variantFields.join(',')}}`);
+  if (namespace && shouldUseDataDrivenVariant(mob, config.skinTexture)) {
+    const variantField = variantSummonSnbtForMob(mob, namespace, config.skinTexture);
+    if (variantField) {
+      lines.push(`data merge entity @s {${variantField}}`);
+    }
+  } else if (!shouldUseDataDrivenVariant(mob, config.skinTexture)) {
+    const variantFields = buildVariantNbt(entity, config.variants);
+    if (variantFields.length) {
+      lines.push(`data merge entity @s {${variantFields.join(',')}}`);
+    }
   }
 
   if (config.damage != null && config.damage > 0) {
     lines.push(`attribute @s ${MC_ATTR_ATTACK_DAMAGE} base set ${config.damage}`);
+  }
+
+  const phaseScale = resolvePhaseScale(mob, phaseIndex);
+  if (phaseScale != null && phaseScale > 0) {
+    lines.push(`attribute @s ${MC_ATTR_SCALE} base set ${phaseScale}`);
   }
 
   lines.push(...equipmentReplaceLines(config));
@@ -169,17 +201,15 @@ function buildEnterPhaseLines(ctx: CompileContext, mob: CustomMob, phaseIndex: n
   const ns = ctx.namespace;
   const config = resolvePhaseConfig(mob, phaseIndex);
   const lines: string[] = [
-    `# Enter phase ${phaseIndex + 1} for ${mob.name}`,
+    `# Enter phase ${phaseIndex + 1} for ${sanitizeMcComment(mob.name)}`,
     `scoreboard players set @s ${QT_MPHASE_OBJECTIVE} ${phaseIndex}`,
   ];
 
-  lines.push(...buildApplyPhaseLines(mob, phaseIndex));
+  lines.push(...buildApplyPhaseLines(mob, phaseIndex, ns));
 
   if (config.announceMessage?.trim()) {
     const msg = escapeSnbtString(config.announceMessage.trim());
-    lines.push(
-      `tellraw @a[distance=..48] {"text":"${msg}","color":"gold","bold":true}`,
-    );
+    lines.push(`tellraw @a[distance=..48] {"text":"${msg}","color":"gold","bold":true}`);
   }
 
   if (mob.bossBar) {
@@ -194,7 +224,10 @@ function buildEnterPhaseLines(ctx: CompileContext, mob: CustomMob, phaseIndex: n
   return lines;
 }
 
-function buildPhaseCheckLines(ctx: CompileContext, mob: CustomMob): {
+function buildPhaseCheckLines(
+  ctx: CompileContext,
+  mob: CustomMob,
+): {
   lines: string[];
   entityLines: string[];
 } {
@@ -202,7 +235,7 @@ function buildPhaseCheckLines(ctx: CompileContext, mob: CustomMob): {
   const phases = mob.phases ?? [];
   const tag = mob.tag;
   const lines: string[] = [
-    `# Phase checks for ${mob.displayName || mob.name}`,
+    `# Phase checks for ${sanitizeMcComment(mob.displayName || mob.name)}`,
     `execute unless entity ${mobSelector(tag)} run return 0`,
     `execute as ${mobSelector(tag)} run function ${ns}:mobs/phases/${tag}/check_entity`,
   ];
@@ -217,9 +250,9 @@ function buildPhaseCheckLines(ctx: CompileContext, mob: CustomMob): {
     const phase = phases[i];
     if (phase.atHealthPercent == null) continue;
     const thresh = thresholdConst(tag, i);
-    const prevMax = i - 1;
+    const requiredPhase = i - 1;
     entityLines.push(
-      `execute if score @s ${QT_MPHASE_TMP_OBJECTIVE} <= ${thresh} ${SYS} if score @s ${QT_MPHASE_OBJECTIVE} matches ..${prevMax} run function ${ns}:mobs/phases/${tag}/enter_${i}`,
+      `execute if score @s ${QT_MPHASE_TMP_OBJECTIVE} <= ${thresh} ${SYS} if score @s ${QT_MPHASE_OBJECTIVE} matches ${requiredPhase} run function ${ns}:mobs/phases/${tag}/enter_${i}`,
     );
   }
 
@@ -235,7 +268,9 @@ export function buildMobPhaseInitHook(
   if (!mobHasPhaseTransitions(mob)) return [];
   const fn = `${namespace}:mobs/phases/${mob.tag}/init`;
   if (opts?.atExecutor) {
-    return [`execute at @s as ${uninittedMobSelector(mob.tag, ',distance=..4')} run function ${fn}`];
+    return [
+      `execute at @s as ${uninittedMobSelector(mob.tag, ',distance=..4')} run function ${fn}`,
+    ];
   }
   if (opts?.x != null && opts?.y != null && opts?.z != null) {
     return [
@@ -285,7 +320,7 @@ function buildDebugLines(ctx: CompileContext, mob: CustomMob): string[] {
     .filter(Boolean)
     .join(', ');
   return [
-    `# Debug nearest ${mob.name} phase state (within 64 blocks of you)`,
+    `# Debug nearest ${sanitizeMcComment(mob.name)} phase state (within 64 blocks of you)`,
     `execute unless entity ${near} run tellraw @s [{"text":"No ${escapeSnbtString(tag)} custom mob within 64 blocks.","color":"red"},{"text":" Needs tags questtool_mob + ${escapeSnbtString(tag)}. Use /function ${ns}:spawn_mob/${tag}","color":"gray"}]`,
     `execute store result score #dbg_hp ${SYS} run data get entity ${near} Health 100`,
     `execute store result score #dbg_max ${SYS} run attribute ${near} ${MC_ATTR_MAX_HEALTH} base get 1`,
@@ -312,10 +347,10 @@ export function buildCustomMobPhaseSupportFiles(ctx: CompileContext): Record<str
 
     files[`mobs/phases/${mob.tag}/init.mcfunction`] =
       [
-        `# Initialize phase tracking for ${mob.name}`,
+        `# Initialize phase tracking for ${sanitizeMcComment(mob.name)}`,
         `scoreboard players set @s ${QT_MPHASE_OBJECTIVE} 0`,
         `tag @s add ${PHASE_INIT_TAG}`,
-        ...buildApplyPhaseLines(mob, 0),
+        ...buildApplyPhaseLines(mob, 0, ns),
       ].join('\n') + '\n';
 
     for (let i = 1; i < (mob.phases?.length ?? 0); i++) {
@@ -323,8 +358,7 @@ export function buildCustomMobPhaseSupportFiles(ctx: CompileContext): Record<str
         buildEnterPhaseLines(ctx, mob, i).join('\n') + '\n';
     }
 
-    files[`mobs/phases/${mob.tag}/debug.mcfunction`] =
-      buildDebugLines(ctx, mob).join('\n') + '\n';
+    files[`mobs/phases/${mob.tag}/debug.mcfunction`] = buildDebugLines(ctx, mob).join('\n') + '\n';
   }
 
   files['mobs/phases_tick.mcfunction'] =

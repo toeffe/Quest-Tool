@@ -26,8 +26,7 @@ export const platformEn = {
 
     lan: {
       title: 'Install for a single-player world (Open to LAN)',
-      step1:
-        'Find your world save folder (Singleplayer > Edit > Open World Folder).',
+      step1: 'Find your world save folder (Singleplayer > Edit > Open World Folder).',
       step2: 'Copy the datapack ZIP into the saves/<world>/datapacks/ folder.',
       step3:
         'Load the world and run /reload (enable cheats once to reload; players do not need cheats to play quests).',
@@ -36,8 +35,7 @@ export const platformEn = {
   },
 
   rewardNotes: {
-    moneyVanilla:
-      'Money uses an internal scoreboard on Vanilla/LAN (no real economy plugin).',
+    moneyVanilla: 'Money uses an internal scoreboard on Vanilla/LAN (no real economy plugin).',
     permissionPaper:
       'Permission rewards require a permissions plugin (Paper). A chat message is shown instead.',
   },

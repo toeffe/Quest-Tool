@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { createCustomMob } from '../types/factory';
-import { createProject } from '../types/factory';
+import { createCustomMob, createProject } from '../types/factory';
 import {
   buildCustomMobKillAdvancement,
   buildCustomMobLootTable,
   buildGiveCustomMobsFunction,
   buildSpawnMobFunctions,
   customMobAdvancementNbt,
+  resolveCustomMobDeathLootTable,
   summonCustomMob,
 } from './customMobs';
 
@@ -43,10 +43,14 @@ describe('customMobs generator', () => {
     expect(cmd).not.toContain('HandItems:');
   });
 
+  it('summonCustomMob emits scale attribute when set', () => {
+    const scaled = { ...mob, scale: 2 };
+    const cmd = summonCustomMob(scaled, 0, 64, 0);
+    expect(cmd).toContain('id:"scale",base:2');
+  });
+
   it('customMobAdvancementNbt filters by registry tag and mob tag', () => {
-    expect(customMobAdvancementNbt(mob)).toBe(
-      '{Tags:["questtool_mob","undead_captain"]}',
-    );
+    expect(customMobAdvancementNbt(mob)).toBe('{Tags:["questtool_mob","undead_captain"]}');
   });
 
   it('buildCustomMobKillAdvancement produces player_killed_entity criteria', () => {
@@ -69,6 +73,24 @@ describe('customMobs generator', () => {
     });
   });
 
+  it('buildCustomMobLootTable returns null when all drop entries are invalid', () => {
+    const project = createProject();
+    const mobWithDrops = {
+      ...mob,
+      drops: [{ customItemId: 'missing-item-id', amount: 1 }],
+    };
+    expect(buildCustomMobLootTable(project, mobWithDrops)).toBeNull();
+  });
+
+  it('resolveCustomMobDeathLootTable skips invalid drop configs', () => {
+    const project = createProject();
+    project.namespace = 'testpack';
+    const mobWithBadDrops = {
+      ...mob,
+      drops: [{ target: '', amount: 1 }],
+    };
+    expect(resolveCustomMobDeathLootTable(mobWithBadDrops, 'testpack', project)).toBeUndefined();
+  });
   it('buildCustomMobLootTable outputs entity loot table JSON', () => {
     const project = createProject();
     const mobWithDrops = {
@@ -76,7 +98,7 @@ describe('customMobs generator', () => {
       drops: [{ target: 'minecraft:rotten_flesh', amount: 2, chance: 100 }],
     };
     const table = buildCustomMobLootTable(project, mobWithDrops);
-    expect(table).toMatchObject({ type: 'minecraft:entity' });
+    expect(table).toMatchObject({ type: 'minecraft:generic' });
     expect(table?.pools).toBeDefined();
   });
 
@@ -97,6 +119,8 @@ describe('customMobs generator', () => {
     const project = createProject();
     project.customMobs = [mob];
     const files = buildSpawnMobFunctions(project);
-    expect(files['spawn_mob/undead_captain.mcfunction']).toContain('summon minecraft:zombie ~ ~1 ~');
+    expect(files['spawn_mob/undead_captain.mcfunction']).toContain(
+      'summon minecraft:zombie ~ ~1 ~',
+    );
   });
 });

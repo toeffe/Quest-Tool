@@ -1,11 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { createProject } from '../types/factory';
 import { buildContext } from './context';
 import {
   buildJobAdvancementFiles,
-  jobAdvancementId,
-  buildJobSyncAdvancementLines,
   buildJobRevokeAdvancementLines,
+  buildJobSyncAdvancementLines,
+  jobAdvancementId,
   normalizeAdvancementBackground,
 } from './jobAdvancements';
 
@@ -49,9 +49,7 @@ describe('jobAdvancements', () => {
     const ctx = buildContext(project);
     const jc = ctx.jobs[0];
     const lines = buildJobSyncAdvancementLines(ctx, jc);
-    expect(lines).toContain(
-      `advancement grant @s only ${jobAdvancementId(ctx, jc, 'root')}`,
-    );
+    expect(lines).toContain(`advancement grant @s only ${jobAdvancementId(ctx, jc, 'root')}`);
     expect(lines.some((l) => l.includes('level_1'))).toBe(true);
     expect(lines.some((l) => l.includes('level_2'))).toBe(true);
     expect(lines.some((l) => l.includes('matches 2..'))).toBe(true);
@@ -68,7 +66,9 @@ describe('jobAdvancements', () => {
 
   it('normalizes legacy background paths to 1.21.11 ids', () => {
     expect(
-      normalizeAdvancementBackground('minecraft:textures/gui/advancements/backgrounds/husbandry.png'),
+      normalizeAdvancementBackground(
+        'minecraft:textures/gui/advancements/backgrounds/husbandry.png',
+      ),
     ).toBe('minecraft:gui/advancements/backgrounds/husbandry');
   });
 

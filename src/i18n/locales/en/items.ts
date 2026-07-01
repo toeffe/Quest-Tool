@@ -1,7 +1,8 @@
 export const itemsEn = {
   title: 'Custom Items',
-  subtitle:
-    'Define reusable items with custom names, lore, and behavior. Use them as quest rewards or gather/delivery targets. Items use Minecraft item components (no custom textures in v1).',
+  subtitle: 'Reusable items for rewards and quest objectives.',
+  subtitleHint:
+    'Custom names, lore, and behavior via item components. No custom textures in v1 — add a resource pack separately if needed.',
 
   kinds: {
     general: 'General',
@@ -32,8 +33,7 @@ export const itemsEn = {
 
   editor: {
     itemKind: 'Item kind',
-    itemKindHint:
-      'Collectibles are trophy-style rewards with sensible defaults.',
+    itemKindHint: 'Collectibles are trophy-style rewards with sensible defaults.',
     editorName: 'Editor name',
     editorNameHint: 'Internal label in this tool only.',
     identityTag: 'Identity tag',
@@ -46,8 +46,7 @@ export const itemsEn = {
     displayNameHint: 'Shown to the player in-game.',
     lore: 'Lore',
     loreHint: 'One line per row.',
-    loreCollectibleHint:
-      'One line per row. e.g. "Awarded for completing the dragon quest."',
+    loreCollectibleHint: 'One line per row. e.g. "Awarded for completing the dragon quest."',
     lorePlaceholder: 'Line one\nLine two',
   },
 
@@ -94,7 +93,6 @@ export const itemsEn = {
 
   preview: {
     title: 'Generated command preview',
-    hint:
-      'After exporting, run /function {{namespace}}:give_custom_items to receive one of each custom item for testing.',
+    hint: 'After exporting, run /function {{namespace}}:give_custom_items to receive one of each custom item for testing.',
   },
 } as const;

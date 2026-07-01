@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { buildContext } from './context';
-import { buildLoadFunction, buildTickFunction } from './load';
 import { createCustomMob, createCustomMobPhase, createProject } from '../types/factory';
 import { buildCommandReference } from './commands';
-import { buildDatapackFiles } from './datapack';
+import { buildContext } from './context';
 import {
   buildCustomMobPhaseSetupLines,
   buildCustomMobPhaseSupportFiles,
   mobHasPhaseTransitions,
-  resolvePhaseConfig,
   QT_MPHASE_MAX_OBJECTIVE,
   QT_MPHASE_OBJECTIVE,
   QT_MPHASE_TMP_OBJECTIVE,
+  resolvePhaseConfig,
 } from './customMobPhases';
-import { summonCustomMob, MC_ATTR_MAX_HEALTH } from './customMobs';
+import { MC_ATTR_MAX_HEALTH, MC_ATTR_SCALE, summonCustomMob } from './customMobs';
+import { buildDatapackFiles } from './datapack';
+import { buildLoadFunction, buildTickFunction } from './load';
 
 function bossMobWithPhases() {
   const project = createProject('Phases');
@@ -94,6 +94,24 @@ describe('customMobPhases', () => {
     expect(resolvePhaseConfig(mob, 0).damage).toBe(6);
   });
 
+  it('resolvePhaseConfig uses mob displayName when phase displayName is unset', () => {
+    const mob = {
+      ...createCustomMob('Named Phases'),
+      tag: 'named_phases',
+      displayName: 'Boss',
+      phases: [
+        { ...createCustomMobPhase('Opening'), name: 'Opening' },
+        {
+          ...createCustomMobPhase('Mid'),
+          name: 'Mid',
+          atHealthPercent: 50,
+        },
+      ],
+    };
+    expect(resolvePhaseConfig(mob, 0).displayName).toBe('Boss');
+    expect(resolvePhaseConfig(mob, 1).displayName).toBe('Boss');
+  });
+
   it('summon uses phase 0 resolved stats when phases exist', () => {
     const { mob } = bossMobWithPhases();
     const cmd = summonCustomMob(mob, '~', '~1', '~');
@@ -108,12 +126,12 @@ describe('customMobPhases', () => {
     expect(lines.some((l) => l.includes(`scoreboard objectives add ${QT_MPHASE_OBJECTIVE}`))).toBe(
       true,
     );
-    expect(lines.some((l) => l.includes(`scoreboard objectives add ${QT_MPHASE_TMP_OBJECTIVE}`))).toBe(
-      true,
-    );
-    expect(lines.some((l) => l.includes(`scoreboard objectives add ${QT_MPHASE_MAX_OBJECTIVE}`))).toBe(
-      true,
-    );
+    expect(
+      lines.some((l) => l.includes(`scoreboard objectives add ${QT_MPHASE_TMP_OBJECTIVE}`)),
+    ).toBe(true);
+    expect(
+      lines.some((l) => l.includes(`scoreboard objectives add ${QT_MPHASE_MAX_OBJECTIVE}`)),
+    ).toBe(true);
     expect(lines.some((l) => l.includes('#ph_undead_captain_t1 qt_sys 50'))).toBe(true);
     expect(lines.some((l) => l.includes('#ph_undead_captain_t2 qt_sys 25'))).toBe(true);
     expect(lines.some((l) => l.includes('#boss_undead_captain_max qt_sys 100'))).toBe(true);
@@ -125,9 +143,7 @@ describe('customMobPhases', () => {
     expect(files['mobs/phases_tick.mcfunction']).toContain(
       'function phasepack:mobs/phases/undead_captain/tick',
     );
-    expect(files['mobs/phases/undead_captain/check_entity.mcfunction']).toContain(
-      'enter_2',
-    );
+    expect(files['mobs/phases/undead_captain/check_entity.mcfunction']).toContain('enter_2');
     expect(files['mobs/phases/undead_captain/enter_1.mcfunction']).toContain('Enraged Captain');
     expect(files['mobs/phases/undead_captain/enter_1.mcfunction']).toContain(
       'The captain enrages!',
@@ -144,8 +160,17 @@ describe('customMobPhases', () => {
     const checkEntity = files['mobs/phases/undead_captain/check_entity.mcfunction'];
     expect(checkEntity).toContain(`attribute @s ${MC_ATTR_MAX_HEALTH} base get 1`);
     expect(checkEntity).not.toContain('generic.max_health');
-    expect(checkEntity).toContain(`scoreboard players operation @s ${QT_MPHASE_TMP_OBJECTIVE} /= @s ${QT_MPHASE_MAX_OBJECTIVE}`);
+    expect(checkEntity).toContain(
+      `scoreboard players operation @s ${QT_MPHASE_TMP_OBJECTIVE} /= @s ${QT_MPHASE_MAX_OBJECTIVE}`,
+    );
     expect(checkEntity).toContain('#boss_undead_captain_max');
+    expect(checkEntity).toContain(
+      `if score @s ${QT_MPHASE_OBJECTIVE} matches 0 run function phasepack:mobs/phases/undead_captain/enter_1`,
+    );
+    expect(checkEntity).toContain(
+      `if score @s ${QT_MPHASE_OBJECTIVE} matches 1 run function phasepack:mobs/phases/undead_captain/enter_2`,
+    );
+    expect(checkEntity).not.toContain(`matches ..`);
     expect(files['mobs/phases/undead_captain/enter_2.mcfunction']).toContain('Desperate Captain');
     expect(files['mobs/phases/undead_captain/debug.mcfunction']).toContain('#dbg_hp');
     expect(files['mobs/phases/undead_captain/debug.mcfunction']).toContain('tellraw @s');
@@ -155,7 +180,8 @@ describe('customMobPhases', () => {
 
   it('computes HP percent without double-scaling max health', () => {
     const { ctx } = phaseTwoScenarioMob();
-    const checkEntity = buildCustomMobPhaseSupportFiles(ctx)['mobs/phases/speed_boss/check_entity.mcfunction'];
+    const checkEntity =
+      buildCustomMobPhaseSupportFiles(ctx)['mobs/phases/speed_boss/check_entity.mcfunction'];
     // Health*100 / max (scale 1): at 20/40 HP → 2000/40 = 50, not 2000/4000 = 0
     expect(checkEntity).toMatch(/Health 100/);
     expect(checkEntity).toMatch(/max_health base get 1/);
@@ -174,6 +200,117 @@ describe('customMobPhases', () => {
     expect(enter1).toContain('bossbar set phase2pack:boss_speed_boss color blue');
     expect(enter1).not.toContain('data merge entity @s {equipment:');
     expect(mob.phases?.[1]?.atHealthPercent).toBe(50);
+  });
+
+  it('applies scale attribute on phase transition', () => {
+    const mob = {
+      ...createCustomMob('Giant Boss'),
+      tag: 'giant_boss',
+      baseEntity: 'minecraft:zombie',
+      scale: 1,
+      phases: [
+        { ...createCustomMobPhase('Phase 1'), name: 'Phase 1' },
+        {
+          ...createCustomMobPhase('Enraged'),
+          name: 'Enraged',
+          atHealthPercent: 50,
+          scale: 2,
+        },
+      ],
+    };
+    const project = createProject();
+    project.namespace = 'scalepack';
+    project.customMobs = [mob];
+    const ctx = buildContext(project);
+    const files = buildCustomMobPhaseSupportFiles(ctx);
+    const enter1 = files['mobs/phases/giant_boss/enter_1.mcfunction'];
+    expect(enter1).toContain(`attribute @s ${MC_ATTR_SCALE} base set 2`);
+  });
+
+  it('applies scale 1 on phase transition when explicitly set', () => {
+    const mob = {
+      ...createCustomMob('Shrink Boss'),
+      tag: 'shrink_boss',
+      baseEntity: 'minecraft:zombie',
+      scale: 2,
+      phases: [
+        { ...createCustomMobPhase('Phase 1'), name: 'Phase 1' },
+        {
+          ...createCustomMobPhase('Normal'),
+          name: 'Normal',
+          atHealthPercent: 50,
+          scale: 1,
+        },
+      ],
+    };
+    const project = createProject();
+    project.namespace = 'scalepack';
+    project.customMobs = [mob];
+    const ctx = buildContext(project);
+    const files = buildCustomMobPhaseSupportFiles(ctx);
+    const enter1 = files['mobs/phases/shrink_boss/enter_1.mcfunction'];
+    expect(enter1).toContain(`attribute @s ${MC_ATTR_SCALE} base set 1`);
+  });
+
+  it('does not apply scale on phase 3 when phase scale is empty', () => {
+    const mob = {
+      ...createCustomMob('Growing Boss'),
+      tag: 'growing_boss',
+      baseEntity: 'minecraft:zombie',
+      scale: 1,
+      phases: [
+        { ...createCustomMobPhase('Phase 1'), name: 'Phase 1' },
+        {
+          ...createCustomMobPhase('Bigger'),
+          name: 'Bigger',
+          atHealthPercent: 66,
+          scale: 2,
+        },
+        {
+          ...createCustomMobPhase('Final'),
+          name: 'Final',
+          atHealthPercent: 33,
+        },
+      ],
+    };
+    const project = createProject();
+    project.namespace = 'scalepack';
+    project.customMobs = [mob];
+    const ctx = buildContext(project);
+    const files = buildCustomMobPhaseSupportFiles(ctx);
+    const enter2 = files['mobs/phases/growing_boss/enter_2.mcfunction'];
+    expect(enter2).not.toContain(`attribute @s ${MC_ATTR_SCALE}`);
+  });
+
+  it('applies explicit scale on phase 3 transition', () => {
+    const mob = {
+      ...createCustomMob('Huge Boss'),
+      tag: 'huge_boss',
+      baseEntity: 'minecraft:zombie',
+      scale: 1,
+      phases: [
+        { ...createCustomMobPhase('Phase 1'), name: 'Phase 1' },
+        {
+          ...createCustomMobPhase('Bigger'),
+          name: 'Bigger',
+          atHealthPercent: 66,
+          scale: 2,
+        },
+        {
+          ...createCustomMobPhase('Huge'),
+          name: 'Huge',
+          atHealthPercent: 33,
+          scale: 4,
+        },
+      ],
+    };
+    const project = createProject();
+    project.namespace = 'scalepack';
+    project.customMobs = [mob];
+    const ctx = buildContext(project);
+    const files = buildCustomMobPhaseSupportFiles(ctx);
+    const enter2 = files['mobs/phases/huge_boss/enter_2.mcfunction'];
+    expect(enter2).toContain(`attribute @s ${MC_ATTR_SCALE} base set 4`);
   });
 
   it('hooks into root load and tick', () => {
@@ -195,7 +332,10 @@ describe('customMobPhases', () => {
   it('exposes debug command in command reference for phased mobs', () => {
     const { project } = phaseTwoScenarioMob();
     const groups = buildCommandReference(project);
-    const customMobGroup = groups.find((g) => g.title.includes('Custom mobs') || g.commands.some((c) => c.command.includes('spawn_mob')));
+    const customMobGroup = groups.find(
+      (g) =>
+        g.title.includes('Custom mobs') || g.commands.some((c) => c.command.includes('spawn_mob')),
+    );
     const debugEntry = customMobGroup?.commands.find((c) =>
       c.command.includes('mobs/phases/speed_boss/debug'),
     );

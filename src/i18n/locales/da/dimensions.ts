@@ -1,13 +1,15 @@
 export const dimensionsDa = {
   title: 'Dimensioner',
-  subtitle: 'Void-brugerdefinerede dimensioner og teleportpuder mellem verdener.',
+  subtitle: 'Void-dimensioner og teleportpuder.',
+  subtitleHint: 'Opret void-verdener til dungeons og forbind dem med pads med cooldown.',
 
   overworld: 'Overworld',
 
   list: {
     dimensionsTitle: 'Dimensioner ({{count}})',
     padsTitle: 'Teleportpuder ({{count}})',
-    emptyDimensions: 'Ingen brugerdefinerede dimensioner endnu. Opret en til void-dungeon-verdener.',
+    emptyDimensions:
+      'Ingen brugerdefinerede dimensioner endnu. Opret en til void-dungeon-verdener.',
     emptyPads: 'Ingen teleportpuder endnu.',
     addDimension: 'Tilføj dimension',
     addPad: 'Tilføj pude',

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import { type Quest } from '../../types/quest';
 import { getDatapackStrings } from '../../generator/strings';
 import { useProjectStore } from '../../store/useProjectStore';
+import type { Quest } from '../../types/quest';
 
 interface Props {
   quest: Quest;

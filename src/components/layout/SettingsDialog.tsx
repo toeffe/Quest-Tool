@@ -1,13 +1,13 @@
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type Platform } from '../../types/quest';
-import { type AppLocale } from '../../i18n/types';
+import type { AppLocale } from '../../i18n/types';
 import { usePlatformLabels } from '../../i18n/useLabels';
-import { useProjectStore } from '../../store/useProjectStore';
+import { readProjectJsonFromFile } from '../../state/projectStore';
 import { useLocaleStore } from '../../store/localeStore';
 import { useUIStore } from '../../store/uiStore';
-import { readProjectJsonFromFile } from '../../state/projectStore';
+import { useProjectStore } from '../../store/useProjectStore';
 import { createProject } from '../../types/factory';
+import type { Platform } from '../../types/quest';
 
 export function SettingsDialog() {
   const { t } = useTranslation('common');

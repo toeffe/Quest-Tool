@@ -1,26 +1,24 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type Project } from '../types/quest';
-import {
-  type CustomItem,
-  type CustomItemKind,
-  type ItemRarity,
-} from '../types/item';
-import { createCustomItem } from '../types/factory';
-import { toIdentifier } from '../types/ids';
-import { useCustomItemKindLabels } from '../i18n/useLabels';
-import {
-  TextInput,
-  TextArea,
-  NumberInput,
-  Select,
-  PillSelect,
-  Field,
-  DataListInput,
-} from './ui/Field';
 import { BASE_ITEM_OPTIONS } from '../data/baseItems';
 import { ENCHANTMENT_OPTIONS, getEnchantmentMaxLevel } from '../data/enchantments';
 import { buildGiveCommand } from '../generator/items';
+import { useCustomItemKindLabels } from '../i18n/useLabels';
+import { createCustomItem } from '../types/factory';
+import { toIdentifier } from '../types/ids';
+import type { CustomItem, CustomItemKind, ItemRarity } from '../types/item';
+import type { Project } from '../types/quest';
+import {
+  asRequiredNumber,
+  DataListInput,
+  Field,
+  NumberInput,
+  PillSelect,
+  Select,
+  TextArea,
+  TextInput,
+} from './ui/Field';
+import { PageHeader } from './ui/PageHeader';
 
 interface Props {
   project: Project;
@@ -99,20 +97,27 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
 
   const previewCommand = selected ? buildGiveCommand(selected, '@s', 1) : '';
 
-  const showFood = selected && selected.kind !== 'collectible' && (selected.kind === 'food' || selected.food || selected.consumable);
-  const showTool = selected && selected.kind !== 'collectible' && (selected.kind === 'tool' || selected.tool);
+  const showFood =
+    selected &&
+    selected.kind !== 'collectible' &&
+    (selected.kind === 'food' || selected.food || selected.consumable);
+  const showTool =
+    selected && selected.kind !== 'collectible' && (selected.kind === 'tool' || selected.tool);
 
   return (
     <div className="items-page">
-      <h1 className="step-title">{t('title')}</h1>
-      <p className="step-sub">{t('subtitle')}</p>
+      <PageHeader title={t('title')} lead={t('subtitle')} hint={t('subtitleHint')} />
 
       <div className="items-layout">
         <aside className="items-list card">
           <div className="row-between" style={{ marginBottom: 12 }}>
             <h3 style={{ margin: 0 }}>{t('list.title', { count: items.length })}</h3>
             <div className="row-actions">
-              <button className="btn small" onClick={() => onAdd('general')} title={t('list.addTitle')}>
+              <button
+                className="btn small"
+                onClick={() => onAdd('general')}
+                title={t('list.addTitle')}
+              >
                 {tc('actions.add')}
               </button>
             </div>
@@ -187,7 +192,8 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
                       updateItem({
                         name,
                         tag: toIdentifier(name, selected.tag),
-                        displayName: selected.displayName === selected.name ? name : selected.displayName,
+                        displayName:
+                          selected.displayName === selected.name ? name : selected.displayName,
                       })
                     }
                   />
@@ -237,29 +243,29 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
                       label={t('food.nutrition')}
                       min={0}
                       value={selected.food?.nutrition ?? 0}
-                      onChange={(nutrition) =>
+                      onChange={asRequiredNumber((nutrition) =>
                         updateItem({
                           food: {
                             nutrition,
                             saturation: selected.food?.saturation ?? 0,
                             canAlwaysEat: selected.food?.canAlwaysEat,
                           },
-                        })
-                      }
+                        }),
+                      )}
                     />
                     <NumberInput
                       label={t('food.saturation')}
                       min={0}
                       value={selected.food?.saturation ?? 0}
-                      onChange={(saturation) =>
+                      onChange={asRequiredNumber((saturation) =>
                         updateItem({
                           food: {
                             nutrition: selected.food?.nutrition ?? 0,
                             saturation,
                             canAlwaysEat: selected.food?.canAlwaysEat,
                           },
-                        })
-                      }
+                        }),
+                      )}
                     />
                   </div>
                   <Field label={t('food.canAlwaysEat')}>
@@ -310,26 +316,28 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
                         label={t('food.amplifier')}
                         min={0}
                         value={effect.amplifier}
-                        onChange={(amplifier) => {
+                        onChange={asRequiredNumber((amplifier) => {
                           const effects = [...(selected.consumable?.effects ?? [])];
                           effects[i] = { ...effects[i], amplifier };
                           updateItem({ consumable: { ...selected.consumable!, effects } });
-                        }}
+                        })}
                       />
                       <NumberInput
                         label={t('food.duration')}
                         min={1}
                         value={effect.duration}
-                        onChange={(duration) => {
+                        onChange={asRequiredNumber((duration) => {
                           const effects = [...(selected.consumable?.effects ?? [])];
                           effects[i] = { ...effects[i], duration };
                           updateItem({ consumable: { ...selected.consumable!, effects } });
-                        }}
+                        })}
                       />
                       <button
                         className="btn small danger"
                         onClick={() => {
-                          const effects = (selected.consumable?.effects ?? []).filter((_, idx) => idx !== i);
+                          const effects = (selected.consumable?.effects ?? []).filter(
+                            (_, idx) => idx !== i,
+                          );
                           updateItem({
                             consumable: {
                               consumeSeconds: selected.consumable?.consumeSeconds,
@@ -370,29 +378,29 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
                       label={t('tool.defaultMiningSpeed')}
                       min={0}
                       value={selected.tool?.defaultMiningSpeed ?? 1}
-                      onChange={(defaultMiningSpeed) =>
+                      onChange={asRequiredNumber((defaultMiningSpeed) =>
                         updateItem({
                           tool: {
                             defaultMiningSpeed,
                             damagePerBlock: selected.tool?.damagePerBlock ?? 1,
                             rules: selected.tool?.rules ?? [],
                           },
-                        })
-                      }
+                        }),
+                      )}
                     />
                     <NumberInput
                       label={t('tool.damagePerBlock')}
                       min={0}
                       value={selected.tool?.damagePerBlock ?? 1}
-                      onChange={(damagePerBlock) =>
+                      onChange={asRequiredNumber((damagePerBlock) =>
                         updateItem({
                           tool: {
                             defaultMiningSpeed: selected.tool?.defaultMiningSpeed ?? 1,
                             damagePerBlock,
                             rules: selected.tool?.rules ?? [],
                           },
-                        })
-                      }
+                        }),
+                      )}
                     />
                   </div>
                   {(selected.tool?.rules ?? []).map((rule, i) => (
@@ -412,11 +420,11 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
                         label={t('tool.speed')}
                         min={0}
                         value={rule.speed}
-                        onChange={(speed) => {
+                        onChange={asRequiredNumber((speed) => {
                           const rules = [...(selected.tool?.rules ?? [])];
                           rules[i] = { ...rules[i], speed };
                           updateItem({ tool: { ...selected.tool!, rules } });
-                        }}
+                        })}
                       />
                       <button
                         className="btn small danger"
@@ -494,11 +502,11 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
                         }
                         min={1}
                         value={enchant.level}
-                        onChange={(level) => {
+                        onChange={asRequiredNumber((level) => {
                           const enchantments = [...(selected.enchantments ?? [])];
                           enchantments[i] = { ...enchantments[i], level };
                           updateItem({ enchantments });
-                        }}
+                        })}
                       />
                       <button
                         className="btn small danger"
@@ -562,9 +570,7 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
                 <pre className="command-preview" style={{ overflow: 'auto', fontSize: 12 }}>
                   /{previewCommand}
                 </pre>
-                <div className="hint">
-                  {t('preview.hint', { namespace: project.namespace })}
-                </div>
+                <div className="hint">{t('preview.hint', { namespace: project.namespace })}</div>
               </div>
             </>
           )}

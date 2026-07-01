@@ -1,13 +1,14 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type Coordinates, type Project, type Quest, type SpawnMode } from '../../types/quest';
-import { CoordsWithDimension } from './CoordsWithDimension';
+import { isVillager, useMobOptions } from '../../data/mobs';
 import { useDimensionOptions } from '../../hooks/useDimensionOptions';
-import { TextInput, TextArea, Select, NumberInput, DataListInput } from '../ui/Field';
 import { toIdentifier } from '../../types/ids';
-import { useMobOptions, isVillager } from '../../data/mobs';
-import { VariantFields, BabySelect } from './VariantFields';
+import type { Coordinates, Project, Quest, SpawnMode } from '../../types/quest';
 import { QuestPreview } from '../preview/QuestPreview';
+import { DataListInput, NumberInput, Select, TextArea, TextInput } from '../ui/Field';
+import { PageHeader } from '../ui/PageHeader';
+import { CoordsWithDimension } from './CoordsWithDimension';
+import { BabySelect, VariantFields } from './VariantFields';
 
 interface Props {
   quest: Quest;
@@ -16,9 +17,21 @@ interface Props {
 }
 
 const PROFESSIONS = [
-  'none', 'armorer', 'butcher', 'cartographer', 'cleric', 'farmer', 'fisherman',
-  'fletcher', 'leatherworker', 'librarian', 'mason', 'nitwit', 'shepherd',
-  'toolsmith', 'weaponsmith',
+  'none',
+  'armorer',
+  'butcher',
+  'cartographer',
+  'cleric',
+  'farmer',
+  'fisherman',
+  'fletcher',
+  'leatherworker',
+  'librarian',
+  'mason',
+  'nitwit',
+  'shepherd',
+  'toolsmith',
+  'weaponsmith',
 ];
 
 const VARIANTS = ['plains', 'desert', 'jungle', 'savanna', 'snow', 'swamp', 'taiga'];
@@ -33,9 +46,21 @@ export function CoordsRow({
   const { t } = useTranslation('common');
   return (
     <div className="grid-3">
-      <NumberInput label={t('coords.x')} value={value.x} onChange={(x) => onChange({ ...value, x })} />
-      <NumberInput label={t('coords.y')} value={value.y} onChange={(y) => onChange({ ...value, y })} />
-      <NumberInput label={t('coords.z')} value={value.z} onChange={(z) => onChange({ ...value, z })} />
+      <NumberInput
+        label={t('coords.x')}
+        value={value.x}
+        onChange={(x) => x != null && onChange({ ...value, x })}
+      />
+      <NumberInput
+        label={t('coords.y')}
+        value={value.y}
+        onChange={(y) => y != null && onChange({ ...value, y })}
+      />
+      <NumberInput
+        label={t('coords.z')}
+        value={value.z}
+        onChange={(z) => z != null && onChange({ ...value, z })}
+      />
     </div>
   );
 }
@@ -61,8 +86,7 @@ export function StepNPC({ quest, project, onChange }: Props) {
 
   return (
     <div>
-      <h1 className="step-title">{t('npc.title')}</h1>
-      <p className="step-sub">{t('npc.subtitle')}</p>
+      <PageHeader title={t('npc.title')} lead={t('npc.subtitle')} hint={t('npc.subtitleHint')} />
 
       <div className="card">
         <h3>{t('npc.identity')}</h3>
@@ -92,13 +116,19 @@ export function StepNPC({ quest, project, onChange }: Props) {
             <Select
               label={t('npc.profession')}
               value={npc.profession}
-              options={PROFESSIONS.map((p) => ({ value: p, label: tc(`professions.${p}` as 'professions.none') }) )}
+              options={PROFESSIONS.map((p) => ({
+                value: p,
+                label: tc(`professions.${p}` as 'professions.none'),
+              }))}
               onChange={(profession) => update({ profession })}
             />
             <Select
               label={t('npc.biomeVariant')}
               value={npc.variant}
-              options={VARIANTS.map((v) => ({ value: v, label: tc(`variants.${v}` as 'variants.plains') }) )}
+              options={VARIANTS.map((v) => ({
+                value: v,
+                label: tc(`variants.${v}` as 'variants.plains'),
+              }))}
               onChange={(variant) => update({ variant })}
             />
             <BabySelect value={npc.baby} onChange={(baby) => update({ baby })} />
@@ -156,7 +186,7 @@ export function StepNPC({ quest, project, onChange }: Props) {
               spawnMode,
               coordinates:
                 spawnMode === 'fixed'
-                  ? npc.coordinates ?? { x: 0, y: 64, z: 0 }
+                  ? (npc.coordinates ?? { x: 0, y: 64, z: 0 })
                   : npc.coordinates,
             })
           }

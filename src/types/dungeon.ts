@@ -3,9 +3,9 @@
  * Dungeons are composed of rooms with bounding boxes, spawns, and triggers.
  */
 
-import { uid, toIdentifier } from './ids';
 import { type AppLocale, DEFAULT_LOCALE } from '../i18n/types';
 import { defaultsT } from '../i18n/useLabels';
+import { toIdentifier, uid } from './ids';
 
 /** Quest state scoreboard values used by quest gates and triggers. */
 export type QuestState = -1 | 0 | 1 | 2 | 3;
@@ -43,11 +43,7 @@ export interface RoomSpawn {
   respawn: boolean;
 }
 
-export type TriggerEvent =
-  | 'on_entry'
-  | 'on_all_mobs_killed'
-  | 'on_quest_complete'
-  | 'on_exit';
+export type TriggerEvent = 'on_entry' | 'on_all_mobs_killed' | 'on_quest_complete' | 'on_exit';
 
 export type TriggerAction =
   | { type: 'set_quest_state'; questName: string; state: QuestState }
@@ -135,10 +131,7 @@ export function createDungeonRoom(name?: string): DungeonRoom {
   };
 }
 
-export function createDungeon(
-  name?: string,
-  locale: AppLocale = DEFAULT_LOCALE,
-): Dungeon {
+export function createDungeon(name?: string, locale: AppLocale = DEFAULT_LOCALE): Dungeon {
   const t = defaultsT(locale);
   const dungeonName = name ?? t('dungeon.name');
   const tag = toIdentifier(dungeonName, 'dungeon');

@@ -1,25 +1,27 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type Project } from '../types/quest';
+import {
+  defaultJobAdvancementBackground,
+  defaultJobAdvancementIcon,
+  JOB_ADVANCEMENT_BACKGROUNDS,
+} from '../generator/jobAdvancements';
+import { actionsToReachLevel, applyBalancedDefaults } from '../generator/jobBalance';
+import { ACTION_PRESETS, defaultPresetForAction } from '../generator/jobStats';
+import type { ValidationIssue } from '../generator/validate';
+import { useJobActionLabels, useJobStatPresetLabels } from '../i18n/useLabels';
 import {
   type Job,
   type JobAction,
-  jobUsesPresets,
   jobIsDistance,
+  jobUsesPresets,
   totalXpForLevel,
 } from '../types/job';
-import { applyBalancedDefaults, actionsToReachLevel } from '../generator/jobBalance';
-import {
-  defaultJobAdvancementIcon,
-  defaultJobAdvancementBackground,
-  JOB_ADVANCEMENT_BACKGROUNDS,
-} from '../generator/jobAdvancements';
-import { ACTION_PRESETS, defaultPresetForAction } from '../generator/jobStats';
-import { type ValidationIssue } from '../generator/validate';
-import { useJobActionLabels, useJobStatPresetLabels } from '../i18n/useLabels';
+import type { Project } from '../types/quest';
 import { ValidationBar } from './editor/ValidationBar';
 import { JobMilestonesEditor } from './JobMilestonesEditor';
-import { TextInput, NumberInput, Field, TextArea, Select } from './ui/Field';
+import { Field, NumberInput, Select, TextArea, TextInput } from './ui/Field';
+import { PageHeader } from './ui/PageHeader';
+import { SectionHeading } from './ui/SectionHeading';
 
 interface Props {
   project: Project;
@@ -126,8 +128,7 @@ export function JobsPage({ project, issues = [], onChange, onAdd, onDuplicate, o
 
   return (
     <div className="items-page">
-      <h1 className="step-title">{t('title')}</h1>
-      <p className="step-sub">{t('subtitle')}</p>
+      <PageHeader title={t('title')} lead={t('subtitle')} hint={t('subtitleHint')} />
 
       <div className="items-layout">
         <aside className="items-list card">
@@ -172,7 +173,11 @@ export function JobsPage({ project, issues = [], onChange, onAdd, onDuplicate, o
                     >
                       {t('settings.balancedDefaults')}
                     </button>
-                    <button type="button" className="btn small" onClick={() => onDuplicate(selected.id)}>
+                    <button
+                      type="button"
+                      className="btn small"
+                      onClick={() => onDuplicate(selected.id)}
+                    >
                       {tc('actions.duplicate')}
                     </button>
                     <button
@@ -266,7 +271,10 @@ export function JobsPage({ project, issues = [], onChange, onAdd, onDuplicate, o
                 />
 
                 <Field label={t('settings.showActionBar')}>
-                  <label className="muted" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <label
+                    className="muted"
+                    style={{ display: 'flex', gap: 8, alignItems: 'center' }}
+                  >
                     <input
                       type="checkbox"
                       style={{ width: 'auto' }}
@@ -296,10 +304,7 @@ export function JobsPage({ project, issues = [], onChange, onAdd, onDuplicate, o
               />
 
               <div className="card">
-                <h3>{t('advancements.title')}</h3>
-                <p className="hint" style={{ marginTop: 0 }}>
-                  {t('advancements.hint')}
-                </p>
+                <SectionHeading title={t('advancements.title')} hint={t('advancements.hint')} />
                 <TextInput
                   label={t('advancements.icon')}
                   hint={t('advancements.iconHint')}

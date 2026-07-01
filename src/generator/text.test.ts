@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { partToComponent, tellraw } from './text';
 
 describe('text components (1.21.5+ format)', () => {

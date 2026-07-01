@@ -1,21 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type Project } from '../types/quest';
-import {
-  type Dimension,
-  type TeleportPad,
-  type PortalEndpoint,
-  type TeleportDestination,
-} from '../types/dimension';
-import { toIdentifier } from '../types/ids';
-import { type ValidationIssue } from '../generator/validate';
-import { ValidationBar } from './editor/ValidationBar';
-import { TextInput, NumberInput, Field, TextArea, Select } from './ui/Field';
+import type { ValidationIssue } from '../generator/validate';
 import { useUIStore } from '../store/uiStore';
+import type { Dimension, TeleportPad } from '../types/dimension';
+import type { Project } from '../types/quest';
+import { DimensionForm } from './dimensions/DimensionForm';
+import { dimensionLabel } from './dimensions/dimensionEditors';
+import { PadForm } from './dimensions/PadForm';
+import { ValidationBar } from './editor/ValidationBar';
+import { PageHeader } from './ui/PageHeader';
 
-type Selection =
-  | { kind: 'dimension'; id: string }
-  | { kind: 'pad'; id: string };
+type Selection = { kind: 'dimension'; id: string } | { kind: 'pad'; id: string };
 
 interface Props {
   project: Project;
@@ -27,114 +22,6 @@ interface Props {
   onAddPad: () => TeleportPad;
   onDuplicatePad: (id: string) => void;
   onDeletePad: (id: string) => void;
-}
-
-function EndpointEditor({
-  label,
-  endpoint,
-  onChange,
-  showRadius,
-  t,
-  tc,
-  dimensionOptions,
-}: {
-  label: string;
-  endpoint: PortalEndpoint;
-  onChange: (ep: PortalEndpoint) => void;
-  showRadius: boolean;
-  t: (key: string, opts?: Record<string, unknown>) => string;
-  tc: (key: string) => string;
-  dimensionOptions: { value: string; label: string }[];
-}) {
-  return (
-    <Field label={label} hint={t('editor.coordsHint')}>
-      <Select
-        label={t('editor.dimension')}
-        value={endpoint.dimensionId ?? ''}
-        options={dimensionOptions}
-        onChange={(dimensionId) =>
-          onChange({ ...endpoint, dimensionId: dimensionId || undefined })
-        }
-      />
-      <div className="grid-3" style={{ marginTop: 8 }}>
-        <NumberInput
-          label={tc('coords.x')}
-          value={endpoint.x}
-          onChange={(x) => onChange({ ...endpoint, x })}
-        />
-        <NumberInput
-          label={tc('coords.y')}
-          value={endpoint.y}
-          onChange={(y) => onChange({ ...endpoint, y })}
-        />
-        <NumberInput
-          label={tc('coords.z')}
-          value={endpoint.z}
-          onChange={(z) => onChange({ ...endpoint, z })}
-        />
-      </div>
-      {showRadius && (
-        <NumberInput
-          label={t('editor.radius')}
-          hint={t('editor.radiusHint')}
-          value={endpoint.radius}
-          min={0}
-          onChange={(radius) => onChange({ ...endpoint, radius })}
-        />
-      )}
-    </Field>
-  );
-}
-
-function DestinationEditor({
-  label,
-  destination,
-  onChange,
-  t,
-  tc,
-  dimensionOptions,
-}: {
-  label: string;
-  destination: TeleportDestination;
-  onChange: (dest: TeleportDestination) => void;
-  t: (key: string, opts?: Record<string, unknown>) => string;
-  tc: (key: string) => string;
-  dimensionOptions: { value: string; label: string }[];
-}) {
-  return (
-    <Field label={label} hint={t('editor.coordsHint')}>
-      <Select
-        label={t('editor.dimension')}
-        value={destination.dimensionId ?? ''}
-        options={dimensionOptions}
-        onChange={(dimensionId) =>
-          onChange({ ...destination, dimensionId: dimensionId || undefined })
-        }
-      />
-      <div className="grid-3" style={{ marginTop: 8 }}>
-        <NumberInput
-          label={tc('coords.x')}
-          value={destination.x}
-          onChange={(x) => onChange({ ...destination, x })}
-        />
-        <NumberInput
-          label={tc('coords.y')}
-          value={destination.y}
-          onChange={(y) => onChange({ ...destination, y })}
-        />
-        <NumberInput
-          label={tc('coords.z')}
-          value={destination.z}
-          onChange={(z) => onChange({ ...destination, z })}
-        />
-      </div>
-    </Field>
-  );
-}
-
-function dimensionLabel(dimensions: Dimension[], dimensionId: string | undefined, overworld: string): string {
-  if (!dimensionId) return overworld;
-  return dimensions.find((d) => d.id === dimensionId)?.name ?? overworld;
 }
 
 function initialSelection(dimensions: Dimension[], pads: TeleportPad[]): Selection | null {
@@ -172,14 +59,6 @@ export function DimensionsPage({
     setDimensionsFocus(null);
   }, [dimensionsFocus, setDimensionsFocus]);
 
-  const dimensionOptions = useMemo(
-    () => [
-      { value: '', label: t('overworld') },
-      ...dimensions.map((d) => ({ value: d.id, label: d.name })),
-    ],
-    [dimensions, t],
-  );
-
   const selectedDimension = useMemo(() => {
     if (selection?.kind !== 'dimension') return undefined;
     return dimensions.find((d) => d.id === selection.id);
@@ -194,9 +73,7 @@ export function DimensionsPage({
     if (!selectedDimension) return;
     onChange({
       ...project,
-      dimensions: dimensions.map((d) =>
-        d.id === selectedDimension.id ? { ...d, ...patch } : d,
-      ),
+      dimensions: dimensions.map((d) => (d.id === selectedDimension.id ? { ...d, ...patch } : d)),
     });
   };
 
@@ -204,9 +81,7 @@ export function DimensionsPage({
     if (!selectedPad) return;
     onChange({
       ...project,
-      teleportPads: teleportPads.map((p) =>
-        p.id === selectedPad.id ? { ...p, ...patch } : p,
-      ),
+      teleportPads: teleportPads.map((p) => (p.id === selectedPad.id ? { ...p, ...patch } : p)),
     });
   };
 
@@ -234,7 +109,12 @@ export function DimensionsPage({
     if (!window.confirm(t('list.deleteDimensionConfirm'))) return;
     onDeleteDimension(id);
     if (selection?.kind === 'dimension' && selection.id === id) {
-      setSelection(initialSelection(dimensions.filter((d) => d.id !== id), teleportPads));
+      setSelection(
+        initialSelection(
+          dimensions.filter((d) => d.id !== id),
+          teleportPads,
+        ),
+      );
     }
   };
 
@@ -242,14 +122,18 @@ export function DimensionsPage({
     if (!window.confirm(t('list.deletePadConfirm'))) return;
     onDeletePad(id);
     if (selection?.kind === 'pad' && selection.id === id) {
-      setSelection(initialSelection(dimensions, teleportPads.filter((p) => p.id !== id)));
+      setSelection(
+        initialSelection(
+          dimensions,
+          teleportPads.filter((p) => p.id !== id),
+        ),
+      );
     }
   };
 
   return (
     <div className="items-page">
-      <h1 className="step-title">{t('title')}</h1>
-      <p className="step-sub">{t('subtitle')}</p>
+      <PageHeader title={t('title')} lead={t('subtitle')} hint={t('subtitleHint')} />
 
       <div className="items-layout">
         <aside className="items-list card">
@@ -276,7 +160,9 @@ export function DimensionsPage({
               onClick={() => setSelection({ kind: 'dimension', id: dim.id })}
               role="button"
               tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && setSelection({ kind: 'dimension', id: dim.id })}
+              onKeyDown={(e) =>
+                e.key === 'Enter' && setSelection({ kind: 'dimension', id: dim.id })
+              }
             >
               <div>
                 <div className="name">{dim.name || t('list.untitled')}</div>
@@ -347,28 +233,12 @@ export function DimensionsPage({
                   </button>
                 </div>
               </div>
-              <TextInput
-                label={t('editor.dimensionName')}
-                value={selectedDimension.name}
-                onChange={(name) =>
-                  updateDimension({ name, tag: toIdentifier(name, selectedDimension.tag || 'dimension') })
-                }
+              <DimensionForm
+                dimension={selectedDimension}
+                project={project}
+                issues={pageIssues}
+                onChange={updateDimension}
               />
-              <TextInput
-                label={t('editor.dimensionTag')}
-                value={selectedDimension.tag}
-                onChange={(tag) => updateDimension({ tag: toIdentifier(tag, 'dimension') })}
-              />
-              <TextArea
-                label={t('editor.description')}
-                value={selectedDimension.description ?? ''}
-                onChange={(description) => updateDimension({ description: description || undefined })}
-              />
-              <p className="muted" style={{ marginTop: 12, marginBottom: 0 }}>
-                {t('editor.dimensionIdHint', {
-                  id: `${project.namespace}:${selectedDimension.tag}`,
-                })}
-              </p>
             </div>
           )}
 
@@ -393,36 +263,11 @@ export function DimensionsPage({
                   </button>
                 </div>
               </div>
-              <TextInput
-                label={t('editor.padName')}
-                value={selectedPad.name}
-                onChange={(name) => updatePad({ name })}
-              />
-              <NumberInput
-                label={t('editor.cooldownSeconds')}
-                hint={t('editor.cooldownHint')}
-                value={selectedPad.cooldownSeconds ?? 1}
-                min={1}
-                onChange={(cooldownSeconds) =>
-                  updatePad({ cooldownSeconds: Math.max(1, cooldownSeconds) })
-                }
-              />
-              <EndpointEditor
-                label={t('editor.atEndpoint')}
-                endpoint={selectedPad.at}
-                onChange={(at) => updatePad({ at })}
-                showRadius
-                t={t}
-                tc={tc}
-                dimensionOptions={dimensionOptions}
-              />
-              <DestinationEditor
-                label={t('editor.toEndpoint')}
-                destination={selectedPad.to}
-                onChange={(to) => updatePad({ to })}
-                t={t}
-                tc={tc}
-                dimensionOptions={dimensionOptions}
+              <PadForm
+                pad={selectedPad}
+                dimensions={dimensions}
+                issues={pageIssues}
+                onChange={updatePad}
               />
             </div>
           )}

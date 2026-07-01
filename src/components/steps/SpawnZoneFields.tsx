@@ -1,13 +1,9 @@
 import { useTranslation } from 'react-i18next';
-import {
-  type Objective,
-  type ZoneDrop,
-  type ZoneDropMode,
-} from '../../types/quest';
-import { type CustomItem } from '../../types/item';
-import { NumberInput, PillSelect, Field, DataListInput } from '../ui/Field';
-import { CoordsWithDimension } from './CoordsWithDimension';
 import { useMobOptions } from '../../data/mobs';
+import type { CustomItem } from '../../types/item';
+import type { Objective, ZoneDrop, ZoneDropMode } from '../../types/quest';
+import { DataListInput, Field, NumberInput, PillSelect } from '../ui/Field';
+import { CoordsWithDimension } from './CoordsWithDimension';
 
 type ItemSource = 'vanilla' | 'custom';
 
@@ -56,13 +52,11 @@ export function SpawnZoneFields({ variant, obj, customItems, dimensionOptions, o
           onChange={(v) =>
             onChange({
               spawnZone: v === 'yes',
-              location:
-                v === 'yes' ? obj.location ?? { x: 100, y: 64, z: 100 } : obj.location,
-              radius: v === 'yes' ? obj.radius ?? 5 : obj.radius,
-              zoneCap: v === 'yes' ? obj.zoneCap ?? defaultZoneCap(obj.amount ?? 1) : obj.zoneCap,
-              zoneMob: v === 'yes' && !isKill ? obj.zoneMob ?? 'minecraft:cow' : obj.zoneMob,
-              zoneDropMode:
-                v === 'yes' ? obj.zoneDropMode ?? defaultDropMode : obj.zoneDropMode,
+              location: v === 'yes' ? (obj.location ?? { x: 100, y: 64, z: 100 }) : obj.location,
+              radius: v === 'yes' ? (obj.radius ?? 5) : obj.radius,
+              zoneCap: v === 'yes' ? (obj.zoneCap ?? defaultZoneCap(obj.amount ?? 1)) : obj.zoneCap,
+              zoneMob: v === 'yes' && !isKill ? (obj.zoneMob ?? 'minecraft:cow') : obj.zoneMob,
+              zoneDropMode: v === 'yes' ? (obj.zoneDropMode ?? defaultDropMode) : obj.zoneDropMode,
               zoneDrops: v === 'yes' ? obj.zoneDrops : obj.zoneDrops,
             })
           }
@@ -214,7 +208,9 @@ export function SpawnZoneFields({ variant, obj, customItems, dimensionOptions, o
                               })
                             }
                           >
-                            {!drop.customItemId && <option value="">{tc('actions.selectItem')}</option>}
+                            {!drop.customItemId && (
+                              <option value="">{tc('actions.selectItem')}</option>
+                            )}
                             {customItems.map((item) => (
                               <option key={item.id} value={item.id}>
                                 {item.name} ({item.displayName})

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ValidationIssue } from '../../generator/validate';
+import type { ValidationIssue } from '../../generator/validate';
 
 interface Props {
   issues: ValidationIssue[];
@@ -19,14 +19,20 @@ export function ValidationBar({ issues }: Props) {
       role="status"
       aria-live="polite"
     >
-      {errors.map((issue, i) => (
-        <div key={`e-${i}`} className="validation-bar-item error">
+      {errors.map((issue) => (
+        <div
+          key={`e-${issue.questId ?? 'p'}-${issue.field ?? 'f'}-${issue.message}`}
+          className="validation-bar-item error"
+        >
           <span aria-hidden>✕</span>
           <span>{issue.message}</span>
         </div>
       ))}
-      {warnings.map((issue, i) => (
-        <div key={`w-${i}`} className="validation-bar-item warning">
+      {warnings.map((issue) => (
+        <div
+          key={`w-${issue.questId ?? 'p'}-${issue.field ?? 'f'}-${issue.message}`}
+          className="validation-bar-item warning"
+        >
           <span aria-hidden>⚠</span>
           <span>{issue.message}</span>
         </div>

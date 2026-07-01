@@ -93,6 +93,12 @@ Custom items are vanilla base items with **item components** (custom name, lore,
 
 Kill objectives with **spawn zones** default to **no item drops** when enabled. You can switch to vanilla mob loot or configure a custom drop list (vanilla items or project custom items, with amount and chance). The datapack attaches a `DeathLootTable` on summon and emits loot table JSON as needed.
 
+### Custom mob drops
+
+On the **Custom mobs** page you can attach a drop list to any mob. Export emits `data/<namespace>/loot_table/mobs/<tag>.json` and sets `DeathLootTable:"<namespace>:mobs/<tag>"` on summon (`/function <namespace>:spawn_mob/<tag>`, quest spawn zones, dungeons). Custom drops **replace** vanilla loot for that mob.
+
+**Test after export:** `/loot spawn ~ ~1 ~ loot <namespace>:mobs/<tag>` then `/function <namespace>:spawn_mob/<tag>` and kill the mob. Rejoin the world after reinstalling the datapack (not only `/reload`). See [docs/custom-mob-drops.md](docs/custom-mob-drops.md) for loot-table format and troubleshooting.
+
 ## Minecraft 1.21.11 notes
 
 - `pack.mcmeta` uses `min_format`/`max_format` `[94, 1]` (datapack format 94.1 for 1.21.11).
@@ -122,13 +128,18 @@ types/                   Quest, item, job domain types
 generator/               Pure functions: Project → datapack files / ZIP
 ```
 
-The **generator** (`src/generator/`) is pure and heavily unit-tested — prefer adding game logic there rather than in UI components. Schema migrations live in `src/state/projectStore.ts` (`PROJECT_SCHEMA_VERSION = 6`). Validation rules are in `src/generator/validate.ts`; the UI runs them continuously via `src/hooks/useValidation.ts` (300 ms debounce).
+The **generator** (`src/generator/`) is pure and heavily unit-tested — prefer adding game logic there rather than in UI components. Schema migrations live in `src/state/projectStore.ts` (`PROJECT_SCHEMA_VERSION`). Validation rules are in `src/generator/validate.ts`; the UI runs them continuously via `src/hooks/useValidation.ts` (300 ms debounce).
+
+**Tick dispatch scaling:** The datapack registers one `tick` function per quest on `minecraft:tick`. Each runs proximity and progress checks every game tick (20×/second). This is simple and correct for personal/small-server packs (tens of quests). Per-quest tick functions skip work when every online player has completed that quest; at very large quest counts (hundreds), MSPT can still rise linearly — see [docs/INGAME_QA.md](docs/INGAME_QA.md) for a manual perf checklist.
+
+**Import safety:** Project JSON imported via Settings is sanitized (control characters stripped from user-authored strings) before it enters the editor or generator.
 
 ### Testing
 
 | Layer | Command / doc |
 |-------|----------------|
 | Unit tests (generator, store, flow) | `npm test` — also runs in [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) before build |
+| Lint | `npm run lint` — Biome, also in CI |
 | Manual in-game QA | [docs/INGAME_QA.md](docs/INGAME_QA.md) ([dansk](docs/INGAME_QA.da.md)) — checklist using `/function <ns>:setup_guide` and `/function <ns>:debug` |
 | QA datapack fixture | Export → **Download test datapack**, or `npm run ingame:fixture` |
 | Future runtime automation | Design in [scripts/ingame/README.md](scripts/ingame/README.md) ([dansk](scripts/ingame/README.da.md)) |
@@ -154,4 +165,4 @@ The custom domain is set via [`public/CNAME`](public/CNAME), which Vite copies i
 
 ## Tech stack
 
-React 18, TypeScript, Vite 5, Zustand, `@xyflow/react`, JSZip, Vitest.
+React 18, TypeScript, Vite 6, Zustand, `@xyflow/react`, JSZip, Vitest 3, Biome.

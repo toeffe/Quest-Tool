@@ -76,6 +76,17 @@ Efter hvert job leveler: boss bar flash, `/function <ns>:debug` viser nyt Lv, Es
 - `/function <ns>:reset` — din quest + job progress
 - `/function <ns>:spawn_all` — genplacer NPCs og stations
 
+## Custom mob drops (projekt-mobs)
+
+Hvis dit projekt definerer **Custom mobs** med en drop list:
+
+1. Genexportér og geninstallér datapacken; **genjoin verdenen** (loot tables caches ved load).
+2. `/loot spawn ~ ~1 ~ loot <ns>:mobs/<mob_tag>` — skal droppe det konfigurerede item.
+3. `/function <ns>:spawn_mob/<mob_tag>` → dræb mob → samme drops.
+4. `/gamerule doMobLoot` skal være `true`.
+
+Loot tables bruger `type: minecraft:generic` og opdelte loot functions for custom items (se [custom-mob-drops.md](custom-mob-drops.md)).
+
 ## Rapportering af issues
 
 Inkluder Minecraft version, platform, eksporteret ZIP, `/function <ns>:debug` output, og hvilket quest/job trin der fejlede.

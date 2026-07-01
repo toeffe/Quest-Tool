@@ -1,10 +1,10 @@
-import { type Coordinates, type Npc, type TargetNpc } from '../types/quest';
-import { type CompileContext, type QuestContext, questObjectives } from './context';
-import { scopeCommandInDimension } from './coordinates';
 import { normalizeEntityId } from '../data/mobs';
 import { buildVariantNbt } from '../data/mobVariants';
-import { escapeSnbtString } from './text';
-import { type DatapackStrings } from './strings';
+import type { Coordinates, Npc, TargetNpc } from '../types/quest';
+import { type CompileContext, type QuestContext, questObjectives } from './context';
+import { scopeCommandInDimension } from './coordinates';
+import type { DatapackStrings } from './strings';
+import { escapeSnbtString, sanitizeMcComment } from './text';
 
 /** Age value that keeps baby mobs from ever growing up. */
 const PERMANENT_BABY_AGE = -2147483648;
@@ -34,9 +34,7 @@ function summonNpc(opts: {
   position: string;
 }): string {
   const entity = normalizeEntityId(opts.entityType);
-  const tags = ['questtool', opts.displayTag, ...opts.extraTags]
-    .map((t) => `"${t}"`)
-    .join(',');
+  const tags = ['questtool', opts.displayTag, ...opts.extraTags].map((t) => `"${t}"`).join(',');
   const fields = [
     `Tags:[${tags}]`,
     `NoAI:1b`,
@@ -136,7 +134,7 @@ export function spawnFunctionLines(
   const npc = qc.quest.npc;
   const giverCoords = npc.spawnMode === 'fixed' ? npc.coordinates : undefined;
   const lines = [
-    `# Spawn NPC(s) for quest: ${qc.quest.name}`,
+    `# Spawn NPC(s) for quest: ${sanitizeMcComment(qc.quest.name)}`,
     scopeAtCoords(ctx, giverCoords, killGiverCommand(qc)),
     ...spawnGiverCommand(qc).map((cmd) => scopeAtCoords(ctx, giverCoords, cmd)),
   ];
@@ -155,11 +153,7 @@ export function spawnFunctionLines(
       const block = o.markerBlock.trim();
       const { x, y, z } = o.location;
       lines.push(
-        scopeCommandInDimension(
-          ctx,
-          o.location.dimensionId,
-          `setblock ${x} ${y} ${z} ${block}`,
-        ),
+        scopeCommandInDimension(ctx, o.location.dimensionId, `setblock ${x} ${y} ${z} ${block}`),
       );
     }
   }

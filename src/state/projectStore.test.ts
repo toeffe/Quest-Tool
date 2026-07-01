@@ -1,14 +1,18 @@
-import { describe, it, expect } from 'vitest';
 import JSZip from 'jszip';
+import { describe, expect, it, vi } from 'vitest';
 import { createProject, createQuest, PROJECT_SCHEMA_VERSION } from '../types/factory';
 import {
-  importProjectJson,
-  exportProjectJson,
   createAndAddCustomItem,
   deleteCustomItem,
-  readProjectJsonFromFile,
+  deleteQuest,
+  exportProjectJson,
+  importProjectJson,
+  loadProject,
   PROJECT_BACKUP_FILENAME,
+  readProjectJsonFromFile,
+  saveProject,
 } from './projectStore';
+
 describe('projectStore migration', () => {
   it('backfills customItems when importing schema v1 projects', () => {
     const legacy = {
@@ -181,6 +185,100 @@ describe('custom item CRUD', () => {
   });
 });
 
+describe('empty quest list', () => {
+  it('preserves an intentionally empty quest list through import/migrate', () => {
+    const empty = {
+      id: 'empty-id',
+      name: 'Empty',
+      namespace: 'empty',
+      platform: 'vanilla',
+      quests: [],
+      version: PROJECT_SCHEMA_VERSION,
+    };
+    const project = importProjectJson(JSON.stringify(empty));
+    expect(project.quests).toEqual([]);
+  });
+
+  it('repopulates quests only when quests field is missing or not an array', () => {
+    const store: Record<string, string> = {};
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => store[key] ?? null,
+      setItem: (key: string, value: string) => {
+        store[key] = value;
+      },
+      removeItem: () => undefined,
+      clear: () => undefined,
+      key: () => null,
+      length: 0,
+    });
+    store['quest-tool-mc.project'] = JSON.stringify({
+      id: 'corrupt-id',
+      name: 'Corrupt',
+      namespace: 'corrupt',
+      platform: 'vanilla',
+      quests: 'not-an-array',
+      version: 1,
+    });
+    const project = loadProject();
+    expect(project.quests.length).toBeGreaterThan(0);
+    vi.unstubAllGlobals();
+  });
+
+  it('deleteQuest refuses to remove the last quest', () => {
+    const project = createProject('Solo');
+    const onlyId = project.quests[0].id;
+    const next = deleteQuest(project, onlyId);
+    expect(next.quests).toHaveLength(1);
+    expect(next.quests[0].id).toBe(onlyId);
+  });
+
+  it('survives save/load round-trip without re-seeding quests', () => {
+    const store: Record<string, string> = {};
+    const localStorageMock = {
+      getItem: (key: string) => store[key] ?? null,
+      setItem: (key: string, value: string) => {
+        store[key] = value;
+      },
+      removeItem: (key: string) => {
+        delete store[key];
+      },
+      clear: () => {
+        for (const key of Object.keys(store)) delete store[key];
+      },
+      key: (index: number) => Object.keys(store)[index] ?? null,
+      get length() {
+        return Object.keys(store).length;
+      },
+    };
+    vi.stubGlobal('localStorage', localStorageMock);
+
+    const empty = {
+      ...createProject('Empty'),
+      quests: [],
+    };
+    saveProject(empty);
+    const loaded = loadProject();
+    expect(loaded.quests).toEqual([]);
+
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('import string sanitization', () => {
+  it('strips embedded newlines from quest names on import', () => {
+    const payload = {
+      ...createProject('Pack'),
+      quests: [
+        {
+          ...createQuest('Evil\nsay injected', 'kill'),
+        },
+      ],
+    };
+    const project = importProjectJson(JSON.stringify(payload));
+    expect(project.quests[0].name).toBe('Evil say injected');
+  });
+});
+
 describe('project import files', () => {
   it('reads project JSON from a datapack ZIP backup', async () => {
     const project = createProject('Zip Pack');
@@ -193,5 +291,14 @@ describe('project import files', () => {
     const restored = importProjectJson(json);
     expect(restored.name).toBe('Zip Pack');
     expect(restored.namespace).toBe('zippack');
+  });
+
+  it('round-trips import through migrate preserving quest count', () => {
+    const project = createProject('Round Trip');
+    project.quests.push(createQuest('Second', 'gather'));
+    const json = exportProjectJson(project);
+    const restored = importProjectJson(json);
+    expect(restored.quests).toHaveLength(2);
+    expect(restored.quests[1].name).toBe('Second');
   });
 });

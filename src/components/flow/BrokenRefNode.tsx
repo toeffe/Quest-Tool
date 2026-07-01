@@ -1,6 +1,6 @@
+import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 
 export interface BrokenRefNodeData {
   label: string;

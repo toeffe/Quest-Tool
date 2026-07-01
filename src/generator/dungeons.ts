@@ -1,15 +1,15 @@
-import {
-  type Dungeon,
-  type RoomTrigger,
-  type BoundingBox,
-  normalizeBounds,
-} from '../types/dungeon';
-import { type CompileContext } from './context';
-import { toIdentifier } from '../types/ids';
 import { normalizeEntityId } from '../data/mobs';
-import { summonCustomMob, customMobLootTableId } from './customMobs';
-import { tellraw, escapeSnbtString } from './text';
+import {
+  type BoundingBox,
+  type Dungeon,
+  normalizeBounds,
+  type RoomTrigger,
+} from '../types/dungeon';
+import { toIdentifier } from '../types/ids';
+import type { CompileContext } from './context';
 import { scopeCommandInDimension } from './coordinates';
+import { resolveCustomMobDeathLootTable, summonCustomMob } from './customMobs';
+import { escapeSnbtString, sanitizeMcComment, tellraw } from './text';
 
 export type FileMap = Record<string, string>;
 
@@ -118,7 +118,7 @@ function buildTriggerActionLines(
   switch (action.type) {
     case 'set_quest_state': {
       const stateObj = questStateObjective(ctx, action.questName);
-      if (!stateObj) return [`# Missing quest: ${action.questName}`];
+      if (!stateObj) return [`# Missing quest: ${sanitizeMcComment(action.questName)}`];
       return [
         scopeDungeonCommand(
           ctx,
@@ -153,7 +153,7 @@ function buildTriggerFunction(
   rc: DungeonRoomContext,
   triggers: RoomTrigger[],
 ): string[] {
-  const lines: string[] = [`# Triggers for ${rc.room.name}`];
+  const lines: string[] = [`# Triggers for ${sanitizeMcComment(rc.room.name)}`];
   for (const trigger of triggers) {
     const actionLines = buildTriggerActionLines(ctx, rc, trigger);
     if (!actionLines.length) continue;
@@ -182,7 +182,7 @@ function buildSingleTriggerFn(
 
 export function buildRoomSpawnFunction(ctx: CompileContext, rc: DungeonRoomContext): string {
   const center = boundsCenter(rc.room.bounds);
-  const lines: string[] = [`# Spawn maintenance for ${rc.room.name}`];
+  const lines: string[] = [`# Spawn maintenance for ${sanitizeMcComment(rc.room.name)}`];
 
   for (const spawn of rc.room.spawns) {
     const holder = `#spawn_${spawn.id.slice(0, 8)}`;
@@ -194,11 +194,12 @@ export function buildRoomSpawnFunction(ctx: CompileContext, rc: DungeonRoomConte
       if (!mob) continue;
       entityType = normalizeEntityId(mob.baseEntity);
       const lootId = mob.drops?.length
-        ? customMobLootTableId(ctx.namespace, mob.tag)
+        ? resolveCustomMobDeathLootTable(mob, ctx.namespace, ctx.project)
         : undefined;
       summonLine = summonCustomMob(mob, center.x, center.y, center.z, {
         deathLootTable: lootId,
         extraTags: [rc.mobTag],
+        namespace: ctx.namespace,
       });
     } else {
       entityType = normalizeEntityId(spawn.vanillaEntity ?? 'minecraft:zombie');
@@ -226,10 +227,7 @@ export function buildRoomDespawnFunction(ctx: CompileContext, rc: DungeonRoomCon
   return scopeDungeonCommand(ctx, rc.dungeon, `kill @e[tag=${rc.mobTag}]`) + '\n';
 }
 
-export function buildRoomOnEntryFunction(
-  ctx: CompileContext,
-  rc: DungeonRoomContext,
-): string {
+export function buildRoomOnEntryFunction(ctx: CompileContext, rc: DungeonRoomContext): string {
   const triggers = rc.room.triggers.filter((t) => t.event === 'on_entry');
   const lines = buildTriggerFunction(ctx, rc, triggers);
   if (rc.room.spawns.some((s) => s.spawnOnEntry)) {
@@ -238,19 +236,13 @@ export function buildRoomOnEntryFunction(
   return (lines.length ? lines : ['# No on_entry triggers']).join('\n') + '\n';
 }
 
-export function buildRoomOnExitFunction(
-  ctx: CompileContext,
-  rc: DungeonRoomContext,
-): string {
+export function buildRoomOnExitFunction(ctx: CompileContext, rc: DungeonRoomContext): string {
   const triggers = rc.room.triggers.filter((t) => t.event === 'on_exit');
   const lines = buildTriggerFunction(ctx, rc, triggers);
   return (lines.length ? lines : ['# No on_exit triggers']).join('\n') + '\n';
 }
 
-export function buildRoomOnAllKilledFunction(
-  ctx: CompileContext,
-  rc: DungeonRoomContext,
-): string {
+export function buildRoomOnAllKilledFunction(ctx: CompileContext, rc: DungeonRoomContext): string {
   const triggers = rc.room.triggers.filter((t) => t.event === 'on_all_mobs_killed');
   const lines = buildTriggerFunction(ctx, rc, triggers);
   return (lines.length ? lines : ['# No on_all_killed triggers']).join('\n') + '\n';
@@ -260,7 +252,7 @@ export function buildRoomTickFunction(ctx: CompileContext, rc: DungeonRoomContex
   const s = boundsToSelector(rc.room.bounds);
   const ns = ctx.namespace;
   const lines: string[] = [
-    `# Tick for ${rc.room.name}`,
+    `# Tick for ${sanitizeMcComment(rc.room.name)}`,
     `scoreboard players set #prev ${rc.occObjective} 0`,
     scopeDungeonCommand(
       ctx,
@@ -322,12 +314,14 @@ function buildRoomTickCall(ctx: CompileContext, rc: DungeonRoomContext): string 
 export function buildDungeonsTickFunction(ctx: CompileContext): string {
   const rooms = buildDungeonRoomContexts(ctx);
   if (!rooms.length) return '# No dungeons\n';
-  return [`# Dungeon room ticks`, ...rooms.map((rc) => buildRoomTickCall(ctx, rc))].join('\n') + '\n';
+  return (
+    [`# Dungeon room ticks`, ...rooms.map((rc) => buildRoomTickCall(ctx, rc))].join('\n') + '\n'
+  );
 }
 
 export function buildDungeonInitFunction(ctx: CompileContext, dungeon: Dungeon): string {
   const rooms = buildDungeonRoomContexts(ctx).filter((rc) => rc.dungeon.id === dungeon.id);
-  const lines: string[] = [`# Init ${dungeon.name}`];
+  const lines: string[] = [`# Init ${sanitizeMcComment(dungeon.name)}`];
   for (const rc of rooms) {
     lines.push(`scoreboard players set #occ ${rc.occObjective} 0`);
     lines.push(`scoreboard players set #vis ${rc.visObjective} 0`);
@@ -341,7 +335,7 @@ export function buildDungeonInitFunction(ctx: CompileContext, dungeon: Dungeon):
 
 export function buildDungeonResetFunction(ctx: CompileContext, dungeon: Dungeon): string {
   const rooms = buildDungeonRoomContexts(ctx).filter((rc) => rc.dungeon.id === dungeon.id);
-  const lines: string[] = [`# Reset ${dungeon.name}`];
+  const lines: string[] = [`# Reset ${sanitizeMcComment(dungeon.name)}`];
   for (const rc of rooms) {
     lines.push(`function ${ctx.namespace}:${rc.fnBase}/despawn`);
     lines.push(`scoreboard players set #occ ${rc.occObjective} 0`);
@@ -379,8 +373,11 @@ export function compileDungeons(ctx: CompileContext): FileMap {
 
     for (const trigger of rc.room.triggers) {
       if (trigger.fireOnce) {
-        files[`${base}/trigger_${trigger.id.slice(0, 8)}.mcfunction`] =
-          buildSingleTriggerFn(ctx, rc, trigger);
+        files[`${base}/trigger_${trigger.id.slice(0, 8)}.mcfunction`] = buildSingleTriggerFn(
+          ctx,
+          rc,
+          trigger,
+        );
       }
       if (trigger.event === 'on_quest_complete') {
         files[`${base}/on_quest_complete_${trigger.id.slice(0, 8)}.mcfunction`] =

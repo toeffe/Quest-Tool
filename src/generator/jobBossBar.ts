@@ -1,6 +1,6 @@
-import { type CompileContext, type JobContext } from './context';
+import type { CompileContext, JobContext } from './context';
 import { NOW_HOLDER, SYS_OBJECTIVE } from './sys';
-import { escapeSnbtString } from './text';
+import { escapeSnbtString, sanitizeMcComment } from './text';
 
 const SYS = SYS_OBJECTIVE;
 
@@ -159,7 +159,7 @@ export function buildBossBarComputeLines(ctx: CompileContext, jc: JobContext): s
   const val = `${jc.constPrefix}_bb_val`;
 
   return [
-    `# Boss bar: ${jc.job.name} — per-player slot`,
+    `# Boss bar: ${sanitizeMcComment(jc.job.name)} — per-player slot`,
     `function ${ns}:jobs/ensure_pid`,
     `execute unless score @s ${QT_PID_OBJECTIVE} matches 1..${MAX_PLAYER_PROGRESS_BARS} run return 0`,
     `scoreboard players set @s ${QT_ACTIVE_JOB_OBJECTIVE} ${jc.index}`,

@@ -1,20 +1,18 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  type Platform,
-  type Quest,
-  type Reward,
-  type RewardType,
-} from '../../types/quest';
-import { type CustomItem } from '../../types/item';
-import { type Job } from '../../types/job';
 import { isRewardSupported } from '../../generator/platform';
+import type { AppLocale } from '../../i18n/types';
 import { useRewardTypeLabels } from '../../i18n/useLabels';
+import type { CustomItem } from '../../types/item';
+import type { Job } from '../../types/job';
+import type { Platform, Quest, Reward, RewardType } from '../../types/quest';
 import { PillSelect } from '../ui/Field';
+import { PageHeader } from '../ui/PageHeader';
 
 interface Props {
   quest: Quest;
   platform: Platform;
+  projectLocale: AppLocale;
   customItems: CustomItem[];
   jobs: Job[];
   onChange: (quest: Quest) => void;
@@ -43,7 +41,14 @@ function itemSource(reward: Reward): ItemSource {
   return reward.customItemId ? 'custom' : 'vanilla';
 }
 
-export function StepRewards({ quest, platform, customItems, jobs, onChange }: Props) {
+export function StepRewards({
+  quest,
+  platform,
+  projectLocale,
+  customItems,
+  jobs,
+  onChange,
+}: Props) {
   const { t } = useTranslation('editor');
   const { t: tc } = useTranslation('common');
   const rewardTypeLabels = useRewardTypeLabels();
@@ -85,8 +90,11 @@ export function StepRewards({ quest, platform, customItems, jobs, onChange }: Pr
 
   return (
     <div>
-      <h1 className="step-title">{t('rewards.title')}</h1>
-      <p className="step-sub">{t('rewards.subtitle')}</p>
+      <PageHeader
+        title={t('rewards.title')}
+        lead={t('rewards.subtitle')}
+        hint={t('rewards.subtitleHint')}
+      />
 
       <div className="card">
         <div className="row-between" style={{ marginBottom: 14 }}>
@@ -96,12 +104,10 @@ export function StepRewards({ quest, platform, customItems, jobs, onChange }: Pr
           </button>
         </div>
 
-        {rewards.length === 0 && (
-          <p className="muted">{t('rewards.empty')}</p>
-        )}
+        {rewards.length === 0 && <p className="muted">{t('rewards.empty')}</p>}
 
         {rewards.map((reward, i) => {
-          const support = isRewardSupported(platform, reward);
+          const support = isRewardSupported(platform, reward, projectLocale);
           const showAmount =
             reward.type === 'item' ||
             reward.type === 'xp' ||
@@ -173,7 +179,9 @@ export function StepRewards({ quest, platform, customItems, jobs, onChange }: Pr
                           update(i, { customItemId: e.target.value, value: undefined })
                         }
                       >
-                        {!reward.customItemId && <option value="">{tc('actions.selectItem')}</option>}
+                        {!reward.customItemId && (
+                          <option value="">{tc('actions.selectItem')}</option>
+                        )}
                         {customItems.map((item) => (
                           <option key={item.id} value={item.id}>
                             {item.name} ({item.displayName})
@@ -209,7 +217,9 @@ export function StepRewards({ quest, platform, customItems, jobs, onChange }: Pr
 
                 {(reward.type === 'permission' || reward.type === 'command') && (
                   <div className="field" style={{ flex: 2 }}>
-                    <label>{reward.type === 'command' ? t('rewards.command') : t('rewards.value')}</label>
+                    <label>
+                      {reward.type === 'command' ? t('rewards.command') : t('rewards.value')}
+                    </label>
                     <input
                       value={reward.value ?? ''}
                       placeholder={valuePlaceholder[reward.type] ?? ''}
@@ -236,16 +246,10 @@ export function StepRewards({ quest, platform, customItems, jobs, onChange }: Pr
               </div>
 
               {reward.type === 'command' && (
-                <div className="hint">{t('rewards.commandPlaceholder')}</div>
+                <p className="field-note">{t('rewards.commandPlaceholder')}</p>
               )}
               {isItem && source === 'vanilla' && (
-                <div className="hint">{t('rewards.vanillaItemHint')}</div>
-              )}
-              {isItem && source === 'custom' && (
-                <div className="hint">{t('rewards.customItemHint')}</div>
-              )}
-              {isJobXp && (
-                <div className="hint">{t('rewards.jobXpHint')}</div>
+                <p className="field-note warn">{t('rewards.vanillaItemHint')}</p>
               )}
               {support.note && (
                 <div className="hint" style={{ color: 'var(--gold)' }}>

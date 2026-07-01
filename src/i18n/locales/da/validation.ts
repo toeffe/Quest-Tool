@@ -10,7 +10,8 @@ export const validationDa = {
   spawnZoneNoLocation: '{{where}} spawn-zone er aktiveret, men ingen placering er angivet.',
   spawnCapMin: '{{where}} spawn-grænse skal være mindst 1.',
   spawnZoneNoMob: '{{where}} spawn-zone er aktiveret, men ingen mob/væsen er angivet.',
-  customDropsEmpty: '{{where}} brugerdefinerede drops er aktiveret, men ingen drops er konfigureret.',
+  customDropsEmpty:
+    '{{where}} brugerdefinerede drops er aktiveret, men ingen drops er konfigureret.',
   dropMissingItem: '{{where}} mangler en genstand.',
   dropAmountMin: '{{where}} antal skal være mindst 1.',
   dropChanceRange: '{{where}} chance skal være mellem 1 og 100.',
@@ -34,6 +35,14 @@ export const validationDa = {
     'Brugerdefineret mob "{{name}}" fase {{phase}} tærskel skal være mellem 1 og 99.',
   customMobPhaseThresholdOrder:
     'Brugerdefineret mob "{{name}}" fase-tærskler skal falde (fx 66%, derefter 33%).',
+  customMobSkinUnsupported:
+    'Brugerdefineret mob "{{name}}" har brugerdefineret tekstur, men base entity "{{entity}}" understøtter ikke skins i vanilla.',
+  customMobSkinResourcePack:
+    'Brugerdefineret mob "{{name}}" har et skin — download og installer den separate resource pack ZIP ud over datapacken.',
+  customMobScaleExtreme:
+    'Brugerdefineret mob "{{name}}" skala ({{scale}}) er uden for anbefalet interval 0,25–4.',
+  customMobWolfSkinInfo:
+    'Brugerdefineret mob "{{name}}" ulv-skin bruges på angry, tame og wild varianter (samme PNG).',
   dungeonNoName: 'En dungeon har et tomt navn.',
   dungeonNoTag: 'Dungeon "{{name}}" har intet funktionstag.',
   dungeonNoRooms: 'Dungeon "{{name}}" har ingen rum.',
@@ -78,7 +87,8 @@ export const validationDa = {
     'Job "{{name}}" milestone-niveau {{level}} skal være mellem 1 og {{maxLevel}}.',
   jobDuplicateMilestone: 'Job "{{name}}" har dubleret milestone på niveau {{level}}.',
   jobMilestoneEmptyItem: 'Job "{{name}}" milestone Lv.{{level}} har en tom genstandsbelønning.',
-  jobMilestoneMissingItem: 'Job "{{name}}" milestone refererer til en genstand, der ikke findes længere.',
+  jobMilestoneMissingItem:
+    'Job "{{name}}" milestone refererer til en genstand, der ikke findes længere.',
   duplicateJobName: 'Dubleret jobnavn: "{{name}}" (brugt {{count}} gange).',
   chainRequiresMissingJob: 'Kæden kræver et job, der ikke findes længere.',
   jobLevelMin: 'Job-niveaukrav skal være mindst 1.',
@@ -88,15 +98,16 @@ export const validationDa = {
   questEmptyName: 'En quest har et tomt navn.',
   npcNoName: 'Questgiveren har intet navn.',
   objectiveMissingCustomItem: 'Et mål refererer til en genstand, der ikke findes længere.',
-  spawnDropMissingCustomItem: 'Et spawn-zone-drop refererer til en genstand, der ikke findes længere.',
+  spawnDropMissingCustomItem:
+    'Et spawn-zone-drop refererer til en genstand, der ikke findes længere.',
   npcFixedNoCoords: 'NPC-spawn er sat til faste koordinater, men ingen er angivet.',
-  targetNpcNoName: 'Mål-NPC\'en har intet navn.',
+  targetNpcNoName: "Mål-NPC'en har intet navn.",
   targetNpcFixedNoCoords: 'Mål-NPC bruger faste koordinater, men ingen er angivet.',
-  chainRequiresNotFound:
-    'Kæden kræver "{{name}}", som ikke er en quest i dette projekt.',
+  chainRequiresNotFound: 'Kæden kræver "{{name}}", som ikke er en quest i dette projekt.',
   chainSelfRequire: 'En quest kan ikke kræve sig selv.',
-  chainUnlocksNotFound:
-    'Kæden låser op for "{{name}}", som ikke er en quest i dette projekt.',
+  chainUnlocksNotFound: 'Kæden låser op for "{{name}}", som ikke er en quest i dette projekt.',
+  chainCycleDetected:
+    'Denne quest er en del af en cirkulær kæde — nogle quests låses måske aldrig op.',
   rewardMissingItem: 'En genstandsbelønning mangler sin genstand.',
   rewardMissingCustomItem: 'En belønning refererer til en genstand, der ikke findes længere.',
   rewardMissingCommand: 'En kommando-belønning mangler sin værdi.',

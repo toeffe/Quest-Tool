@@ -8,7 +8,8 @@ export const editorDa = {
 
   quest: {
     title: 'Questdefinition',
-    subtitle: 'Vælg hvad spilleren skal gøre, og beskriv målet.',
+    subtitle: 'Vælg måltype og beskriv questen.',
+    subtitleHint: 'Questtype styrer hvordan fremgang spores in-game.',
     type: 'Type',
     questType: 'Questtype',
     questTypeHint: 'Dette afgør hvordan fremgang spores i spillet.',
@@ -19,11 +20,12 @@ export const editorDa = {
     description: 'Beskrivelse',
     descriptionHint: 'Et kort resumé af questens historie eller formål.',
     objectives: 'Mål',
+    objectivesHint:
+      'Alle mål skal fuldføres før aflevering. Genstandsmål har Indstilling ved aflevering — leveringsquests fjerner altid genstande.',
     objective: 'Mål',
     objectiveN: 'Mål {{n}}',
     addObjective: '+ Tilføj mål',
-    multiObjectiveHint:
-      'Spilleren skal fuldføre alle mål nedenfor, før questen afleveres.',
+    multiObjectiveHint: 'Spilleren skal fuldføre alle mål nedenfor, før questen afleveres.',
     turnInHint:
       'Hvert genstandsmål har en Ved aflevering-indstilling nedenfor — vælg om de krævede genstande fjernes fra spillerens inventar, når belønningen hentes. Leveringsquests fjerner altid genstande.',
     objectiveText: 'Måltekst',
@@ -64,8 +66,8 @@ export const editorDa = {
 
   npc: {
     title: 'Questgiver (NPC)',
-    subtitle:
-      'Design landsbyboeren der tilbyder denne quest. De hilser på spillere i nærheden, udleverer questen og modtager afleveringen.',
+    subtitle: "NPC'en der tilbyder og modtager denne quest.",
+    subtitleHint: 'Hilsen, tilbudsdialog, spawnplacering og afleveringsadfærd.',
     identity: 'Identitet',
     npcName: 'NPC-navn',
     npcNameHint: 'Vises svævende over landsbyboeren og i dialog.',
@@ -90,7 +92,8 @@ export const editorDa = {
 
   rewards: {
     title: 'Belønninger',
-    subtitle: 'Hvad spilleren modtager ved fuldførelse. Tilføj så mange du vil.',
+    subtitle: 'Gives ved questfuldførelse.',
+    subtitleHint: 'Tilføj genstande, XP, penge, tilladelser, kommandoer eller job-XP.',
     rewardList: 'Belønningsliste',
     addReward: '+ Tilføj belønning',
     empty: 'Ingen belønninger endnu. Klik "Tilføj belønning" for at oprette en.',
@@ -105,8 +108,7 @@ export const editorDa = {
       'Brug et præcist Minecraft-genstand-id (f.eks. minecraft:diamond). En stavefejl betyder at genstanden stille og roligt ikke gives i spillet.',
     customItemHint:
       'Giver genstanden med dens brugerdefinerede navn, lore og komponenter fra fanen Genstande.',
-    jobXpHint:
-      'Giver bonus job-XP ved questfuldførelse (ud over passiv XP fra handlinger).',
+    jobXpHint: 'Giver bonus job-XP ved questfuldførelse (ud over passiv XP fra handlinger).',
     placeholders: {
       item: 'minecraft:diamond',
       permission: 'group.vip or some.permission.node',
@@ -116,10 +118,10 @@ export const editorDa = {
 
   chain: {
     title: 'Questkæde',
-    subtitleCanvas:
-      'Historierækkefølge sættes på canvas. Brug denne fane til job-gates og opfølgningsadfærd.',
-    subtitleEditor:
-      'Link quests til historielinjer. Foretræk træk-og-forbind i Historieflow; brug felterne nedenfor om nødvendigt.',
+    subtitleCanvas: 'Historierækkefølge er på canvas.',
+    subtitleCanvasHint: 'Brug denne fane til job-gates, auto-start og meddelelser.',
+    subtitleEditor: 'Link quests til historielinjer.',
+    subtitleEditorHint: 'Foretræk træk-og-forbind i Historieflow; dropdowns nedenfor er fallback.',
     storyOrder: 'Historierækkefølge',
     topologyHint:
       'Træk fra højre port på et questkort til en andens venstre port. For at fjerne link: klik på pilen mellem quests, eller brug Fjern link-knapperne nedenfor.',
@@ -128,8 +130,7 @@ export const editorDa = {
     missingQuest: '(manglende quest)',
     jobRequirement: 'Jobkrav',
     requiresJobLevel: 'Kræver jobniveau',
-    requiresJobLevelHint:
-      'Questen forbliver låst, indtil spilleren når det krævede jobniveau.',
+    requiresJobLevelHint: 'Questen forbliver låst, indtil spilleren når det krævede jobniveau.',
     minimumLevel: 'Minimumsniveau',
     noJobsHint: 'Tilføj et job på fanen Jobs for at låse quests efter færdighedsniveau.',
     followUp: 'Opfølgningsadfærd',
@@ -141,16 +142,13 @@ export const editorDa = {
       'Link denne quest til en opfølgning i Historieflow for at bruge auto-start.',
     announcement: 'Meddelelse',
     announceCompletion: 'Meddel fuldførelse til alle',
-    announceHint:
-      'Sender en serveromfattende chatbesked, når en spiller fuldfører denne quest.',
+    announceHint: 'Sender en serveromfattende chatbesked, når en spiller fuldfører denne quest.',
     announceCheckbox: 'Send fuldførelsesmeddelelse',
     manualEdit: 'Manuelt link (dropdowns)',
     requiresQuestFirst: 'Kræver denne quest først',
-    requiresQuestFirstHint:
-      'Denne quest forbliver låst, indtil den valgte quest er fuldført.',
+    requiresQuestFirstHint: 'Denne quest forbliver låst, indtil den valgte quest er fuldført.',
     completingUnlocks: 'Fuldførelse låser op for',
-    completingUnlocksHint:
-      'Når denne quest er færdig, bliver den valgte quest tilgængelig.',
+    completingUnlocksHint: 'Når denne quest er færdig, bliver den valgte quest tilgængelig.',
   },
 
   spawnZone: {
@@ -170,10 +168,8 @@ export const editorDa = {
     spawnRadius: 'Spawnradius (blokke)',
     spawnRadiusHint: 'Mobs spawner inden for denne afstand fra zonecentrum.',
     liveMobCap: 'Levende mob-grænse',
-    liveMobCapKillHint:
-      'Maks. mobs i live i zonen ad gangen. Nye spawner efter drab.',
-    liveMobCapGatherHint:
-      'Maks. mobs i live i zonen ad gangen. Nye spawner når mobs fjernes.',
+    liveMobCapKillHint: 'Maks. mobs i live i zonen ad gangen. Nye spawner efter drab.',
+    liveMobCapGatherHint: 'Maks. mobs i live i zonen ad gangen. Nye spawner når mobs fjernes.',
     dropBehavior: 'Drop-adfærd',
     dropBehaviorHint:
       'Hvilke genstande der droppes, når spillere dræber quest-spawnede mobs i denne zone.',

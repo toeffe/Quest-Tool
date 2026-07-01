@@ -1,20 +1,18 @@
-import { type CustomMob, type CustomMobEquipmentSlot, type CustomMobBossBarColor } from '../types/customMob';
-import { type Project } from '../types/quest';
-import { toIdentifier } from '../types/ids';
 import { normalizeEntityId } from '../data/mobs';
 import { buildVariantNbt } from '../data/mobVariants';
-import { escapeSnbtString } from './text';
+import type { CustomMob, CustomMobBossBarColor, CustomMobEquipmentSlot } from '../types/customMob';
+import { toIdentifier } from '../types/ids';
+import type { Project } from '../types/quest';
 import { namespaced } from './context';
-import { buildZoneDropLootTable, type LootTableJson } from './lootTables';
 import { buildMobPhaseInitHook, resolvePhaseConfig } from './customMobPhases';
+import { buildZoneDropLootTable, type LootTableJson } from './lootTables';
+import { shouldUseDataDrivenVariant, variantSummonSnbtForMob } from './mobSkins';
+import { escapeSnbtString, sanitizeMcComment } from './text';
 
 /** Shared entity tag identifying project custom mobs. */
 export const CUSTOM_MOB_REGISTRY_TAG = 'questtool_mob';
 
-export function findCustomMob(
-  project: Project,
-  id: string | undefined,
-): CustomMob | undefined {
+export function findCustomMob(project: Project, id: string | undefined): CustomMob | undefined {
   if (!id) return undefined;
   return (project.customMobs ?? []).find((m) => m.id === id);
 }
@@ -46,6 +44,7 @@ function datapackNamespace(project: Project, namespace?: string): string {
 /** 1.21.2+ attribute command ids (generic. prefix removed). */
 export const MC_ATTR_MAX_HEALTH = 'minecraft:max_health';
 export const MC_ATTR_ATTACK_DAMAGE = 'minecraft:attack_damage';
+export const MC_ATTR_SCALE = 'minecraft:scale';
 
 /** 1.21.5+ entity attribute list (lowercase keys, no generic. prefix). */
 function attributeFieldsFromConfig(config: ReturnType<typeof resolvePhaseConfig>): string[] {
@@ -55,6 +54,9 @@ function attributeFieldsFromConfig(config: ReturnType<typeof resolvePhaseConfig>
   }
   if (config.damage != null && config.damage > 0) {
     attrs.push(`{id:"attack_damage",base:${config.damage}}`);
+  }
+  if (config.scale != null && config.scale > 0) {
+    attrs.push(`{id:"scale",base:${config.scale}}`);
   }
   return attrs.length ? [`attributes:[${attrs.join(',')}]`] : [];
 }
@@ -75,10 +77,7 @@ function equipmentFieldsFromConfig(config: ReturnType<typeof resolvePhaseConfig>
   }
 
   if (!slotEntries.length) return [];
-  return [
-    `equipment:{${slotEntries.join(',')}}`,
-    `drop_chances:{${dropEntries.join(',')}}`,
-  ];
+  return [`equipment:{${slotEntries.join(',')}}`, `drop_chances:{${dropEntries.join(',')}}`];
 }
 
 function summonConfig(mob: CustomMob, phaseIndex?: number) {
@@ -94,23 +93,31 @@ export function summonCustomMob(
   x: number | string,
   y: number | string,
   z: number | string,
-  opts?: { deathLootTable?: string; extraTags?: string[]; phaseIndex?: number },
+  opts?: {
+    deathLootTable?: string;
+    extraTags?: string[];
+    phaseIndex?: number;
+    namespace?: string;
+  },
 ): string {
   const entity = normalizeEntityId(mob.baseEntity);
   const config = summonConfig(mob, opts?.phaseIndex);
   const allTags = [...customMobTags(mob), ...(opts?.extraTags ?? [])];
-  const tags = allTags
-    .map((t) => `"${escapeSnbtString(t)}"`)
-    .join(',');
+  const tags = allTags.map((t) => `"${escapeSnbtString(t)}"`).join(',');
+  const useSkin = shouldUseDataDrivenVariant(mob, config.skinTexture);
   const fields = [
     `Tags:[${tags}]`,
     `PersistenceRequired:1b`,
     `CustomNameVisible:1b`,
     `CustomName:{text:"${escapeSnbtString(config.displayName)}"}`,
-    ...buildVariantNbt(entity, config.variants),
+    ...(useSkin ? [] : buildVariantNbt(entity, config.variants)),
     ...attributeFieldsFromConfig(config),
     ...equipmentFieldsFromConfig(config),
   ];
+  if (opts?.namespace && useSkin) {
+    const variantField = variantSummonSnbtForMob(mob, opts.namespace, config.skinTexture);
+    if (variantField) fields.push(variantField);
+  }
   if (config.glowing) fields.push('Glowing:1b');
   if (config.health != null && config.health > 0) {
     fields.push(`Health:${config.health}f`);
@@ -159,7 +166,7 @@ export function spawnCustomMobInZone(
   const entity = normalizeEntityId(mob.baseEntity);
   const spread = Math.max(1, radius);
   const lines = [
-    summonCustomMob(mob, x, y, z, { deathLootTable }),
+    summonCustomMob(mob, x, y, z, { deathLootTable, namespace }),
     `spreadplayers ${x} ${z} 1 ${spread} false @e[type=${entity},tag=${mob.tag},distance=..1,limit=1]`,
   ];
   if (namespace) {
@@ -168,13 +175,17 @@ export function spawnCustomMobInZone(
   return lines;
 }
 
-export function buildCustomMobLootTable(
-  project: Project,
-  mob: CustomMob,
-): LootTableJson | null {
+export function buildCustomMobLootTable(project: Project, mob: CustomMob): LootTableJson | null {
   const drops = mob.drops ?? [];
   if (!drops.length) return null;
-  return buildZoneDropLootTable(project, drops);
+  const table = buildZoneDropLootTable(project, drops);
+  const pools = table.pools as unknown[] | undefined;
+  if (!pools?.length) return null;
+  return table;
+}
+
+export function mobHasValidDrops(project: Project, mob: CustomMob): boolean {
+  return buildCustomMobLootTable(project, mob) != null;
 }
 
 export function buildCustomMobLootTableFiles(
@@ -185,8 +196,7 @@ export function buildCustomMobLootTableFiles(
   for (const mob of project.customMobs ?? []) {
     const table = buildCustomMobLootTable(project, mob);
     if (!table) continue;
-    files[customMobLootTablePath(namespace, mob.tag)] =
-      JSON.stringify(table, null, 2) + '\n';
+    files[customMobLootTablePath(namespace, mob.tag)] = JSON.stringify(table, null, 2) + '\n';
   }
   return files;
 }
@@ -194,22 +204,21 @@ export function buildCustomMobLootTableFiles(
 export function resolveCustomMobDeathLootTable(
   mob: CustomMob,
   namespace: string,
+  project?: Project,
 ): string | undefined {
   if (!mob.drops?.length) return undefined;
+  if (project && !mobHasValidDrops(project, mob)) return undefined;
   return customMobLootTableId(namespace, mob.tag);
 }
 
-export function buildGiveCustomMobsFunction(
-  project: Project,
-  namespace?: string,
-): string | null {
+export function buildGiveCustomMobsFunction(project: Project, namespace?: string): string | null {
   const mobs = project.customMobs ?? [];
   if (!mobs.length) return null;
   const ns = datapackNamespace(project, namespace);
   const lines = ['# Spawn one of each custom mob in front of the executing player (testing)'];
   for (const mob of mobs) {
-    const loot = resolveCustomMobDeathLootTable(mob, ns);
-    lines.push(summonCustomMob(mob, '~', '~1', '~', { deathLootTable: loot }));
+    const loot = resolveCustomMobDeathLootTable(mob, ns, project);
+    lines.push(summonCustomMob(mob, '~', '~1', '~', { deathLootTable: loot, namespace: ns }));
     lines.push(...buildMobPhaseInitHook(mob, ns, { atExecutor: true }));
   }
   return lines.join('\n') + '\n';
@@ -222,11 +231,11 @@ export function buildSpawnMobFunctions(
   const files: Record<string, string> = {};
   const ns = datapackNamespace(project, namespace);
   for (const mob of project.customMobs ?? []) {
-    const loot = resolveCustomMobDeathLootTable(mob, ns);
+    const loot = resolveCustomMobDeathLootTable(mob, ns, project);
     const content =
       [
-        `# Spawn custom mob "${mob.name}" at the executing player`,
-        summonCustomMob(mob, '~', '~1', '~', { deathLootTable: loot }),
+        `# Spawn custom mob "${sanitizeMcComment(mob.name)}" at the executing player`,
+        summonCustomMob(mob, '~', '~1', '~', { deathLootTable: loot, namespace: ns }),
         ...buildMobPhaseInitHook(mob, ns, { atExecutor: true }),
       ].join('\n') + '\n';
     files[`spawn_mob/${mob.tag}.mcfunction`] = content;
@@ -235,10 +244,7 @@ export function buildSpawnMobFunctions(
 }
 
 /** Human-readable label for kill objectives referencing a custom mob. */
-export function customMobDisplayLabel(
-  project: Project,
-  eliteMobId: string | undefined,
-): string {
+export function customMobDisplayLabel(project: Project, eliteMobId: string | undefined): string {
   if (!eliteMobId) return 'custom mob';
   const mob = findCustomMob(project, eliteMobId);
   return mob?.displayName || mob?.name || 'custom mob';

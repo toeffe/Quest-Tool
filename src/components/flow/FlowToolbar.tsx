@@ -1,6 +1,11 @@
 import { Panel } from '@xyflow/react';
 import { useTranslation } from 'react-i18next';
-import { dismissFlowLegend, dismissFlowTip, isFlowLegendDismissed, isFlowTipDismissed } from './flowStorage';
+import {
+  dismissFlowLegend,
+  dismissFlowTip,
+  isFlowLegendDismissed,
+  isFlowTipDismissed,
+} from './flowStorage';
 
 interface Props {
   questCount: number;
@@ -47,10 +52,20 @@ export function FlowToolbar({
     <>
       <Panel position="top-center" className="flow-toolbar-panel">
         <div className="flow-toolbar">
-          <button type="button" className="btn small" onClick={onAutoArrange} title={t('toolbar.autoArrangeTitle')}>
+          <button
+            type="button"
+            className="btn small"
+            onClick={onAutoArrange}
+            title={t('toolbar.autoArrangeTitle')}
+          >
             {t('toolbar.autoArrange')}
           </button>
-          <button type="button" className="btn small" onClick={onFitView} title={t('toolbar.fitViewTitle')}>
+          <button
+            type="button"
+            className="btn small"
+            onClick={onFitView}
+            title={t('toolbar.fitViewTitle')}
+          >
             {t('toolbar.fitView')}
           </button>
           <button
@@ -90,7 +105,9 @@ export function FlowToolbar({
           <span className="flow-toolbar-status muted">
             {t('toolbar.questCount', { count: questCount })}
             {errorCount > 0 && ` · ${t('toolbar.errorCount', { count: errorCount })}`}
-            {errorCount === 0 && warningCount > 0 && ` · ${t('toolbar.warningCount', { count: warningCount })}`}
+            {errorCount === 0 &&
+              warningCount > 0 &&
+              ` · ${t('toolbar.warningCount', { count: warningCount })}`}
             {errorNavLabel}
           </span>
         </div>
@@ -99,9 +116,7 @@ export function FlowToolbar({
       {showTip && (
         <Panel position="top-left">
           <div className="flow-tip flow-tip-dismissible">
-            <span>
-              {questCount <= 1 ? t('tips.singleQuest') : t('tips.multiQuest')}
-            </span>
+            <span>{questCount <= 1 ? t('tips.singleQuest') : t('tips.multiQuest')}</span>
             <button
               type="button"
               className="flow-tip-dismiss"
@@ -128,6 +143,10 @@ export function FlowToolbar({
               <li>{t('legend.arrowStyles')}</li>
               <li>{t('legend.startLocked')}</li>
               <li>{t('legend.clickStep')}</li>
+              <li>{t('legend.worldEdges')}</li>
+              <li>{t('legend.dungeonDimension')}</li>
+              <li>{t('legend.padPorts')}</li>
+              <li>{t('legend.clickWorldNode')}</li>
             </ul>
             <button
               type="button"

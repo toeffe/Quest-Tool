@@ -1,55 +1,62 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
-  ReactFlow,
-  ReactFlowProvider,
   Background,
-  Controls,
-  MiniMap,
-  MarkerType,
-  useReactFlow,
   type Connection,
+  Controls,
   type Edge,
   type EdgeTypes,
+  MarkerType,
+  MiniMap,
   type Node,
   type NodeChange,
   type NodeTypes,
+  ReactFlow,
+  ReactFlowProvider,
+  useReactFlow,
 } from '@xyflow/react';
-import { type Project, type Quest } from '../../types/quest';
-import { type ValidationIssue } from '../../generator/validate';
-import { type EditorTab } from '../editor/ValidationBar';
-import { QuestNode } from './QuestNode';
-import { DungeonNode } from './DungeonNode';
-import { DimensionNode } from './DimensionNode';
-import { PadNode } from './PadNode';
-import { GenerateNode } from './GenerateNode';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { ValidationIssue } from '../../generator/validate';
+import { registerFlowShortcuts } from '../../hooks/flowShortcuts';
+import type { Project, Quest } from '../../types/quest';
+import type { EditorTab } from '../editor/ValidationBar';
 import { BrokenRefNode } from './BrokenRefNode';
-import { InspectorPanel, type InspectorTarget } from './InspectorPanel';
-import { FlowToolbar } from './FlowToolbar';
-import { StoryEdge } from './StoryEdge';
 import { CategoryLanes } from './CategoryLanes';
-import { type PlaythroughStep, isStoryStart } from './questPlaythrough';
-import { showFlowToast } from './flowToast';
+import { ChainEdgePopover, isEditableStoryEdge } from './ChainEdgePopover';
 import {
-  GENERATE_NODE_ID,
   collectBrokenStubs,
   connectFailureMessage,
   connectQuests,
   disconnectQuests,
+  disconnectWorldEdge,
   dungeonFlowEdges,
+  GENERATE_NODE_ID,
   generateEdges,
   getConnectFailureReason,
-  isBrokenNodeId,
-  isDungeonNodeId,
-  isDimensionNodeId,
-  isPadNodeId,
   isAuxiliaryFlowNodeId,
+  isBrokenNodeId,
+  isDimensionNodeId,
+  isDungeonNodeId,
+  isOverworldNodeId,
+  isPadNodeId,
+  isWorldStoryEdge,
+  needsOverworldAnchor,
+  OVERWORLD_NODE_ID,
   questsToEdges,
+  type FlowEdgeData,
+  worldFlowEdges,
 } from './chainEdges';
-import { useUIStore } from '../../store/uiStore';
-import { layeredLayout, placeBrokenStubs, type XY } from './layout';
-import { ChainEdgePopover, isChainStoryEdge } from './ChainEdgePopover';
-import { registerFlowShortcuts } from '../../hooks/flowShortcuts';
+import { DimensionNode } from './DimensionNode';
+import { DungeonNode } from './DungeonNode';
+import { FlowToolbar } from './FlowToolbar';
+import { showFlowToast } from './flowToast';
+import { GenerateNode } from './GenerateNode';
+import { InspectorPanel, type InspectorTarget } from './InspectorPanel';
+import { fullFlowLayout, placeBrokenStubs, type XY } from './layout';
+import { OverworldNode } from './OverworldNode';
+import { PadNode } from './PadNode';
+import { QuestNode } from './QuestNode';
+import { isStoryStart, type PlaythroughStep } from './questPlaythrough';
+import { StoryEdge } from './StoryEdge';
 
 interface Props {
   project: Project;
@@ -65,6 +72,7 @@ const nodeTypes: NodeTypes = {
   dungeon: DungeonNode,
   dimension: DimensionNode,
   pad: PadNode,
+  overworld: OverworldNode,
   generate: GenerateNode,
   broken: BrokenRefNode,
 } as unknown as NodeTypes;
@@ -74,7 +82,7 @@ const edgeTypes: EdgeTypes = {
 } as unknown as EdgeTypes;
 
 function seedPositions(project: Project, edges: Edge[]): Map<string, XY> {
-  const layout = layeredLayout(project.quests, edges);
+  const layout = fullFlowLayout(project, edges);
   const stored = project.flowPositions ?? {};
   const stubs = collectBrokenStubs(project.quests);
   const ids = [
@@ -85,6 +93,7 @@ function seedPositions(project: Project, edges: Edge[]): Map<string, XY> {
     ...stubs.map((s) => s.id),
     GENERATE_NODE_ID,
   ];
+  if (needsOverworldAnchor(project)) ids.push(OVERWORLD_NODE_ID);
   const map = new Map<string, XY>();
   for (const id of ids) {
     map.set(id, stored[id] ?? layout.get(id) ?? { x: 0, y: 0 });
@@ -109,20 +118,16 @@ function FlowCanvasInner({
 }: Props) {
   const { t } = useTranslation('flow');
   const { fitView } = useReactFlow();
-  const setActiveView = useUIStore((s) => s.setActiveView);
-  const setDimensionsFocus = useUIStore((s) => s.setDimensionsFocus);
-  const setDungeonsFocus = useUIStore((s) => s.setDungeonsFocus);
   const storyEdges = useMemo(() => questsToEdges(project.quests), [project.quests]);
   const dungeonEdges = useMemo(() => dungeonFlowEdges(project), [project]);
+  const worldEdges = useMemo(() => worldFlowEdges(project), [project]);
   const edges = useMemo<Edge[]>(
-    () => [...storyEdges, ...dungeonEdges, ...generateEdges(project.quests)],
-    [project, storyEdges, dungeonEdges],
+    () => [...storyEdges, ...dungeonEdges, ...worldEdges, ...generateEdges(project.quests)],
+    [project, storyEdges, dungeonEdges, worldEdges],
   );
   const brokenStubs = useMemo(() => collectBrokenStubs(project.quests), [project.quests]);
 
-  const [positions, setPositions] = useState<Map<string, XY>>(() =>
-    seedPositions(project, edges),
-  );
+  const [positions, setPositions] = useState<Map<string, XY>>(() => seedPositions(project, edges));
   const [inspector, setInspector] = useState<InspectorTarget>(null);
   const [showMinimap, setShowMinimap] = useState(true);
   const [errorsOnly, setErrorsOnly] = useState(false);
@@ -144,6 +149,28 @@ function FlowCanvasInner({
   const errorCount = issues.filter((i) => i.level === 'error').length;
   const warningCount = issues.filter((i) => i.level === 'warning').length;
 
+  const questHasError = useCallback(
+    (questId: string) => issues.some((i) => i.questId === questId && i.level === 'error'),
+    [issues],
+  );
+
+  const worldNodeHasError = useCallback(
+    (nodeId: string) => {
+      if (isOverworldNodeId(nodeId)) return false;
+      if (isDungeonNodeId(project, nodeId)) {
+        return issues.some((i) => i.dungeonId === nodeId && i.level === 'error');
+      }
+      if (isDimensionNodeId(project, nodeId)) {
+        return issues.some((i) => i.dimensionId === nodeId && !i.teleportPadId && i.level === 'error');
+      }
+      if (isPadNodeId(project, nodeId)) {
+        return issues.some((i) => i.teleportPadId === nodeId && i.level === 'error');
+      }
+      return false;
+    },
+    [project, issues],
+  );
+
   useEffect(() => {
     setPositions((prev) => {
       const needed = [
@@ -154,10 +181,11 @@ function FlowCanvasInner({
         ...brokenStubs.map((s) => s.id),
         GENERATE_NODE_ID,
       ];
+      if (needsOverworldAnchor(project)) needed.push(OVERWORLD_NODE_ID);
       const missing = needed.some((id) => !prev.has(id));
-      const stale = [...prev.keys()].some((id) => !needed.includes(id));
+      const stale = [...prev.keys()].some((id) => !needed.includes(id) && !isBrokenNodeId(id));
       if (!missing && !stale) return prev;
-      const fresh = layeredLayout(project.quests, edges);
+      const fresh = fullFlowLayout(project, edges);
       const stored = project.flowPositions ?? {};
       const next = new Map<string, XY>();
       for (const id of needed) {
@@ -176,16 +204,28 @@ function FlowCanvasInner({
         }
       }
       if (!next.has(GENERATE_NODE_ID)) {
-        next.set(GENERATE_NODE_ID, prev.get(GENERATE_NODE_ID) ?? fresh.get(GENERATE_NODE_ID) ?? { x: 0, y: 0 });
+        next.set(
+          GENERATE_NODE_ID,
+          prev.get(GENERATE_NODE_ID) ?? fresh.get(GENERATE_NODE_ID) ?? { x: 0, y: 0 },
+        );
       }
       return next;
     });
-  }, [project.quests, project.flowPositions, edges, brokenStubs]);
+  }, [project, project.flowPositions, edges, brokenStubs]);
 
-  const questHasError = useCallback(
-    (questId: string) => issues.some((i) => i.questId === questId && i.level === 'error'),
-    [issues],
-  );
+  const visibleWorldNodeIds = useMemo(() => {
+    if (!errorsOnly) return null;
+    const visible = new Set<string>();
+    for (const edge of [...dungeonEdges, ...worldEdges]) {
+      const srcErr = questHasError(edge.source) || worldNodeHasError(edge.source);
+      const tgtErr = questHasError(edge.target) || worldNodeHasError(edge.target);
+      if (srcErr || tgtErr) {
+        visible.add(edge.source);
+        visible.add(edge.target);
+      }
+    }
+    return visible;
+  }, [errorsOnly, dungeonEdges, worldEdges, questHasError, worldNodeHasError]);
 
   const panToQuest = useCallback(
     (questId: string) => {
@@ -243,6 +283,12 @@ function FlowCanvasInner({
     const inspectorQuestId = inspector?.kind === 'quest' ? inspector.questId : null;
     const selectedStepId = inspector?.kind === 'quest' ? inspector.stepId : undefined;
 
+    const isWorldHidden = (nodeId: string) =>
+      errorsOnly &&
+      !worldNodeHasError(nodeId) &&
+      visibleWorldNodeIds !== null &&
+      !visibleWorldNodeIds.has(nodeId);
+
     const questNodes: Node[] = project.quests.map((quest) => ({
       id: quest.id,
       type: 'quest',
@@ -281,47 +327,67 @@ function FlowCanvasInner({
       },
     };
 
-    const dungeonNodes: Node[] = (project.dungeons ?? []).map((dungeon, i) => ({
+    const dungeonNodes: Node[] = (project.dungeons ?? []).map((dungeon) => ({
       id: dungeon.id,
       type: 'dungeon',
-      position: positions.get(dungeon.id) ?? { x: 400, y: 80 + i * 140 },
-      hidden: errorsOnly && !issues.some((i) => i.dungeonId === dungeon.id && i.level === 'error'),
+      position: positions.get(dungeon.id) ?? { x: 400, y: 80 },
+      hidden: isWorldHidden(dungeon.id),
       data: {
         dungeon,
         project,
         issues: issues.filter((i) => i.dungeonId === dungeon.id),
-        isSelected: false,
+        isSelected: inspector?.kind === 'dungeon' && inspector.dungeonId === dungeon.id,
       },
     }));
 
-    const dimensionNodes: Node[] = (project.dimensions ?? []).map((dimension, i) => ({
+    const dimensionNodes: Node[] = (project.dimensions ?? []).map((dimension) => ({
       id: dimension.id,
       type: 'dimension',
-      position: positions.get(dimension.id) ?? { x: 720, y: 80 + i * 120 },
-      hidden:
-        errorsOnly && !issues.some((i) => i.dimensionId === dimension.id && i.level === 'error'),
+      position: positions.get(dimension.id) ?? { x: 720, y: 80 },
+      hidden: isWorldHidden(dimension.id),
       data: {
         dimension,
         issues: issues.filter((i) => i.dimensionId === dimension.id && !i.teleportPadId),
-        isSelected: false,
+        isSelected: inspector?.kind === 'dimension' && inspector.dimensionId === dimension.id,
       },
     }));
 
-    const padNodes: Node[] = (project.teleportPads ?? []).map((pad, i) => ({
+    const padNodes: Node[] = (project.teleportPads ?? []).map((pad) => ({
       id: pad.id,
       type: 'pad',
-      position: positions.get(pad.id) ?? { x: 720, y: 320 + i * 120 },
-      hidden:
-        errorsOnly && !issues.some((i) => i.teleportPadId === pad.id && i.level === 'error'),
+      position: positions.get(pad.id) ?? { x: 720, y: 320 },
+      hidden: isWorldHidden(pad.id),
       data: {
         pad,
         dimensions: project.dimensions ?? [],
         issues: issues.filter((i) => i.teleportPadId === pad.id),
-        isSelected: false,
+        isSelected: inspector?.kind === 'pad' && inspector.padId === pad.id,
       },
     }));
 
-    return [...questNodes, ...dungeonNodes, ...dimensionNodes, ...padNodes, ...stubNodes, generateNode];
+    const overworldNode: Node | null = needsOverworldAnchor(project)
+      ? {
+          id: OVERWORLD_NODE_ID,
+          type: 'overworld',
+          position: positions.get(OVERWORLD_NODE_ID) ?? { x: 720, y: 80 },
+          draggable: false,
+          selectable: false,
+          hidden: isWorldHidden(OVERWORLD_NODE_ID),
+          data: {
+            isSelected: false,
+          },
+        }
+      : null;
+
+    return [
+      ...questNodes,
+      ...dungeonNodes,
+      ...dimensionNodes,
+      ...padNodes,
+      ...(overworldNode ? [overworldNode] : []),
+      ...stubNodes,
+      generateNode,
+    ];
   }, [
     project,
     positions,
@@ -331,6 +397,8 @@ function FlowCanvasInner({
     inspector,
     errorsOnly,
     questHasError,
+    worldNodeHasError,
+    visibleWorldNodeIds,
     errorCount,
     warningCount,
     brokenStubs,
@@ -357,14 +425,31 @@ function FlowCanvasInner({
   const onConnect = useCallback(
     (connection: Connection) => {
       if (!connection.source || !connection.target) return;
-      const reason = getConnectFailureReason(project, connection.source, connection.target);
+      const reason = getConnectFailureReason(
+        project,
+        connection.source,
+        connection.target,
+        connection.sourceHandle,
+      );
       if (reason) {
         showFlowToast(connectFailureMessage(reason));
         return;
       }
-      onChangeProject(connectQuests(project, connection.source, connection.target));
+      const preferredRoomId =
+        inspector?.kind === 'dungeon' && inspector.dungeonId === connection.target
+          ? inspector.roomId
+          : undefined;
+      onChangeProject(
+        connectQuests(
+          project,
+          connection.source,
+          connection.target,
+          connection.sourceHandle,
+          preferredRoomId,
+        ),
+      );
     },
-    [project, onChangeProject],
+    [project, onChangeProject, inspector],
   );
 
   const onEdgesDelete = useCallback(
@@ -373,6 +458,16 @@ function FlowCanvasInner({
       let next = project;
       for (const edge of deleted) {
         if (isBrokenNodeId(edge.source) || isBrokenNodeId(edge.target)) continue;
+        if (isWorldStoryEdge(edge)) {
+          const data = edge.data as FlowEdgeData | undefined;
+          next = disconnectWorldEdge(
+            next,
+            edge.source,
+            edge.target,
+            data?.worldEndpoint,
+          );
+          continue;
+        }
         if (isDungeonNodeId(project, edge.target)) {
           next = disconnectQuests(next, edge.source, edge.target);
           continue;
@@ -385,12 +480,12 @@ function FlowCanvasInner({
   );
 
   const relayout = useCallback(() => {
-    const fresh = layeredLayout(project.quests, edges);
+    const fresh = fullFlowLayout(project, edges);
     placeBrokenStubs(fresh, brokenStubs);
     setPositions(fresh);
     persistPositions(fresh);
     window.setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50);
-  }, [project.quests, edges, brokenStubs, persistPositions, fitView]);
+  }, [project, edges, brokenStubs, persistPositions, fitView]);
 
   const handleFitView = useCallback(() => {
     fitView({ padding: 0.2, duration: 300 });
@@ -432,16 +527,19 @@ function FlowCanvasInner({
     [project, onChangeProject],
   );
 
-  const handleEdgeClick = useCallback((event: React.MouseEvent, edge: Edge) => {
-    if (!isChainStoryEdge(edge)) return;
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    setEdgeMenu({
-      edge,
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
-    });
-  }, []);
+  const handleEdgeClick = useCallback(
+    (event: React.MouseEvent, edge: Edge) => {
+      if (!isEditableStoryEdge(edge, project)) return;
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setEdgeMenu({
+        edge,
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      });
+    },
+    [project],
+  );
 
   useEffect(() => {
     return registerFlowShortcuts({
@@ -500,15 +598,14 @@ function FlowCanvasInner({
             }
             if (node.id === GENERATE_NODE_ID) {
               setInspector({ kind: 'generate' });
+            } else if (isOverworldNodeId(node.id)) {
+              return;
             } else if (isDungeonNodeId(project, node.id)) {
-              setDungeonsFocus(node.id);
-              setActiveView('dungeons');
+              setInspector({ kind: 'dungeon', dungeonId: node.id });
             } else if (isDimensionNodeId(project, node.id)) {
-              setDimensionsFocus({ kind: 'dimension', id: node.id });
-              setActiveView('dimensions');
+              setInspector({ kind: 'dimension', dimensionId: node.id });
             } else if (isPadNodeId(project, node.id)) {
-              setDimensionsFocus({ kind: 'pad', id: node.id });
-              setActiveView('dimensions');
+              setInspector({ kind: 'pad', padId: node.id });
             } else if (!isAuxiliaryFlowNodeId(project, node.id)) {
               focusQuest(node.id);
             }

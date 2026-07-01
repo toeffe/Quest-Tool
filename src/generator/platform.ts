@@ -1,12 +1,10 @@
-import { type Platform, type Reward } from '../types/quest';
-import { type CompileContext } from './context';
-import { SYS_OBJECTIVE } from './sys';
-import { actionbar, tellraw, type TextPart } from './text';
-import { namespaced } from './context';
+import i18n, { getAppLocale } from '../i18n';
+import type { AppLocale } from '../i18n/types';
+import type { Platform, Reward } from '../types/quest';
+import { type CompileContext, namespaced } from './context';
 import { buildGiveCommand } from './items';
-import i18n from '../i18n';
-import { type AppLocale } from '../i18n/types';
-import { getAppLocale } from '../i18n';
+import { SYS_OBJECTIVE } from './sys';
+import { actionbar, type TextPart, tellraw } from './text';
 
 /**
  * Per-platform handling of rewards that depend on external systems

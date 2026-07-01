@@ -1,7 +1,6 @@
-import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type Project, type Quest } from '../types/quest';
-import { validateProject } from '../generator/validate';
+import { useQuestIssues } from '../hooks/useValidation';
+import type { Project, Quest } from '../types/quest';
 
 interface Props {
   project: Project;
@@ -13,20 +12,20 @@ interface Props {
  * Generate step runs, so problems are visible while editing instead of only at
  * export time.
  */
-export function QuestChecklist({ project, quest }: Props) {
+export function QuestChecklist({ project: _project, quest }: Props) {
   const { t } = useTranslation('editor');
   const { t: tc } = useTranslation('common');
-  const issues = useMemo(
-    () => validateProject(project).filter((i) => i.questId === quest.id),
-    [project, quest.id],
-  );
+  const issues = useQuestIssues(quest.id);
 
   const errors = issues.filter((i) => i.level === 'error');
   const warnings = issues.filter((i) => i.level === 'warning');
 
   return (
     <div className="checklist">
-      <div className="row-between" style={{ marginBottom: errors.length || warnings.length ? 10 : 0 }}>
+      <div
+        className="row-between"
+        style={{ marginBottom: errors.length || warnings.length ? 10 : 0 }}
+      >
         <strong className="checklist-title">{t('checklist.title')}</strong>
         {errors.length === 0 ? (
           <span className="badge ok">{tc('actions.ready')}</span>

@@ -1,9 +1,11 @@
-import { type Project } from '../types/quest';
 import { tellraw } from '../generator/text';
+import { defaultsT } from '../i18n/useLabels';
+import type { Project } from '../types/quest';
 import { TEST_DATAPACK_NAMESPACE, TEST_DATAPACK_SURFACE_Y } from './testDatapackConstants';
 import { JOB_STATION_LABELS, JOB_STATION_X } from './testDatapackStations';
 
 const NS = TEST_DATAPACK_NAMESPACE;
+const tEn = defaultsT('en');
 
 function line(text: string, color = 'gray'): string {
   return tellraw('@s', [{ text, color }]);
@@ -31,7 +33,10 @@ export function generateTestGuideLines(project: Project): string[] {
 
   for (const station of JOB_STATION_LABELS) {
     lines.push(
-      line(`• ${station.name} @ ${JOB_STATION_X}, ${TEST_DATAPACK_SURFACE_Y}, ${station.z}`, 'yellow'),
+      line(
+        `• ${tEn(`starterJobs.${station.nameKey}`)} @ ${JOB_STATION_X}, ${TEST_DATAPACK_SURFACE_Y}, ${station.z}`,
+        'yellow',
+      ),
       line(`  ${station.action}`, 'gray'),
     );
   }

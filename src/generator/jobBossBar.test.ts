@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest';
+import { createProject, createStarterJobs } from '../types/factory';
 import { buildContext } from './context';
 import {
+  buildBossBarExtendVisibilityLines,
+  buildBossBarTickLines,
   buildJobBossBarSetupLines,
   buildJobBossBarSupportFiles,
   buildUpdateProgressBarLines,
-  buildBossBarExtendVisibilityLines,
-  buildBossBarTickLines,
-  playerBossBarId,
   MAX_PLAYER_PROGRESS_BARS,
+  playerBossBarId,
   QT_BB_UNTIL_OBJECTIVE,
 } from './jobBossBar';
-import { compileJob, buildJobsTickFunction } from './jobFunctions';
-import { createProject, createStarterJobs } from '../types/factory';
+import { buildJobsTickFunction, compileJob } from './jobFunctions';
 
 function ctxWithJobs() {
   const project = createProject('BossBar');
@@ -33,9 +33,9 @@ describe('jobBossBar', () => {
     const ctx = ctxWithJobs();
     const lines = buildJobBossBarSetupLines(ctx);
     expect(lines.some((l) => l.includes('scoreboard objectives add qt_pid'))).toBe(true);
-    expect(lines.some((l) => l.includes(`scoreboard objectives add ${QT_BB_UNTIL_OBJECTIVE}`))).toBe(
-      true,
-    );
+    expect(
+      lines.some((l) => l.includes(`scoreboard objectives add ${QT_BB_UNTIL_OBJECTIVE}`)),
+    ).toBe(true);
     expect(lines.filter((l) => l.includes('bossbar add')).length).toBe(MAX_PLAYER_PROGRESS_BARS);
     expect(lines.some((l) => l.includes('unless score #qt_next_pid'))).toBe(true);
   });

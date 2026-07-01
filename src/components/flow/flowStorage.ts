@@ -28,7 +28,10 @@ export function setFlowInspectorWidth(width: number): void {
 }
 
 export function clampInspectorWidth(width: number): number {
-  const max = typeof window !== 'undefined' ? Math.min(MAX_INSPECTOR_WIDTH, window.innerWidth * 0.6) : MAX_INSPECTOR_WIDTH;
+  const max =
+    typeof window !== 'undefined'
+      ? Math.min(MAX_INSPECTOR_WIDTH, window.innerWidth * 0.6)
+      : MAX_INSPECTOR_WIDTH;
   return Math.min(max, Math.max(MIN_INSPECTOR_WIDTH, width));
 }
 

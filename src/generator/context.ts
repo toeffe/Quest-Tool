@@ -1,11 +1,11 @@
-import { type Project, type Quest } from '../types/quest';
-import { type CustomItem } from '../types/item';
-import { type CustomMob } from '../types/customMob';
-import { type Job } from '../types/job';
-import { type AppLocale } from '../i18n/types';
+import type { AppLocale } from '../i18n/types';
+import type { CustomMob } from '../types/customMob';
 import { toIdentifier } from '../types/ids';
+import type { CustomItem } from '../types/item';
+import type { Job } from '../types/job';
+import type { Project, Quest } from '../types/quest';
 import { resolveJobStatCriteria } from './jobStats';
-import { getDatapackStrings, type DatapackStrings } from './strings';
+import { type DatapackStrings, getDatapackStrings } from './strings';
 
 /**
  * Stable, short identifiers for a quest's scoreboard objectives and entity tags.

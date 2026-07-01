@@ -37,6 +37,10 @@ export const flowDa = {
     arrowStyles: 'Solid pil — historien fortsætter · stiplet — kun forudsætning',
     startLocked: 'START — indgangsquest · LÅST — kræver forudsætning',
     clickStep: 'Klik på et gennemspilningstrin for at redigere',
+    worldEdges: 'Cyan stiplet — dimensionlinks for dungeon/pude',
+    dungeonDimension: 'Dungeons højre port (→) til dimension — sæt hjemmedimension',
+    padPorts: 'Pude venstre = fra-dimension · højre = til-dimension',
+    clickWorldNode: 'Klik dungeon, dimension eller pude — rediger i inspektøren',
     dismissAria: 'Luk forklaring',
   },
 
@@ -44,7 +48,12 @@ export const flowDa = {
     exportTitle: 'Eksport',
     closeTitle: 'Luk',
     fullEditorTitle: 'Åbn denne quest i den fulde editor',
+    fullDimensionsTitle: 'Åbn i Dimensions-editoren',
+    fullDungeonsTitle: 'Åbn i Dungeons-editoren',
     untitledQuest: 'Quest uden titel',
+    untitledDimension: 'Dimension uden titel',
+    untitledPad: 'Pude uden titel',
+    untitledDungeon: 'Dungeon uden titel',
   },
 
   edges: {
@@ -53,11 +62,18 @@ export const flowDa = {
     autoStarts: 'Auto-starter',
     missingQuest: 'Manglende quest',
     gates: 'Quest-gate',
+    inDimension: 'I dimension',
+    padFrom: 'Fra',
+    padTo: 'Til',
     popoverTitle: 'Kædelink',
     popoverAria: 'Indstillinger for kædelink',
     popoverRoute: '{{source}} → {{target}}',
+    gatePopoverTitle: 'Quest-gate',
+    gatePopoverAria: 'Indstillinger for quest-gate',
+    gatePopoverRoute: '{{quest}} → {{dungeon}}',
     autoStartNext: 'Auto-start næste quest',
     unlinkQuests: 'Fjern link mellem quests',
+    unlinkGate: 'Fjern quest-gate',
     unlinkHint: 'Tip: vælg pilen og tryk Delete eller Backspace for at fjerne linket.',
     untitled: 'Uden titel',
     clickToUnlink: 'klik for at fjerne link',
@@ -66,12 +82,11 @@ export const flowDa = {
   connect: {
     cycle: 'Kan ikke linke disse quests — det ville skabe en cirkulær afhængighed.',
     self: 'En quest kan ikke linke til sig selv.',
-    generate:
-      'Træk mellem questkort for at linke dem. Eksportknuden forbindes automatisk.',
+    generate: 'Træk mellem questkort for at linke dem. Eksportknuden forbindes automatisk.',
     missing: 'Kunne ikke linke — en af quests blev ikke fundet.',
     broken: 'Kan ikke forbinde til en ødelagt kædereference.',
-    fixBrokenRef:
-      'Ret det manglende questnavn på fanen Kæde i den linkede quest.',
+    worldTarget: 'Træk dungeons eller puder til en dimensionsnode for at tildele dimension.',
+    fixBrokenRef: 'Ret det manglende questnavn på fanen Kæde i den linkede quest.',
   },
 
   questNode: {
@@ -98,21 +113,33 @@ export const flowDa = {
   dungeonNode: {
     untitled: 'Dungeon uden titel',
     typeLabel: 'Dungeon',
-    handleInTitle: 'Slip et quest-link her for at sætte quest-gate på alle rum',
+    handleInTitle: 'Slip et quest-link her for at sætte quest-gate på første rum',
+    handleDimensionTitle: 'Træk til en dimension for at sætte dungeonens hjemmedimension',
     roomCount: '{{count}} rum',
     roomCount_plural: '{{count}} rum',
+    inDimension: 'I {{dimension}}',
     missingMobTitle: 'Et rum-spawn refererer til en slettet brugerdefineret mob',
   },
 
   dimensionNode: {
     untitled: 'Dimension uden titel',
     typeLabel: 'Dimension',
+    handleInTitle: 'Slip et dungeon- eller pudelink her for at tildele denne dimension',
   },
 
   padNode: {
     untitled: 'Pude uden titel',
     typeLabel: 'Teleportpude',
     route: '{{from}} → {{to}}',
+    handleFromTitle: 'Træk til en dimension — pudeoprindelse (fra)',
+    handleToTitle: 'Træk til en dimension — pudemål (til)',
+  },
+
+  overworldNode: {
+    title: 'Overworld',
+    typeLabel: 'Dimension',
+    hint: 'Standard Minecraft-overworld',
+    handleInTitle: 'Slip et dungeon- eller pudelink her for overworld',
   },
 
   generateNode: {
@@ -163,8 +190,7 @@ export const flowDa = {
     daily: 'Fuldfør daglig: {{amount}} {{target}}',
     talkGiver: 'Tal med questgiveren',
     objectiveN: 'Mål {{n}}',
-    zoneDetail:
-      'Zone @ ({{x}}, {{y}}, {{z}}) r={{radius}} cap={{cap}}',
+    zoneDetail: 'Zone @ ({{x}}, {{y}}, {{z}}) r={{radius}} cap={{cap}}',
     withinBlocks: 'Inden for {{radius}} blokke',
   },
 } as const;

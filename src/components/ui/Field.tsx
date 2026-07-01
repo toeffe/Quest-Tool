@@ -1,17 +1,31 @@
-import { type ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { HintTooltip } from './HintTooltip';
 
 interface FieldProps {
   label: string;
   hint?: string;
+  /** Critical inline text shown below the control (warnings, behavior notes). */
+  note?: string;
   children: ReactNode;
 }
 
-export function Field({ label, hint, children }: FieldProps) {
+export function FieldLabel({ label, hint }: { label: string; hint?: string }) {
+  return (
+    <span className="field-label-row">
+      <span>{label}</span>
+      {hint && <HintTooltip text={hint} label={label} />}
+    </span>
+  );
+}
+
+export function Field({ label, hint, note, children }: FieldProps) {
   return (
     <div className="field">
-      <label>{label}</label>
+      <label>
+        <FieldLabel label={label} hint={hint} />
+      </label>
       {children}
-      {hint && <div className="hint">{hint}</div>}
+      {note && <div className="field-note">{note}</div>}
     </div>
   );
 }
@@ -19,19 +33,16 @@ export function Field({ label, hint, children }: FieldProps) {
 interface TextInputProps {
   label: string;
   hint?: string;
+  note?: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
 }
 
-export function TextInput({ label, hint, value, onChange, placeholder }: TextInputProps) {
+export function TextInput({ label, hint, note, value, onChange, placeholder }: TextInputProps) {
   return (
-    <Field label={label} hint={hint}>
-      <input
-        value={value}
-        placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-      />
+    <Field label={label} hint={hint} note={note}>
+      <input value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
     </Field>
   );
 }
@@ -39,14 +50,15 @@ export function TextInput({ label, hint, value, onChange, placeholder }: TextInp
 interface TextAreaProps {
   label: string;
   hint?: string;
+  note?: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
 }
 
-export function TextArea({ label, hint, value, onChange, placeholder }: TextAreaProps) {
+export function TextArea({ label, hint, note, value, onChange, placeholder }: TextAreaProps) {
   return (
-    <Field label={label} hint={hint}>
+    <Field label={label} hint={hint} note={note}>
       <textarea
         value={value}
         placeholder={placeholder}
@@ -56,22 +68,55 @@ export function TextArea({ label, hint, value, onChange, placeholder }: TextArea
   );
 }
 
+export function asRequiredNumber(
+  handler: (value: number) => void,
+): (value: number | undefined) => void {
+  return (value) => {
+    if (value != null) handler(value);
+  };
+}
+
 interface NumberInputProps {
   label: string;
   hint?: string;
-  value: number;
-  onChange: (value: number) => void;
+  note?: string;
+  value: number | undefined;
+  onChange: (value: number | undefined) => void;
   min?: number;
+  step?: number;
+  placeholder?: string;
+  /** When false (default), cleared input is ignored and onChange is only called with a number. */
+  allowClear?: boolean;
 }
 
-export function NumberInput({ label, hint, value, onChange, min }: NumberInputProps) {
+export function NumberInput({
+  label,
+  hint,
+  note,
+  value,
+  onChange,
+  min,
+  step,
+  placeholder,
+  allowClear = false,
+}: NumberInputProps) {
   return (
-    <Field label={label} hint={hint}>
+    <Field label={label} hint={hint} note={note}>
       <input
         type="number"
-        value={Number.isFinite(value) ? value : 0}
+        value={value == null || !Number.isFinite(value) ? '' : value}
         min={min}
-        onChange={(e) => onChange(Number(e.target.value))}
+        step={step ?? 'any'}
+        placeholder={placeholder}
+        onChange={(e) => {
+          const raw = e.target.value;
+          if (raw === '') {
+            if (allowClear) onChange(undefined);
+            return;
+          }
+          const n = Number(raw);
+          if (Number.isFinite(n)) onChange(n);
+        }}
       />
     </Field>
   );
@@ -80,6 +125,7 @@ export function NumberInput({ label, hint, value, onChange, min }: NumberInputPr
 interface DataListInputProps {
   label: string;
   hint?: string;
+  note?: string;
   value: string;
   onChange: (value: string) => void;
   options: { value: string; label?: string }[];
@@ -91,6 +137,7 @@ interface DataListInputProps {
 export function DataListInput({
   label,
   hint,
+  note,
   value,
   onChange,
   options,
@@ -98,7 +145,7 @@ export function DataListInput({
   placeholder,
 }: DataListInputProps) {
   return (
-    <Field label={label} hint={hint}>
+    <Field label={label} hint={hint} note={note}>
       <input
         value={value}
         list={listId}
@@ -119,6 +166,7 @@ export function DataListInput({
 interface SelectProps<T extends string> {
   label: string;
   hint?: string;
+  note?: string;
   value: T;
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
@@ -127,12 +175,13 @@ interface SelectProps<T extends string> {
 export function Select<T extends string>({
   label,
   hint,
+  note,
   value,
   options,
   onChange,
 }: SelectProps<T>) {
   return (
-    <Field label={label} hint={hint}>
+    <Field label={label} hint={hint} note={note}>
       <select value={value} onChange={(e) => onChange(e.target.value as T)}>
         {options.map((o) => (
           <option key={o.value} value={o.value}>

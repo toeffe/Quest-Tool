@@ -10,20 +10,28 @@ export function jobStationZ(index: number): number {
   return JOB_STATION_Z_START + index * JOB_STATION_Z_SPACING;
 }
 
-/** Job station centers for UI / guide (name, x, z). */
-export const JOB_STATION_LABELS: { name: string; z: number; action: string }[] = [
-  { name: 'Fishing', z: jobStationZ(0), action: 'Catch a fish in the pool (rod in test kit)' },
-  { name: 'Mining', z: jobStationZ(1), action: 'Mine the coal ore' },
-  { name: 'Woodcutting', z: jobStationZ(2), action: 'Break the oak log pillar' },
-  { name: 'Farming', z: jobStationZ(3), action: 'Break mature wheat' },
-  { name: 'Combat', z: jobStationZ(4), action: 'Kill the caged zombie' },
-  { name: 'Hunting', z: jobStationZ(5), action: 'Kill the caged spider' },
-  { name: 'Breeding', z: jobStationZ(6), action: 'Breed cows with wheat from kit' },
-  { name: 'Enchanting', z: jobStationZ(7), action: 'Enchant a book at the table' },
-  { name: 'Trading', z: jobStationZ(8), action: 'Trade with the librarian (emeralds in kit)' },
-  { name: 'Crafting', z: jobStationZ(9), action: 'Craft oak planks at the table' },
+/** Job station centers for UI / guide (nameKey, x, z). */
+export const JOB_STATION_LABELS: { nameKey: string; z: number; action: string }[] = [
   {
-    name: 'PvP',
+    nameKey: 'starter_fishing',
+    z: jobStationZ(0),
+    action: 'Catch a fish in the pool (rod in test kit)',
+  },
+  { nameKey: 'starter_mining', z: jobStationZ(1), action: 'Mine the coal ore' },
+  { nameKey: 'starter_woodcutting', z: jobStationZ(2), action: 'Break the oak log pillar' },
+  { nameKey: 'starter_farming', z: jobStationZ(3), action: 'Break mature wheat' },
+  { nameKey: 'starter_combat', z: jobStationZ(4), action: 'Kill the caged zombie' },
+  { nameKey: 'starter_hunting', z: jobStationZ(5), action: 'Kill the caged spider' },
+  { nameKey: 'starter_breeding', z: jobStationZ(6), action: 'Breed cows with wheat from kit' },
+  { nameKey: 'starter_enchanting', z: jobStationZ(7), action: 'Enchant a book at the table' },
+  {
+    nameKey: 'starter_trading',
+    z: jobStationZ(8),
+    action: 'Trade with the librarian (emeralds in kit)',
+  },
+  { nameKey: 'starter_crafting', z: jobStationZ(9), action: 'Craft oak planks at the table' },
+  {
+    nameKey: 'starter_pvp',
     z: jobStationZ(10),
     action: 'Kill another player (solo: skip — read sign at station)',
   },
@@ -40,7 +48,10 @@ export function generateStationCommands(): string[] {
 
   // Fishing — water pool
   const z0 = jobStationZ(0);
-  lines.push(...pad(x, z0, 'blue'), `fill ${x - 1} ${Y - 1} ${z0 - 1} ${x + 1} ${Y - 1} ${z0 + 1} minecraft:water`);
+  lines.push(
+    ...pad(x, z0, 'blue'),
+    `fill ${x - 1} ${Y - 1} ${z0 - 1} ${x + 1} ${Y - 1} ${z0 + 1} minecraft:water`,
+  );
 
   // Mining — coal ore
   const z1 = jobStationZ(1);
@@ -96,10 +107,7 @@ export function generateStationCommands(): string[] {
 
   // PvP pad + visual marker
   const z10 = jobStationZ(10);
-  lines.push(
-    ...pad(x, z10, 'orange'),
-    `setblock ${x} ${Y + 1} ${z10} minecraft:gold_block`,
-  );
+  lines.push(...pad(x, z10, 'orange'), `setblock ${x} ${Y + 1} ${z10} minecraft:gold_block`);
 
   // Quest zone markers (vanilla / custom drop zones referenced by quests 10–11)
   lines.push(

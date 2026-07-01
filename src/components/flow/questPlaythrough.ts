@@ -1,11 +1,11 @@
-import { type Edge } from '@xyflow/react';
-import { type Project, type Quest, type Objective } from '../../types/quest';
-import { type EditorTab } from '../editor/ValidationBar';
-import { getIncomingEdgeCount } from './chainEdges';
-import i18n, { getAppLocale } from '../../i18n';
-import { mobLabelI18n } from '../../i18n/useLabels';
+import type { Edge } from '@xyflow/react';
 import { customMobDisplayLabel } from '../../generator/customMobs';
-import { type AppLocale } from '../../i18n/types';
+import i18n, { getAppLocale } from '../../i18n';
+import type { AppLocale } from '../../i18n/types';
+import { mobLabelI18n } from '../../i18n/useLabels';
+import type { Objective, Project, Quest } from '../../types/quest';
+import type { EditorTab } from '../editor/ValidationBar';
+import { getIncomingEdgeCount } from './chainEdges';
 
 export type PlaythroughStepKind =
   | 'prerequisite'
@@ -66,7 +66,11 @@ function objectiveLabel(
       return pt('playthrough.deliver', { amount: o.amount ?? 0, target }, locale);
     case 'exploration':
       return o.location
-        ? pt('playthrough.exploreCoords', { x: o.location.x, y: o.location.y, z: o.location.z }, locale)
+        ? pt(
+            'playthrough.exploreCoords',
+            { x: o.location.x, y: o.location.y, z: o.location.z },
+            locale,
+          )
         : pt('playthrough.exploreLocation', undefined, locale);
     case 'daily':
       return pt('playthrough.daily', { amount: o.amount ?? 0, target }, locale);
@@ -263,10 +267,7 @@ export function buildQuestPlaythrough(quest: Quest, project: Project): Playthrou
         );
       }
       for (const trigger of room.triggers) {
-        if (
-          trigger.action.type === 'set_quest_state' &&
-          trigger.action.questName === quest.name
-        ) {
+        if (trigger.action.type === 'set_quest_state' && trigger.action.questName === quest.name) {
           add(
             'objective',
             pt(

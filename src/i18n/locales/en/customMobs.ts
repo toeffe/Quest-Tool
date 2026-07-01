@@ -1,7 +1,8 @@
 export const customMobsEn = {
   title: 'Custom Mobs',
-  subtitle:
-    'Define reusable mobs with custom names, stats, and drops. Reference them from kill objectives across your project. Appearance uses the vanilla entity model unless you add a resource pack.',
+  subtitle: 'Reusable mobs for kill quests and spawn zones.',
+  subtitleHint:
+    'Set stats, scale, drops, and optional skins. Variant-capable bases (pig, cow, wolf, cat, chicken, frog, zombie nautilus) can use custom textures via a separate resource pack on export. Humanoids support scale only in vanilla.',
 
   list: {
     title: 'Mobs ({{count}})',
@@ -15,45 +16,56 @@ export const customMobsEn = {
 
   editor: {
     editorName: 'Editor name',
-    editorNameHint: 'Internal label in this tool only.',
+    editorNameHint: 'Tool-only label.',
     identityTag: 'Identity tag',
-    identityTagHint: 'Entity tag used to identify this mob in-game. Must be unique.',
+    identityTagHint: 'Unique in-game entity tag.',
     baseEntity: 'Base entity',
     baseEntityHint:
-      'Vanilla mob type. Appearance matches this entity unless you add a resource pack.',
+      'Vanilla mob type. Custom texture on variant-capable types (resource pack on export). Humanoids: scale only.',
     baseEntityNote:
-      'Appearance is based on the vanilla entity. Add a resource pack to use custom models.',
+      'Export provides a separate resource pack download when you upload a skin. Humanoid bases (zombie, skeleton) cannot use custom textures in vanilla — use scale or pick a different base entity.',
     baseEntityPlaceholder: 'minecraft:zombie',
     displayName: 'Display name',
-    displayNameHint: 'Shown above the mob in-game.',
+    displayNameHint: 'In-game nameplate.',
     health: 'Max health',
-    healthHint: 'Override max health (leave empty for vanilla default).',
+    healthHint: 'Empty = vanilla default.',
     damage: 'Attack damage',
-    damageHint: 'Override attack damage (leave empty for vanilla default).',
+    damageHint: 'Empty = vanilla default.',
+    scale: 'Scale',
+    scaleHint: '1 = vanilla size. Empty = default.',
+    skin: 'Custom texture',
+    skinHint: 'PNG for supported bases. Resource pack ZIP on export.',
+    skinPaths: 'Export paths',
+    skinAssetId: 'asset_id: {{path}}',
+    skinTexturePath: 'Texture: {{path}}',
+    skinFrogNote:
+      'Frog skins must be 64×48 PNG with a transparent background, laid out for the vanilla frog model UV (use temperate_frog.png from the 1.21.11 jar as a template).',
+    skinUnsupported:
+      'Custom textures are not supported for this base entity in vanilla. Use scale or choose a variant-capable mob type.',
+    skinClear: 'Remove texture',
     glowing: 'Glowing',
     glowingHint: 'Makes the mob glow through walls.',
     bossBar: 'Boss health bar',
-    bossBarHint:
-      'Shows a boss bar to nearby players while this mob is alive. Uses max health for the bar scale (custom or vanilla default).',
+    bossBarHint: 'Boss bar for nearby players while alive.',
     previewCommand: 'Summon preview',
-    previewCommandHint: 'Test command to spawn this mob at your location.',
+    previewCommandHint: 'Spawns this mob at your location.',
   },
 
   phases: {
     title: 'Phases',
-    hint:
-      'Health-based phases. Phase 1 uses mob stats at spawn. Each later phase needs an Enter at HP % threshold — without it, that phase never triggers. Re-export after changes. Test with /function <namespace>:spawn_mob/<tag> (recommended); preview summon auto-initializes on the first tick only.',
+    hint: 'Health-based transitions. Phase 1 = spawn stats. Later phases need an Enter at HP % threshold. Re-export after edits. Test: /function <namespace>:spawn_mob/<tag>.',
     addPhase: '+ Add phase',
     empty: 'No phases configured. Add a second phase to enable health-based transitions.',
     phaseLabel: 'Phase {{index}}',
     phaseName: 'Phase name',
-    phaseNameHint: 'Editor label only.',
+    phaseNameHint: 'Editor label.',
     atHealthPercent: 'Enter at HP %',
-    atHealthPercentHint: 'Phase begins when health drops to this percent or below. Not used on phase 1.',
+    atHealthPercentHint: 'Triggers at or below this HP %. Not used on phase 1.',
     displayName: 'Display name',
     displayNameHint: 'Override the in-game name for this phase.',
     damage: 'Attack damage',
     damageHint: 'Override attack damage for this phase.',
+    scaleHint: 'Override size for this phase (empty = keep current size).',
     glowing: 'Glowing',
     bossBarColor: 'Boss bar color',
     bossBarColorDefault: 'Default (red)',
@@ -68,13 +80,14 @@ export const customMobsEn = {
     duration: 'Duration (ticks)',
     durationHint: '0 = infinite while phase lasts',
     equipmentOverride: 'Equipment override',
-    equipmentOverrideHint: 'Replace equipment when entering this phase. Leave empty to keep current gear.',
+    equipmentOverrideHint:
+      'Replace equipment when entering this phase. Leave empty to keep current gear.',
     inheritHint: 'Empty fields inherit from the mob defaults above.',
   },
 
   drops: {
     title: 'Custom drops',
-    hint: 'Items dropped when this mob dies. Requires the mob to be spawned by the datapack or manually.',
+    hint: 'Items dropped when this mob dies (replaces vanilla loot for that mob). Only works on mobs spawned by the datapack — re-export after edits, then use /function <namespace>:spawn_mob/<tag> or a quest spawn zone.',
     addDrop: '+ Add drop',
     empty: 'No custom drops configured.',
   },

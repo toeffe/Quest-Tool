@@ -1,10 +1,10 @@
 import { memo, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ValidationIssue } from '../../generator/validate';
+import type { ValidationIssue } from '../../generator/validate';
+import type { Project, Quest } from '../../types/quest';
 import { issueMatchesTab } from '../editor/ValidationBar';
 import { QuestPreview } from '../preview/QuestPreview';
-import { type PlaythroughStep, buildQuestPlaythrough } from './questPlaythrough';
-import { type Project, type Quest } from '../../types/quest';
+import { buildQuestPlaythrough, type PlaythroughStep } from './questPlaythrough';
 
 const ICON_CHARS: Record<string, string> = {
   lock: '🔒',
@@ -71,7 +71,11 @@ export const PlaythroughTimeline = memo(function PlaythroughTimeline({
       editorTab: 'objectives',
       icon: 'task',
     };
-    return [...steps.slice(0, firstObjectiveIdx + 1), collapsed, ...steps.slice(lastObjectiveIdx + 1)];
+    return [
+      ...steps.slice(0, firstObjectiveIdx + 1),
+      collapsed,
+      ...steps.slice(lastObjectiveIdx + 1),
+    ];
   }, [steps, collapseObjectives, quest.id, t]);
 
   const clearHoverTimer = () => {

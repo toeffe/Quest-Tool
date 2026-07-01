@@ -24,8 +24,7 @@ export const flowEn = {
   tips: {
     singleQuest:
       'Add quests in the sidebar, then drag between cards to link your storyline. Click any step to edit.',
-    multiQuest:
-      'Drag the right port (→) to another quest\'s left port (←). Click a link to unlink.',
+    multiQuest: "Drag the right port (→) to another quest's left port (←). Click a link to unlink.",
     dismissAria: 'Dismiss tip',
   },
 
@@ -37,6 +36,10 @@ export const flowEn = {
     arrowStyles: 'Solid arrow — story continues · dashed — prerequisite only',
     startLocked: 'START — entry quest · LOCKED — needs prerequisite',
     clickStep: 'Click any playthrough step to edit',
+    worldEdges: 'Cyan dashed — dungeon/pad dimension links',
+    dungeonDimension: 'Dungeon right port (→) to dimension — set home dimension',
+    padPorts: 'Pad left = from dimension · right = to dimension',
+    clickWorldNode: 'Click dungeon, dimension, or pad — edit in the inspector',
     dismissAria: 'Dismiss legend',
   },
 
@@ -44,7 +47,12 @@ export const flowEn = {
     exportTitle: 'Export',
     closeTitle: 'Close',
     fullEditorTitle: 'Open this quest in the full-width editor',
+    fullDimensionsTitle: 'Open in the Dimensions editor',
+    fullDungeonsTitle: 'Open in the Dungeons editor',
     untitledQuest: 'Untitled quest',
+    untitledDimension: 'Untitled dimension',
+    untitledPad: 'Untitled pad',
+    untitledDungeon: 'Untitled dungeon',
   },
 
   edges: {
@@ -53,11 +61,18 @@ export const flowEn = {
     autoStarts: 'Auto-starts',
     missingQuest: 'Missing quest',
     gates: 'Quest gate',
+    inDimension: 'In dimension',
+    padFrom: 'From',
+    padTo: 'To',
     popoverTitle: 'Chain link',
     popoverAria: 'Chain link options',
     popoverRoute: '{{source}} → {{target}}',
+    gatePopoverTitle: 'Quest gate',
+    gatePopoverAria: 'Quest gate options',
+    gatePopoverRoute: '{{quest}} → {{dungeon}}',
     autoStartNext: 'Auto-start next quest',
     unlinkQuests: 'Unlink quests',
+    unlinkGate: 'Remove quest gate',
     unlinkHint: 'Tip: select the arrow and press Delete or Backspace to unlink.',
     untitled: 'Untitled',
     clickToUnlink: 'click to unlink',
@@ -66,18 +81,17 @@ export const flowEn = {
   connect: {
     cycle: 'Cannot link these quests — that would create a circular dependency.',
     self: 'A quest cannot link to itself.',
-    generate:
-      'Drag between quest cards to link them. The export node connects automatically.',
+    generate: 'Drag between quest cards to link them. The export node connects automatically.',
     missing: 'Could not link — one of the quests was not found.',
     broken: 'Cannot connect to a broken chain reference stub.',
-    fixBrokenRef:
-      'Fix the missing quest name in the Chain tab of the linked quest.',
+    worldTarget: 'Drag dungeons or pads to a dimension node to assign their dimension.',
+    fixBrokenRef: 'Fix the missing quest name in the Chain tab of the linked quest.',
   },
 
   questNode: {
     untitled: 'Untitled quest',
-    handleInTitle: 'Drop a link here (from another quest\'s right port)',
-    handleOutTitle: 'Drag to the next quest\'s left port to link',
+    handleInTitle: "Drop a link here (from another quest's right port)",
+    handleOutTitle: "Drag to the next quest's left port to link",
     startBadge: 'START',
     startTitle: 'Story entry point',
     lockedBadge: 'LOCKED',
@@ -98,21 +112,33 @@ export const flowEn = {
   dungeonNode: {
     untitled: 'Untitled dungeon',
     typeLabel: 'Dungeon',
-    handleInTitle: 'Drop a quest link here to set quest gate on all rooms',
+    handleInTitle: 'Drop a quest link here to set quest gate on the first room',
+    handleDimensionTitle: 'Drag to a dimension to set this dungeon’s home dimension',
     roomCount: '{{count}} room',
     roomCount_plural: '{{count}} rooms',
+    inDimension: 'In {{dimension}}',
     missingMobTitle: 'A room spawn references a deleted custom mob',
   },
 
   dimensionNode: {
     untitled: 'Untitled dimension',
     typeLabel: 'Dimension',
+    handleInTitle: 'Drop a dungeon or pad link here to assign this dimension',
   },
 
   padNode: {
     untitled: 'Untitled pad',
     typeLabel: 'Teleport pad',
     route: '{{from}} → {{to}}',
+    handleFromTitle: 'Drag to a dimension — pad origin (from)',
+    handleToTitle: 'Drag to a dimension — pad destination (to)',
+  },
+
+  overworldNode: {
+    title: 'Overworld',
+    typeLabel: 'Dimension',
+    hint: 'Default Minecraft overworld',
+    handleInTitle: 'Drop a dungeon or pad link here for overworld',
   },
 
   generateNode: {
@@ -163,8 +189,7 @@ export const flowEn = {
     daily: 'Complete daily: {{amount}} {{target}}',
     talkGiver: 'Talk to the quest giver',
     objectiveN: 'Objective {{n}}',
-    zoneDetail:
-      'Zone @ ({{x}}, {{y}}, {{z}}) r={{radius}} cap={{cap}}',
+    zoneDetail: 'Zone @ ({{x}}, {{y}}, {{z}}) r={{radius}} cap={{cap}}',
     withinBlocks: 'Within {{radius}} blocks',
   },
 } as const;

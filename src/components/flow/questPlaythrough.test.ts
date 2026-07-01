@@ -1,12 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { createProject, createQuest } from '../../types/factory';
+import { questsToEdges } from './chainEdges';
 import {
   buildQuestPlaythrough,
   isStoryLocked,
   isStoryStart,
   prerequisiteResolved,
 } from './questPlaythrough';
-import { questsToEdges } from './chainEdges';
 
 function enProject(name: string) {
   const project = createProject(name);

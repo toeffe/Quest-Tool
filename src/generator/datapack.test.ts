@@ -1,10 +1,21 @@
-import { describe, it, expect } from 'vitest';
-import { type Project } from '../types/quest';
-import { createProject, createQuest, createCustomItem, createCustomMob, createStarterJobs } from '../types/factory';
-import { createDimension, createTeleportPad } from '../types/dimension';
 import JSZip from 'jszip';
-import { buildDatapackFiles, buildRawCommands, buildDatapackZip } from './datapack';
+import { describe, expect, it } from 'vitest';
 import { PROJECT_BACKUP_FILENAME } from '../state/projectStore';
+import { createDimension, createTeleportPad } from '../types/dimension';
+import {
+  createCustomItem,
+  createCustomMob,
+  createProject,
+  createQuest,
+  createStarterJobs,
+} from '../types/factory';
+import type { Project } from '../types/quest';
+import {
+  buildDatapackFiles,
+  buildDatapackZip,
+  buildRawCommands,
+  buildResourcePackZip,
+} from './datapack';
 import { DATAPACK_FORMAT } from './packFormat';
 
 function sampleProject(): Project {
@@ -47,6 +58,19 @@ describe('datapack structure', () => {
     expect(files['install.txt']).toContain('1.21.11');
   });
 
+  it('localizes install.txt readme by project locale', () => {
+    const enReadme = buildDatapackFiles(sampleProject())['install.txt'];
+    expect(enReadme).toContain('How playing works');
+    expect(enReadme).not.toContain('Sådan spiller du');
+
+    const daProject = createProject('Test Pakke', 'da');
+    daProject.namespace = 'testpack';
+    daProject.quests = [createQuest('Dræb zombier', 'kill', 'da')];
+    const daReadme = buildDatapackFiles(daProject)['install.txt'];
+    expect(daReadme).toContain('Sådan spiller du');
+    expect(daReadme).not.toContain('How playing works');
+  });
+
   it('declares scoreboard objectives in the load function', () => {
     const files = buildDatapackFiles(sampleProject());
     const load = files['data/testpack/function/load.mcfunction'];
@@ -60,7 +84,9 @@ describe('datapack structure', () => {
     const files = buildDatapackFiles(sampleProject());
     expect(files['data/testpack/function/jobs/tick.mcfunction']).toBeDefined();
     expect(files['data/testpack/function/jobs/sync_all.mcfunction']).toBeDefined();
-    expect(files['data/testpack/function/tick.mcfunction']).toContain('function testpack:jobs/tick');
+    expect(files['data/testpack/function/tick.mcfunction']).toContain(
+      'function testpack:jobs/tick',
+    );
     const paths = Object.keys(files);
     expect(paths.some((p) => /function\/jobs\/0_.*\/tick\.mcfunction$/.test(p))).toBe(true);
     expect(paths.some((p) => /advancement\/jobs\/0_.*\/root\.json$/.test(p))).toBe(true);
@@ -100,7 +126,9 @@ describe('datapack structure', () => {
     const load = files['data/testpack/function/load.mcfunction'];
     expect(load).toContain('scoreboard objectives add q0k0 dummy');
     expect(load).not.toContain('minecraft.killed:minecraft.chicken');
-    const advPath = Object.keys(files).find((p) => /advancement\/quests\/0_.*\/kill_0\.json$/.test(p));
+    const advPath = Object.keys(files).find((p) =>
+      /advancement\/quests\/0_.*\/kill_0\.json$/.test(p),
+    );
     expect(advPath).toBeDefined();
     const adv = JSON.parse(files[advPath!]);
     expect(adv.criteria.killed_quest_mob.trigger).toBe('minecraft:player_killed_entity');
@@ -171,6 +199,22 @@ describe('datapack structure', () => {
     const files = buildDatapackFiles(project);
     const turnin = Object.entries(files).find(([p]) => /turnin\.mcfunction$/.test(p))?.[1] ?? '';
     expect(turnin).toContain('give @s minecraft:diamond 2');
+  });
+
+  it('exports custom mob loot table and DeathLootTable on spawn_mob', () => {
+    const project = createProject();
+    project.namespace = 'droppack';
+    const mob = createCustomMob('Loot Boss', 'en');
+    mob.tag = 'loot_boss';
+    mob.baseEntity = 'minecraft:frog';
+    mob.drops = [{ target: 'minecraft:slime_ball', amount: 3, chance: 100 }];
+    project.customMobs = [mob];
+    const files = buildDatapackFiles(project);
+    expect(files['data/droppack/loot_table/mobs/loot_boss.json']).toContain('slime_ball');
+    expect(files['data/droppack/loot_table/mobs/loot_boss.json']).toContain('"type": "minecraft:generic"');
+    expect(files['data/droppack/function/spawn_mob/loot_boss.mcfunction']).toContain(
+      'DeathLootTable:"droppack:mobs/loot_boss"',
+    );
   });
 
   it('includes give_custom_mobs and spawn_mob functions when custom mobs exist', () => {
@@ -275,7 +319,9 @@ describe('datapack structure', () => {
 
     expect(paths).toContain('data/dimpack/dimension/void_arena.json');
     expect(paths.some((p) => p.includes('dimension_type/'))).toBe(false);
-    expect(JSON.parse(files['data/dimpack/dimension/void_arena.json']).type).toBe('minecraft:overworld');
+    expect(JSON.parse(files['data/dimpack/dimension/void_arena.json']).type).toBe(
+      'minecraft:overworld',
+    );
 
     expect(files['data/dimpack/function/pads/tick.mcfunction']).toContain('pad0_cd');
     expect(files['data/dimpack/function/load.mcfunction']).toContain('pad0_cd');
@@ -303,5 +349,30 @@ describe('datapack structure', () => {
     expect(backup.name).toBe('Test Pack');
     const meta = JSON.parse(await zip.file('pack.mcmeta')!.async('string'));
     expect(meta.pack.min_format).toEqual([...DATAPACK_FORMAT]);
+  });
+
+  it('exports resource pack separately when custom mob has skin', async () => {
+    const TINY_PNG =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+    const project = sampleProject();
+    const mob = createCustomMob('Boar', 'en');
+    mob.tag = 'undead_boar';
+    mob.baseEntity = 'minecraft:pig';
+    mob.skinTexture = TINY_PNG;
+    project.customMobs = [mob];
+
+    const datapackFiles = buildDatapackFiles(project);
+    expect(datapackFiles['data/testpack/pig_variant/undead_boar.json']).toBeDefined();
+    expect(datapackFiles['resourcepack/pack.mcmeta']).toBeUndefined();
+
+    const datapackBlob = await buildDatapackZip(project);
+    const datapackZip = await JSZip.loadAsync(new Uint8Array(await datapackBlob.arrayBuffer()));
+    expect(datapackZip.file('resourcepack/pack.mcmeta')).toBeNull();
+    expect(datapackZip.file('pack.mcmeta')).not.toBeNull();
+
+    const rpBlob = await buildResourcePackZip(project);
+    const rpZip = await JSZip.loadAsync(new Uint8Array(await rpBlob.arrayBuffer()));
+    expect(rpZip.file('pack.mcmeta')).not.toBeNull();
+    expect(rpZip.file('assets/testpack/textures/entity/pig/undead_boar.png')).not.toBeNull();
   });
 });

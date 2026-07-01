@@ -1,21 +1,21 @@
-import { commonDa } from './common';
-import { editorDa } from './editor';
-import { flowDa } from './flow';
-import { exportDa } from './export';
-import { helpDa } from './help';
-import { jobsDa } from './jobs';
-import { itemsDa } from './items';
-import { questDa } from './quest';
-import { datapackDa } from './datapack';
-import { platformDa } from './platform';
-import { commandsDa } from './commands';
-import { defaultsDa } from './defaults';
-import { advancementsDa } from './advancements';
-import { validationDa } from './validation';
-import { customMobsDa } from './customMobs';
-import { dungeonsDa } from './dungeons';
-import { dimensionsDa } from './dimensions';
 import { mobsDa } from '../mobs.generated';
+import { advancementsDa } from './advancements';
+import { commandsDa } from './commands';
+import { commonDa } from './common';
+import { customMobsDa } from './customMobs';
+import { datapackDa } from './datapack';
+import { defaultsDa } from './defaults';
+import { dimensionsDa } from './dimensions';
+import { dungeonsDa } from './dungeons';
+import { editorDa } from './editor';
+import { exportDa } from './export';
+import { flowDa } from './flow';
+import { helpDa } from './help';
+import { itemsDa } from './items';
+import { jobsDa } from './jobs';
+import { platformDa } from './platform';
+import { questDa } from './quest';
+import { validationDa } from './validation';
 
 export const daResources = {
   common: commonDa,

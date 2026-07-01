@@ -1,5 +1,5 @@
-import { type CustomItem } from '../types/item';
-import { type Objective, type Project, type Reward } from '../types/quest';
+import type { CustomItem } from '../types/item';
+import type { Objective, Project, Reward } from '../types/quest';
 import { namespaced } from './context';
 import { escapeSnbtString } from './text';
 
@@ -45,10 +45,7 @@ export function buildItemStackArg(item: CustomItem): string {
 
   if (item.food) {
     const f = item.food;
-    const foodParts = [
-      `nutrition:${f.nutrition}`,
-      `saturation:${f.saturation}`,
-    ];
+    const foodParts = [`nutrition:${f.nutrition}`, `saturation:${f.saturation}`];
     if (f.canAlwaysEat) foodParts.push('can_always_eat:true');
     parts.push(`food={${foodParts.join(',')}}`);
   }
@@ -91,18 +88,12 @@ export function buildGiveCommand(item: CustomItem, target: string, amount: numbe
   return `give ${target} ${buildItemStackArg(item)} ${amount}`;
 }
 
-export function findCustomItem(
-  project: Project,
-  id: string | undefined,
-): CustomItem | undefined {
+export function findCustomItem(project: Project, id: string | undefined): CustomItem | undefined {
   if (!id) return undefined;
   return (project.customItems ?? []).find((i) => i.id === id);
 }
 
-export function resolveObjectiveStack(
-  project: Project,
-  objective: Objective,
-): string | null {
+export function resolveObjectiveStack(project: Project, objective: Objective): string | null {
   if (objective.customItemId) {
     const item = findCustomItem(project, objective.customItemId);
     return item ? buildClearStackArg(item) : null;
@@ -129,10 +120,7 @@ export function resolveRewardStack(
 }
 
 /** Human-readable label for quest messages (delivery errors, etc.). */
-export function itemDisplayLabel(
-  project: Project,
-  objective: Objective,
-): string {
+export function itemDisplayLabel(project: Project, objective: Objective): string {
   if (objective.customItemId) {
     const item = findCustomItem(project, objective.customItemId);
     return item?.displayName || item?.name || 'custom item';

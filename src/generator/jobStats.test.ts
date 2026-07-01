@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
-import { type Job, type JobAction } from '../types/job';
+import { describe, expect, it } from 'vitest';
+import type { Job, JobAction } from '../types/job';
 import {
-  resolveJobStatCriteria,
-  jobUsesMultiStat,
   defaultPresetForAction,
   JOB_STAT_PRESETS,
+  jobUsesMultiStat,
+  resolveJobStatCriteria,
 } from './jobStats';
 
 function job(partial: Partial<Job> & { action: JobAction }): Job {

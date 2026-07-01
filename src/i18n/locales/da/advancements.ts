@@ -1,7 +1,8 @@
 export const advancementsDa = {
   title: 'Advancements',
-  subtitle:
-    'Forhåndsvis hvordan jobfærdigheder vises i Minecraft. In-game, åbn Esc → Advancements → {{namespace}} for at følge niveauer. Hvert job genererer en rod-node og en niveaukæde (Lv.1 → Lv.2 → …).',
+  subtitle: 'Forhåndsvis job-færdighedstræ til din datapack.',
+  subtitleHint:
+    'In-game: Esc → Advancements → {{namespace}}. Hvert job får en rod-node og niveaukæde. Rediger ikoner og tekst på Jobs-fanen.',
   namespaceFallback: 'dit namespace',
 
   empty: 'Ingen jobs defineret. Tilføj et job på fanen Jobs for at generere et færdighedstræ.',
@@ -29,8 +30,7 @@ export const advancementsDa = {
     title: 'Niveaukæde',
     level: 'Lv.{{level}}',
     reward: 'belønning',
-    showingMilestones:
-      'Viser milestones; alle {{maxLevel}} niveauer genereres i datapacken.',
+    showingMilestones: 'Viser milestones; alle {{maxLevel}} niveauer genereres i datapacken.',
   },
 
   footer:

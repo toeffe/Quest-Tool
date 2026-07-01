@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type Project } from '../types/quest';
-import { type Job, totalXpForLevel } from '../types/job';
+import { buildContext } from '../generator/context';
 import {
   defaultJobAdvancementIcon,
   jobAdvancementBackground,
   jobAdvancementId,
 } from '../generator/jobAdvancements';
-import { buildContext } from '../generator/context';
+import { type Job, totalXpForLevel } from '../types/job';
+import type { Project } from '../types/quest';
+import { PageHeader } from './ui/PageHeader';
 
 interface Props {
   project: Project;
@@ -57,10 +58,11 @@ export function AdvancementsPage({ project }: Props) {
 
   return (
     <div className="items-page">
-      <h1 className="step-title">{t('title')}</h1>
-      <p className="step-sub">
-        {t('subtitle', { namespace: project.namespace || t('namespaceFallback') })}
-      </p>
+      <PageHeader
+        title={t('title')}
+        lead={t('subtitle')}
+        hint={t('subtitleHint', { namespace: project.namespace || t('namespaceFallback') })}
+      />
 
       {jobs.length === 0 ? (
         <div className="card">
@@ -80,7 +82,9 @@ export function AdvancementsPage({ project }: Props) {
                 onKeyDown={(e) => e.key === 'Enter' && setSelectedId(job.id)}
               >
                 <div className="quest-item-name">{job.name}</div>
-                <div className="quest-item-meta muted">{t('list.levels', { count: job.maxLevel })}</div>
+                <div className="quest-item-meta muted">
+                  {t('list.levels', { count: job.maxLevel })}
+                </div>
               </div>
             ))}
           </aside>
@@ -146,7 +150,9 @@ export function AdvancementsPage({ project }: Props) {
                       );
                       return (
                         <span key={level} className="adv-chain-node">
-                          <span className={`adv-chain-pill${hasReward ? ' adv-chain-milestone' : ''}`}>
+                          <span
+                            className={`adv-chain-pill${hasReward ? ' adv-chain-milestone' : ''}`}
+                          >
                             <strong>{t('levelChain.level', { level })}</strong>
                             <span className="muted">
                               {levelTitle(selected, level)} · {totalXpForLevel(selected, level)} XP

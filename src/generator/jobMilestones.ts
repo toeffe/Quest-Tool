@@ -1,9 +1,8 @@
-import { type JobMilestoneReward } from '../types/job';
-import { type CompileContext } from './context';
+import type { JobMilestoneReward } from '../types/job';
+import { type CompileContext, namespaced } from './context';
 import { buildGiveCommand } from './items';
-import { namespaced } from './context';
-import { tellraw, escapeSnbtString } from './text';
-import { type DatapackStrings } from './strings';
+import type { DatapackStrings } from './strings';
+import { escapeSnbtString, tellraw } from './text';
 
 /** mcfunction command lines for one milestone reward list. */
 export function jobMilestoneRewardCommands(
@@ -45,7 +44,11 @@ export function jobMilestoneRewardCommands(
   return lines;
 }
 
-export function milestoneAnnouncement(str: DatapackStrings, jobName: string, level: number): string {
+export function milestoneAnnouncement(
+  str: DatapackStrings,
+  jobName: string,
+  level: number,
+): string {
   return (
     `tellraw @s ["",` +
     `{"text":"${escapeSnbtString(str.jobMilestonePrefix)}","color":"gold"},` +

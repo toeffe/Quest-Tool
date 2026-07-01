@@ -1,6 +1,7 @@
 export const dungeonsDa = {
   title: 'Dungeons',
-  subtitle: 'Definer dungeon-rum med afgrænsningsbokse, mob-spawns og triggere.',
+  subtitle: 'Rum med afgrænsning, spawns og triggere.',
+  subtitleHint: 'Definér dungeon-områder, mob-spawns, quest-gates og rumhændelser til datapacken.',
 
   list: {
     title: 'Dungeons ({{count}})',
@@ -19,7 +20,8 @@ export const dungeonsDa = {
     dungeonTag: 'Funktionstag',
     description: 'Beskrivelse (valgfri)',
     dimension: 'Dimension',
-    dimensionHint: 'Rummenes afgrænsninger er relative til den valgte dimension (Overworld eller en brugerdefineret void-dimension).',
+    dimensionHint:
+      'Rummenes afgrænsninger er relative til den valgte dimension (Overworld eller en brugerdefineret void-dimension).',
     roomName: 'Rumnavn',
     roomType: 'Rumtype',
     customTypeLabel: 'Brugerdefineret typelabel',

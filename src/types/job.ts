@@ -40,14 +40,7 @@ export const JOB_ACTION_LABELS: Record<JobAction, string> = {
 };
 
 /** Actions that use stat presets or a single target id. */
-export const TYPED_JOB_ACTIONS: JobAction[] = [
-  'mine',
-  'woodcut',
-  'farm',
-  'hunt',
-  'craft',
-  'use',
-];
+export const TYPED_JOB_ACTIONS: JobAction[] = ['mine', 'woodcut', 'farm', 'hunt', 'craft', 'use'];
 
 export const DISTANCE_JOB_ACTIONS: JobAction[] = ['walk', 'sprint'];
 

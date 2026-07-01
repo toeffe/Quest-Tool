@@ -1,6 +1,6 @@
 import { createQuest } from '../types/factory';
-import { type CustomItem } from '../types/item';
-import { type Project, type Quest } from '../types/quest';
+import type { CustomItem } from '../types/item';
+import type { Project, Quest } from '../types/quest';
 import { TEST_DATAPACK_SURFACE_Y } from './testDatapackConstants';
 import { getJobByKey } from './testDatapackJobs';
 

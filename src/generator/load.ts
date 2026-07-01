@@ -1,13 +1,17 @@
 import { type CompileContext, questObjectives, statId } from './context';
-import { findCustomMob } from './customMobs';
-import { buildJobLoadLines, buildJobResetLines } from './jobFunctions';
 import { buildCustomMobBossBarSetupLines, buildCustomMobBossBarTickHook } from './customMobBossBar';
 import { buildCustomMobPhaseSetupLines, buildCustomMobPhaseTickHook } from './customMobPhases';
-import { buildJobBossBarSetupLines, buildHideJobBossBarLines, jobsUseProgressBar } from './jobBossBar';
-import { buildDungeonLoadLines, buildDungeonInitCalls } from './dungeons';
+import { findCustomMob } from './customMobs';
+import { buildDungeonInitCalls, buildDungeonLoadLines } from './dungeons';
+import {
+  buildHideJobBossBarLines,
+  buildJobBossBarSetupLines,
+  jobsUseProgressBar,
+} from './jobBossBar';
+import { buildJobLoadLines, buildJobResetLines } from './jobFunctions';
 import { buildPadLoadLines, buildPadsTickHook } from './pads';
 import { NOW_HOLDER, SYS_OBJECTIVE } from './sys';
-import { escapeSnbtString } from './text';
+import { escapeSnbtString, sanitizeMcComment } from './text';
 
 export { NOW_HOLDER, SYS_OBJECTIVE } from './sys';
 
@@ -32,7 +36,7 @@ export function buildLoadFunction(ctx: CompileContext): string {
   const STR = ctx.str;
   const lines: string[] = [
     `# Quest Tool MC - load`,
-    `# Project: ${ctx.project.name} | Minecraft 1.21.11 | Platform: ${ctx.project.platform}`,
+    `# Project: ${sanitizeMcComment(ctx.project.name)} | Minecraft 1.21.11 | Platform: ${ctx.project.platform}`,
     // Hide the "Triggered [..]" / "Gave .." command feedback that /trigger and reward
     // commands print to chat. 1.21.11 renamed this gamerule to snake_case.
     `gamerule send_command_feedback false`,
@@ -93,16 +97,16 @@ export function buildLoadFunction(ctx: CompileContext): string {
   }
 
   for (const jc of ctx.jobs) {
-    lines.push(
-      `execute as @a run function ${ctx.namespace}:${jc.fnBase}/sync_advancements`,
-    );
+    lines.push(`execute as @a run function ${ctx.namespace}:${jc.fnBase}/sync_advancements`);
   }
 
   for (const initCall of buildDungeonInitCalls(ctx)) {
     lines.push(initCall);
   }
 
-  lines.push(`tellraw @a {"text":"${escapeSnbtString(STR.packLoaded(ctx.project.name))}","color":"green"}`);
+  lines.push(
+    `tellraw @a {"text":"${escapeSnbtString(STR.packLoaded(ctx.project.name))}","color":"green"}`,
+  );
   return lines.join('\n') + '\n';
 }
 
@@ -126,8 +130,8 @@ export function buildTickFunction(ctx: CompileContext): string {
   }
   const padsTick = buildPadsTickHook(ctx);
   if (padsTick) lines.push(padsTick);
-  lines.push(...buildCustomMobBossBarTickHook(ctx));
   lines.push(...buildCustomMobPhaseTickHook(ctx));
+  lines.push(...buildCustomMobBossBarTickHook(ctx));
   return lines.join('\n') + '\n';
 }
 
@@ -189,9 +193,7 @@ export function buildResetFunction(ctx: CompileContext): string {
     lines.push(...buildJobResetLines(ctx, jc));
   }
   lines.push(...buildHideJobBossBarLines(ctx));
-  lines.push(
-    `tellraw @s {"text":"${STR.resetSelf}","color":"yellow"}`,
-  );
+  lines.push(`tellraw @s {"text":"${STR.resetSelf}","color":"yellow"}`);
   return lines.join('\n') + '\n';
 }
 

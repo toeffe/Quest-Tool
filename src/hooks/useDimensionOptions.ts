@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type Project } from '../types/quest';
+import type { Project } from '../types/quest';
 
 export function useDimensionOptions(project: Project) {
   const { t } = useTranslation('dimensions');

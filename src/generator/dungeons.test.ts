@@ -1,17 +1,22 @@
-import { describe, it, expect } from 'vitest';
-import { createProject, createQuest } from '../types/factory';
-import { createDungeon, createDungeonRoom, createRoomSpawn, normalizeBounds } from '../types/dungeon';
+import { describe, expect, it } from 'vitest';
 import { createDimension } from '../types/dimension';
 import {
-  boundsToSelector,
+  createDungeon,
+  createDungeonRoom,
+  createRoomSpawn,
+  normalizeBounds,
+} from '../types/dungeon';
+import { createProject, createQuest } from '../types/factory';
+import { buildContext } from './context';
+import {
   boundsCenter,
+  boundsToSelector,
   buildDungeonRoomContexts,
-  buildRoomTickFunction,
-  buildRoomSpawnFunction,
   buildDungeonsTickFunction,
+  buildRoomSpawnFunction,
+  buildRoomTickFunction,
   compileDungeons,
 } from './dungeons';
-import { buildContext } from './context';
 import { buildLoadFunction, buildTickFunction } from './load';
 
 describe('dungeons generator', () => {
@@ -129,10 +134,14 @@ describe('dungeons generator', () => {
 
     const ctx = buildContext(project);
     const tick = buildDungeonsTickFunction(ctx);
-    expect(tick).toContain('execute in questpack:void_crypt run execute if entity @a[x=0,y=64,z=0,dx=10,dy=6,dz=10]');
+    expect(tick).toContain(
+      'execute in questpack:void_crypt run execute if entity @a[x=0,y=64,z=0,dx=10,dy=6,dz=10]',
+    );
 
     const rc = buildDungeonRoomContexts(ctx)[0];
     const roomTick = buildRoomTickFunction(ctx, rc);
-    expect(roomTick).toContain('execute in questpack:void_crypt run execute if entity @a[x=0,y=64,z=0,dx=10,dy=6,dz=10]');
+    expect(roomTick).toContain(
+      'execute in questpack:void_crypt run execute if entity @a[x=0,y=64,z=0,dx=10,dy=6,dz=10]',
+    );
   });
 });

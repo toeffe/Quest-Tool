@@ -23,7 +23,8 @@ export const validationEn = {
   customMobNoTag: 'Custom mob "{{name}}" has no identity tag.',
   customMobNoBaseEntity: 'Custom mob "{{name}}" has no base entity.',
   customMobUnused: 'Custom mob "{{name}}" is not used in any kill objective.',
-  customMobHighHealth: 'Custom mob "{{name}}" has very high health ({{health}}) — may affect survivability.',
+  customMobHighHealth:
+    'Custom mob "{{name}}" has very high health ({{health}}) — may affect survivability.',
   customMobDropsNoSpawnZone:
     'Custom mob "{{name}}" has drops configured but is not used in a spawn zone — players must encounter it world-wide.',
   duplicateMobTag: 'Duplicate custom mob tag "{{tag}}" (used {{count}} times).',
@@ -33,6 +34,14 @@ export const validationEn = {
     'Custom mob "{{name}}" phase {{phase}} threshold must be between 1 and 99.',
   customMobPhaseThresholdOrder:
     'Custom mob "{{name}}" phase thresholds must decrease (e.g. 66%, then 33%).',
+  customMobSkinUnsupported:
+    'Custom mob "{{name}}" has a custom texture but base entity "{{entity}}" does not support skins in vanilla.',
+  customMobSkinResourcePack:
+    'Custom mob "{{name}}" has a skin — download and install the separate resource pack ZIP in addition to the datapack.',
+  customMobScaleExtreme:
+    'Custom mob "{{name}}" scale ({{scale}}) is outside the recommended 0.25–4 range.',
+  customMobWolfSkinInfo:
+    'Custom mob "{{name}}" wolf skin is applied to angry, tame, and wild variants (same PNG).',
   dungeonNoName: 'A dungeon has an empty name.',
   dungeonNoTag: 'Dungeon "{{name}}" has no function tag.',
   dungeonNoRooms: 'Dungeon "{{name}}" has no rooms.',
@@ -41,7 +50,8 @@ export const validationEn = {
   dungeonSpawnMissingMob: 'Room "{{room}}" spawn references a deleted custom mob.',
   dungeonTriggerMissingQuest: 'Room "{{room}}" trigger references missing quest "{{quest}}".',
   duplicateDungeonTag: 'Duplicate dungeon tag "{{tag}}" (used {{count}} times).',
-  dungeonSpawnsNoOutcome: 'Room "{{room}}" has spawns that do not respawn but no on_all_killed trigger.',
+  dungeonSpawnsNoOutcome:
+    'Room "{{room}}" has spawns that do not respawn but no on_all_killed trigger.',
   dungeonBossNoTrigger: 'Boss room "{{room}}" has no on_all_mobs_killed trigger.',
   dungeonOverlappingRooms: 'Rooms "{{a}}" and "{{b}}" in "{{dungeon}}" have overlapping bounds.',
   dungeonUnreferenced: 'Dungeon "{{name}}" is not referenced by any quest gate or trigger.',
@@ -59,10 +69,8 @@ export const validationEn = {
     'Custom item "{{name}}" enchantment "{{enchant}}" level must be at least 1.',
   customItemEnchantmentMaxLevel:
     'Custom item "{{name}}" enchantment "{{enchant}}" exceeds vanilla max level ({{max}}).',
-  customItemUnknownEnchantment:
-    'Custom item "{{name}}" uses unknown enchantment "{{enchant}}".',
-  customItemDuplicateEnchantment:
-    'Custom item "{{name}}" has duplicate enchantment "{{enchant}}".',
+  customItemUnknownEnchantment: 'Custom item "{{name}}" uses unknown enchantment "{{enchant}}".',
+  customItemDuplicateEnchantment: 'Custom item "{{name}}" has duplicate enchantment "{{enchant}}".',
   jobEmptyName: 'A job has an empty name.',
   jobXpPerActionMin: 'Job "{{name}}" XP per action must be at least 1.',
   jobXpPerLevelMin: 'Job "{{name}}" XP per level must be at least 1.',
@@ -77,7 +85,8 @@ export const validationEn = {
     'Job "{{name}}" milestone level {{level}} must be between 1 and {{maxLevel}}.',
   jobDuplicateMilestone: 'Job "{{name}}" has duplicate milestone at level {{level}}.',
   jobMilestoneEmptyItem: 'Job "{{name}}" milestone Lv.{{level}} has an empty item reward.',
-  jobMilestoneMissingItem: 'Job "{{name}}" milestone references a custom item that no longer exists.',
+  jobMilestoneMissingItem:
+    'Job "{{name}}" milestone references a custom item that no longer exists.',
   duplicateJobName: 'Duplicate job name: "{{name}}" (used {{count}} times).',
   chainRequiresMissingJob: 'Chain requires a job that no longer exists.',
   jobLevelMin: 'Job level requirement must be at least 1.',
@@ -91,19 +100,18 @@ export const validationEn = {
   npcFixedNoCoords: 'NPC spawn is set to fixed coordinates but none are provided.',
   targetNpcNoName: 'The target NPC has no name.',
   targetNpcFixedNoCoords: 'Target NPC uses fixed coordinates but none are provided.',
-  chainRequiresNotFound:
-    'Chain requires "{{name}}", which is not a quest in this project.',
+  chainRequiresNotFound: 'Chain requires "{{name}}", which is not a quest in this project.',
   chainSelfRequire: 'A quest cannot require itself.',
-  chainUnlocksNotFound:
-    'Chain unlocks "{{name}}", which is not a quest in this project.',
+  chainUnlocksNotFound: 'Chain unlocks "{{name}}", which is not a quest in this project.',
+  chainCycleDetected:
+    'This quest is part of a circular chain dependency — some quests may never unlock.',
   rewardMissingItem: 'An item reward is missing its item.',
   rewardMissingCustomItem: 'A reward references a custom item that no longer exists.',
   rewardMissingCommand: 'A command reward is missing its value.',
   questNoRewards: 'Quest has no rewards.',
   duplicateQuestName: 'Duplicate quest name: "{{name}}" (used {{count}} times).',
   duplicateNpcTag: 'NPC tag "{{tag}}" is used by {{count}} quests; they will share/duplicate NPCs.',
-  moneyVanillaNote:
-    'Money uses an internal scoreboard on Vanilla/LAN (no real economy plugin).',
+  moneyVanillaNote: 'Money uses an internal scoreboard on Vanilla/LAN (no real economy plugin).',
   permissionNote:
     'Permission rewards require a permissions plugin (Paper). A chat message is shown instead.',
 } as const;

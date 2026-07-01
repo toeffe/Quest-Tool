@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type Project, type Quest } from '../../types/quest';
-import { Field, Select, NumberInput } from '../ui/Field';
+import type { Project, Quest } from '../../types/quest';
 import { disconnectQuests } from '../flow/chainEdges';
+import { asRequiredNumber, Field, NumberInput, Select } from '../ui/Field';
+import { PageHeader } from '../ui/PageHeader';
 
 interface Props {
   quest: Quest;
@@ -45,7 +46,11 @@ function ChainTopologySummary({
             <span>{requires || tc('actions.noneDash')}</span>
             {requires && !requiresOk && ` ${t('chain.missingQuest')}`}
             {requires && onClearRequires && (
-              <button type="button" className="btn small danger chain-unlink-btn" onClick={onClearRequires}>
+              <button
+                type="button"
+                className="btn small danger chain-unlink-btn"
+                onClick={onClearRequires}
+              >
                 {tc('actions.unlink')}
               </button>
             )}
@@ -57,7 +62,11 @@ function ChainTopologySummary({
             <span>{unlocks || tc('actions.noneDash')}</span>
             {unlocks && !unlocksOk && ` ${t('chain.missingQuest')}`}
             {unlocks && onClearUnlocks && (
-              <button type="button" className="btn small danger chain-unlink-btn" onClick={onClearUnlocks}>
+              <button
+                type="button"
+                className="btn small danger chain-unlink-btn"
+                onClick={onClearUnlocks}
+              >
                 {tc('actions.unlink')}
               </button>
             )}
@@ -118,10 +127,11 @@ export function StepChain({ quest, project, onChange, onChangeProject, canvasFir
 
   return (
     <div>
-      <h1 className="step-title">{t('chain.title')}</h1>
-      <p className="step-sub">
-        {canvasFirst ? t('chain.subtitleCanvas') : t('chain.subtitleEditor')}
-      </p>
+      <PageHeader
+        title={t('chain.title')}
+        lead={canvasFirst ? t('chain.subtitleCanvas') : t('chain.subtitleEditor')}
+        hint={canvasFirst ? t('chain.subtitleCanvasHint') : t('chain.subtitleEditorHint')}
+      />
 
       <div className="card">
         <h3>{t('chain.storyOrder')}</h3>
@@ -168,22 +178,23 @@ export function StepChain({ quest, project, onChange, onChangeProject, canvasFir
             label={t('chain.minimumLevel')}
             value={quest.chain.requiresJob.level}
             min={1}
-            onChange={(level) =>
+            onChange={asRequiredNumber((level) =>
               setChain({
                 requiresJob: { ...quest.chain.requiresJob!, level },
-              })
-            }
+              }),
+            )}
           />
         )}
-        {jobs.length === 0 && (
-          <p className="hint">{t('chain.noJobsHint')}</p>
-        )}
+        {jobs.length === 0 && <p className="hint">{t('chain.noJobsHint')}</p>}
       </div>
 
       <div className="card">
         <h3>{t('chain.followUp')}</h3>
         <Field label={t('chain.autoStart')} hint={t('chain.autoStartHint')}>
-          <label className="muted" style={{ display: 'flex', gap: 8, alignItems: 'center', fontWeight: 500 }}>
+          <label
+            className="muted"
+            style={{ display: 'flex', gap: 8, alignItems: 'center', fontWeight: 500 }}
+          >
             <input
               type="checkbox"
               style={{ width: 'auto' }}
@@ -193,15 +204,16 @@ export function StepChain({ quest, project, onChange, onChangeProject, canvasFir
             {t('chain.autoStartCheckbox')}
           </label>
         </Field>
-        {!quest.chain.unlocks && (
-          <p className="hint">{t('chain.autoStartNoUnlockHint')}</p>
-        )}
+        {!quest.chain.unlocks && <p className="hint">{t('chain.autoStartNoUnlockHint')}</p>}
       </div>
 
       <div className="card">
         <h3>{t('chain.announcement')}</h3>
         <Field label={t('chain.announceCompletion')} hint={t('chain.announceHint')}>
-          <label className="muted" style={{ display: 'flex', gap: 8, alignItems: 'center', fontWeight: 500 }}>
+          <label
+            className="muted"
+            style={{ display: 'flex', gap: 8, alignItems: 'center', fontWeight: 500 }}
+          >
             <input
               type="checkbox"
               style={{ width: 'auto' }}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import {
   clampInspectorWidth,
   DEFAULT_INSPECTOR_WIDTH,
@@ -58,7 +58,10 @@ export function ResizableInspector({ children }: Props) {
   }, []);
 
   return (
-    <div className="flow-inspector-wrap" style={{ width, ['--flow-inspector-width' as string]: `${width}px` }}>
+    <div
+      className="flow-inspector-wrap"
+      style={{ width, ['--flow-inspector-width' as string]: `${width}px` }}
+    >
       <div
         className="flow-inspector-resize-handle"
         role="separator"

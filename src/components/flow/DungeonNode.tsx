@@ -1,9 +1,10 @@
+import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
-import { type Dungeon } from '../../types/dungeon';
-import { type Project } from '../../types/quest';
-import { type ValidationIssue } from '../../generator/validate';
+import type { ValidationIssue } from '../../generator/validate';
+import { dimensionLabel } from '../dimensions/dimensionEditors';
+import type { Dungeon } from '../../types/dungeon';
+import type { Project } from '../../types/quest';
 
 export interface DungeonNodeData {
   dungeon: Dungeon;
@@ -17,13 +18,24 @@ export type DungeonFlowNode = Node<DungeonNodeData, 'dungeon'>;
 
 export const DungeonNode = memo(function DungeonNode({ data }: NodeProps<DungeonFlowNode>) {
   const { t } = useTranslation('flow');
-  const { dungeon, issues, isSelected } = data;
+  const { t: td } = useTranslation('dimensions');
+  const { dungeon, project, issues, isSelected } = data;
   const hasError = issues.some((i) => i.level === 'error');
   const hasWarning = issues.some((i) => i.level === 'warning');
   const nodeState = hasError ? 'error' : hasWarning ? 'warning' : 'ok';
   const roomCount = dungeon.rooms.length;
+  const dimensionName = dimensionLabel(
+    project.dimensions ?? [],
+    dungeon.dimensionId,
+    td('overworld'),
+  );
   const missingMob = dungeon.rooms.some((r) =>
-    r.spawns.some((s) => s.sourceType === 'customMob' && s.customMobId && !(data.project.customMobs ?? []).some((m) => m.id === s.customMobId)),
+    r.spawns.some(
+      (s) =>
+        s.sourceType === 'customMob' &&
+        s.customMobId &&
+        !(data.project.customMobs ?? []).some((m) => m.id === s.customMobId),
+    ),
   );
 
   return (
@@ -35,6 +47,14 @@ export const DungeonNode = memo(function DungeonNode({ data }: NodeProps<Dungeon
         position={Position.Left}
         className="flow-handle flow-handle-in"
         title={t('dungeonNode.handleInTitle')}
+        isConnectable
+      />
+      <Handle
+        id="dimension"
+        type="source"
+        position={Position.Right}
+        className="flow-handle flow-handle-out"
+        title={t('dungeonNode.handleDimensionTitle')}
         isConnectable
       />
 
@@ -54,6 +74,9 @@ export const DungeonNode = memo(function DungeonNode({ data }: NodeProps<Dungeon
         </div>
         <p className="muted" style={{ margin: '8px 0 0', fontSize: 12 }}>
           {t('dungeonNode.roomCount', { count: roomCount })}
+        </p>
+        <p className="muted" style={{ margin: '4px 0 0', fontSize: 12 }}>
+          {t('dungeonNode.inDimension', { dimension: dimensionName })}
         </p>
       </div>
     </div>

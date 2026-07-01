@@ -27,8 +27,7 @@ export const datapackEn = {
 
   coinsEarned: 'You earned {{amount}} coins!',
   permissionGranted: 'Permission granted: {{node}}',
-  permissionUnlocked:
-    'You have unlocked: {{node}} (ask staff to activate it)',
+  permissionUnlocked: 'You have unlocked: {{node}} (ask staff to activate it)',
 
   npcSpawned: '[Quest Tool] NPC(s) spawned for "{{questName}}".',
 
@@ -55,4 +54,74 @@ export const datapackEn = {
   jobMilestonePrefix: '[Jobs] Milestone: ',
   jobMilestoneSuffix: ' {{level}} — reward granted!',
   resetJobsNote: 'Job progress (XP and levels) is also reset.',
+
+  readme: {
+    header: 'Quest Tool MC - {{projectName}}',
+    generatedFor: 'Generated for Minecraft Java Edition {{version}}',
+    playingTitle: 'How playing works',
+    playingStep1: '- Walk up to a quest giver NPC; dialogue appears in chat automatically.',
+    playingStep2: '- Click the [ Accept Quest ] message (uses /trigger, no cheats needed).',
+    playingStep3:
+      '- Progress shows on your action bar. Complete the objective, then return to the giver.',
+    playingStep4:
+      '- Click [ Turn In Quest ] to claim rewards. Chained quests unlock automatically.',
+    jobsTitle: 'Jobs (passive skills)',
+    jobsStep1:
+      '- Fishing, mining, combat, and other jobs level up automatically from player actions.',
+    jobsStep2: '- Open Esc → Advancements → {{namespace}} to see skill trees and levels.',
+    jobsStep3:
+      '- Milestone rewards (custom items, XP, etc.) are granted on level-up when configured on the Jobs tab.',
+    jobsStep4:
+      '- While earning job XP, a personal boss bar briefly shows your level, total XP, and progress to the next level, then hides after a few seconds.',
+    jobsStep5: '- Job progress is also shown in /function {{namespace}}:debug.',
+    jobsStep6:
+      '- Use /function {{namespace}}:reset to clear job XP and levels along with quest progress.',
+    adminTitle: 'Admin commands',
+    adminSetupGuide: '- /function {{namespace}}:setup_guide   - list NPC spawn commands',
+    adminSpawnAll: '- /function {{namespace}}:spawn_all     - spawn every NPC at your feet',
+    adminDebug: '- /function {{namespace}}:debug         - check NPCs and your quest state',
+    adminGiveItems:
+      '- /function {{namespace}}:give_custom_items - give one of each custom item (testing)',
+    adminGiveMobs:
+      '- /function {{namespace}}:give_custom_mobs - spawn one of each custom mob (testing)',
+    adminJobsSync:
+      '- /function {{namespace}}:jobs/sync_all - refresh job advancement tabs for everyone online',
+    adminReset: '- /function {{namespace}}:reset         - reset YOUR quest progress',
+    adminResetPlayer:
+      '- /execute as <player> run function {{namespace}}:reset   - reset one player',
+    adminResetAll: "- /function {{namespace}}:reset_all     - reset everyone's quest progress",
+    backupTitle: 'Editor project backup',
+    backupLine1: 'This ZIP also contains {{filename}} — your full Quest Tool MC project',
+    backupLine2:
+      '(quests, custom items, spawn zones, etc.). Import it in the app to restore or edit',
+    backupLine3: 'your work later. Minecraft ignores this file when loading the datapack.',
+    feedbackNote1: 'Note: this pack runs "gamerule send_command_feedback false" on load so the',
+    feedbackNote2: '[ Accept ]/[ Turn In ] buttons do not spam "Triggered [..]" into chat.',
+    feedbackNote3: 'To restore command feedback, run: gamerule send_command_feedback true',
+    questsTitle: 'Quests in this pack',
+    questLine: '- {{name}} ({{type}}) - giver: {{giver}}',
+    jobsListTitle: 'Jobs in this pack',
+    jobLine: '- {{name}} ({{action}}) - {{xp}} XP per action, max level {{maxLevel}}',
+    dimensionsTitle: 'Custom dimensions',
+    dimensionsStep1:
+      '- Restart the world after installing or updating this pack (not just /reload).',
+    dimensionsStep2: '- Dimension/worldgen changes require leaving and re-opening the world.',
+    dimensionsStep3: '- Build a small platform in void dimensions before testing dungeons or pads.',
+    dimensionLine: '- {{name}} ({{id}}) — test: /execute in {{id}} run tp @s 0 64 0',
+    skinsTitle: 'Custom mob skins (resource pack)',
+    skinsStep1: '- This datapack ZIP does NOT include mob textures.',
+    skinsStep2: '- Export also provides a separate resource pack ZIP (Download resource pack',
+    skinsStep3: '  in Quest Tool). Install that pack in addition to this datapack.',
+    skinsStep4: '- Multiplayer: host the resource pack ZIP and set server.properties',
+    skinsStep5: '  require-resource-pack=true and resource-pack=<url>.',
+    skinsStep6: '- Single-player: enable the resource pack in Options > Resource Packs.',
+    skinsStep7: '- Players may need to rejoin (not just /reload) after skin updates.',
+    skinsStep8: '- Custom textures only apply to mobs spawned by this datapack with',
+    skinsStep9: '  a configured skin (pig, cow, wolf, cat, chicken, frog, zombie nautilus).',
+    platformVanillaNote1: 'Note: Money is tracked on an internal "money" scoreboard and permission',
+    platformVanillaNote2: 'rewards display a chat message only, since no plugins are available.',
+    platformPaperNote1: 'Note: Money/permission rewards run eco/lp commands as the player (@s).',
+    platformPaperNote2: 'They require an economy plugin + LuckPerms that accept target selectors.',
+    platformPaperNote3: 'Money also always updates an internal "money" scoreboard as a fallback.',
+  },
 } as const;

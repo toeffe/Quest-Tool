@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import i18n, { setAppLocale } from '../i18n';
-import { type AppLocale, DEFAULT_LOCALE } from '../i18n/types';
 import { getSavedAppLocale, saveAppLocale } from '../i18n/localeStorage';
+import { type AppLocale, DEFAULT_LOCALE } from '../i18n/types';
 
 interface LocaleStore {
   locale: AppLocale;

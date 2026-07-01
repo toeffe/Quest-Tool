@@ -1,7 +1,7 @@
-import { type CompileContext } from './context';
-import { type Dimension } from '../types/dimension';
+import type { Dimension } from '../types/dimension';
 import { toIdentifier } from '../types/ids';
-import { type FileMap } from './dungeons';
+import type { CompileContext } from './context';
+import type { FileMap } from './dungeons';
 
 /** Flat void generator settings — matches vanilla 1.21.11 "The Void" superflat preset. */
 export const VOID_FLAT_SETTINGS = {

@@ -1,10 +1,5 @@
 import { useRef } from 'react';
-import {
-  type Platform,
-  type Project,
-  PLATFORM_LABELS,
-  QUEST_TYPE_LABELS,
-} from '../types/quest';
+import { PLATFORM_LABELS, type Platform, type Project, QUEST_TYPE_LABELS } from '../types/quest';
 
 interface Props {
   project: Project;
@@ -58,10 +53,7 @@ export function ProjectSidebar({
 
         <div className="field" style={{ marginBottom: 0 }}>
           <label>Platform</label>
-          <select
-            value={project.platform}
-            onChange={(e) => onPlatform(e.target.value as Platform)}
-          >
+          <select value={project.platform} onChange={(e) => onPlatform(e.target.value as Platform)}>
             {(Object.keys(PLATFORM_LABELS) as Platform[]).map((p) => (
               <option key={p} value={p}>
                 {PLATFORM_LABELS[p]}
@@ -118,8 +110,7 @@ export function ProjectSidebar({
 
       <div className="sidebar-footer">
         <div className="hint" style={{ margin: '0 0 10px', fontSize: 12 }}>
-          Download a datapack on Generate — it includes a project
-          backup you can re-import below.
+          Download a datapack on Generate — it includes a project backup you can re-import below.
         </div>
         <button className="btn block ghost" onClick={() => fileRef.current?.click()}>
           Import project (datapack ZIP)

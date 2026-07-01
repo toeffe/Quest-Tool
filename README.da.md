@@ -93,6 +93,12 @@ Custom items er vanilla base items med **item components** (custom name, lore, f
 
 Kill objectives med **spawn zones** default til **no item drops** når aktiveret. Du kan skifte til vanilla mob loot eller konfigurere en custom drop list (vanilla items eller projekt custom items, med amount og chance). Datapacken vedhæfter en `DeathLootTable` ved summon og emitter loot table JSON efter behov.
 
+### Custom mob drops
+
+På siden **Custom mobs** kan du tilføje en drop list til enhver mob. Export emitter `data/<namespace>/loot_table/mobs/<tag>.json` og sætter `DeathLootTable:"<namespace>:mobs/<tag>"` ved summon (`/function <namespace>:spawn_mob/<tag>`, quest spawn zones, dungeons). Custom drops **erstatter** vanilla loot for den mob.
+
+**Test efter export:** `/loot spawn ~ ~1 ~ loot <namespace>:mobs/<tag>` og `/function <namespace>:spawn_mob/<tag>` — dræb mobben. Genjoin verdenen efter geninstall af datapack (ikke kun `/reload`). Se [docs/custom-mob-drops.md](docs/custom-mob-drops.md) for loot-table format og fejlfinding.
+
 ## Bemærkninger om Minecraft 1.21.11
 
 - `pack.mcmeta` bruger `min_format`/`max_format` `[94, 1]` (datapack format 94.1 for 1.21.11).

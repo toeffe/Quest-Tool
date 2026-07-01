@@ -235,10 +235,7 @@ function formatValue(kind: VariantKind, value: string): string {
  * selected variants of an entity, falling back to each field's first option so
  * the NPC always has a deterministic appearance.
  */
-export function buildVariantNbt(
-  entityType: string,
-  variants?: Record<string, string>,
-): string[] {
+export function buildVariantNbt(entityType: string, variants?: Record<string, string>): string[] {
   return variantFieldsFor(entityType).map((field) => {
     const value = variants?.[field.nbtKey] ?? field.options[0].value;
     return `${field.nbtKey}:${formatValue(field.kind, value)}`;

@@ -1,7 +1,8 @@
 export const exportEn = {
   title: 'Generate & Export',
-  subtitle:
-    'Validate your quests and download a ready-to-install datapack for Minecraft 1.21.11. The ZIP includes quest-tool-project.json for re-import.',
+  subtitle: 'Validate and download your datapack ZIP.',
+  subtitleHint:
+    'Minecraft Java 1.21.11. The ZIP includes quest-tool-project.json for re-import via Settings.',
 
   testPack: {
     title: 'Test datapack (flat world)',
@@ -17,12 +18,10 @@ export const exportEn = {
       debug: '/function {{namespace}}:debug — quest state + job Lv/XP',
       questLayout:
         'Quests 1–18 (rows at Z=0, 12, 24). Quest 5: gold block at 4, {{y}}, 8. Quest 12 needs Woodcutting Lv 2.',
-      jobStations:
-        'Jobs at X={{x}}: {{stations}}. PvP needs a second player (skip solo).',
+      jobStations: 'Jobs at X={{x}}: {{stations}}. PvP needs a second player (skip solo).',
       reset: '/function {{namespace}}:reset between full runs',
     },
-    downloaded:
-      'Test datapack downloaded. NPCs are placed around 0, {{y}}, 0 on superflat.',
+    downloaded: 'Test datapack downloaded. NPCs are placed around 0, {{y}}, 0 on superflat.',
     downloadButton: 'Download test datapack (.zip)',
     exportFailed: 'Test pack export failed',
   },
@@ -31,6 +30,7 @@ export const exportEn = {
     title: 'Validation',
     allGood: 'Everything looks good. You are ready to export.',
     questPrefix: '{{name}}: ',
+    detailsSummary: 'Validation issues ({{count}})',
   },
 
   installGuide: {
@@ -39,17 +39,22 @@ export const exportEn = {
 
   exportCard: {
     title: 'Export',
-    downloaded:
-      "Datapack downloaded. Drop it into your world's datapacks folder and run /reload.",
+    downloaded: "Datapack downloaded. Drop it into your world's datapacks folder and run /reload.",
+    resourcePackDownloaded:
+      'Resource pack downloaded. Install it separately (server required pack or single-player resource packs).',
     downloadButton: 'Download datapack (.zip)',
+    downloadResourcePackButton: 'Download resource pack (.zip)',
     copyCommands: 'Copy raw commands',
     projectBackup: 'Download project backup (.json)',
-    blockedHint: 'Fix the errors above to download the datapack.',
+    blockedHint: 'Fix the errors below to download the datapack.',
+    warningsHint: 'You can export, but review the warnings below.',
     exportFailed: 'Export failed',
+    resourcePackExportFailed: 'Resource pack export failed',
   },
 
   files: {
     title: 'Generated files ({{count}})',
+    commandPreview: 'Command preview',
     subtitle: 'Preview of datapack contents. Use Download for the full ZIP.',
     truncated: '…',
     moreFiles: '…and {{count}} more files in the ZIP.',

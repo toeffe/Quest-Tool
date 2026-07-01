@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next';
-import { type ActiveView, useUIStore } from '../../store/uiStore';
-import { useValidation } from '../../hooks/useValidation';
 import { hasBlockingErrors } from '../../generator/validate';
-import { useProject } from '../../store/useProjectStore';
+import { useValidation } from '../../hooks/useValidation';
 import { usePlatformLabels } from '../../i18n/useLabels';
+import { type ActiveView, useUIStore } from '../../store/uiStore';
+import { useProject } from '../../store/useProjectStore';
 
 const VIEW_IDS: ActiveView[] = [
   'flow',

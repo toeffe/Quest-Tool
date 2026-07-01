@@ -1,6 +1,8 @@
 export const commonEn = {
   appName: 'Quest Tool MC',
   appTitle: 'Quest Tool MC — Minecraft Quest Creator',
+  saveError:
+    'Could not save your project to this browser (storage may be full). Export a backup from the Export page.',
 
   nav: {
     mainViewsAria: 'Main views',
@@ -25,6 +27,7 @@ export const commonEn = {
     add: '+ Add',
     remove: 'Remove',
     copy: 'Copy',
+    duplicateSuffix: '(copy)',
     settings: 'Settings',
     help: '? Help',
     closeHelp: 'Close help',
@@ -33,6 +36,7 @@ export const commonEn = {
     building: 'Building…',
     copied: 'Copied!',
     loading: 'Loading…',
+    dismiss: 'Dismiss',
     ready: 'Ready',
     unlink: 'Unlink',
     fullEditor: 'Full editor',
@@ -40,6 +44,7 @@ export const commonEn = {
     no: 'No',
     off: 'Off',
     on: 'On',
+    more: 'More',
     keep: 'Keep items',
     selectItem: 'Select an item…',
     selectJob: 'Select a job…',
@@ -51,6 +56,10 @@ export const commonEn = {
     toggleTitle: 'Toggle light / dark theme',
   },
 
+  editor: {
+    emptyState: 'Select a quest to edit, or create a new one from the sidebar.',
+  },
+
   settings: {
     title: 'Project settings',
     titleButton: 'Project settings (namespace, platform, import)',
@@ -60,8 +69,7 @@ export const commonEn = {
     namespacePlaceholder: 'questpack',
     platform: 'Platform',
     importSection: 'Import project',
-    importHint:
-      'Import a .json backup or a datapack ZIP containing quest-tool-project.json.',
+    importHint: 'Import a .json backup or a datapack ZIP containing quest-tool-project.json.',
     importButton: 'Import project file',
     dangerZone: 'Danger zone',
     resetProject: 'Reset project',

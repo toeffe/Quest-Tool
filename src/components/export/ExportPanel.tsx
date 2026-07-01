@@ -1,29 +1,39 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useProject } from '../../store/useProjectStore';
-import { useValidation } from '../../hooks/useValidation';
-import { useExport } from '../../hooks/useExport';
-import { hasBlockingErrors } from '../../generator/validate';
-import {
-  buildRawCommands,
-  buildDatapackFiles,
-} from '../../generator/datapack';
-import { installGuide } from '../../generator/platform';
-import { buildContext } from '../../generator/context';
-import { exportProjectJson, projectJsonFileName } from '../../state/projectStore';
 import {
   TEST_DATAPACK_NAMESPACE,
   TEST_DATAPACK_SURFACE_Y,
 } from '../../fixtures/testDatapackProject';
 import { JOB_STATION_LABELS, JOB_STATION_X } from '../../fixtures/testDatapackStations';
+import { buildContext } from '../../generator/context';
+import { buildDatapackFiles, buildRawCommands } from '../../generator/datapack';
+import { installGuide } from '../../generator/platform';
+import { hasBlockingErrors } from '../../generator/validate';
+import { useExport } from '../../hooks/useExport';
+import { useValidation } from '../../hooks/useValidation';
+import { exportProjectJson, projectJsonFileName } from '../../state/projectStore';
+import { useProject } from '../../store/useProjectStore';
+import { PageHeader } from '../ui/PageHeader';
 
 export function ExportPanel() {
   const { t } = useTranslation('export');
   const { t: tc } = useTranslation('common');
+  const { t: tDefaults } = useTranslation('defaults');
   const project = useProject();
   const issues = useValidation();
-  const { busy, downloaded, testDownloaded, error, testError, downloadDatapack, downloadTestDatapack } =
-    useExport();
+  const {
+    busy,
+    downloaded,
+    resourcePackDownloaded,
+    testDownloaded,
+    error,
+    resourcePackError,
+    testError,
+    hasSkins,
+    downloadDatapack,
+    downloadResourcePack,
+    downloadTestDatapack,
+  } = useExport();
   const [copied, setCopied] = useState(false);
 
   const blocked = hasBlockingErrors(issues);
@@ -32,10 +42,7 @@ export function ExportPanel() {
   const projectLocale = project.locale ?? 'da';
   const namespace = buildContext(project).namespace;
 
-  const rawCommands = useMemo(
-    () => (blocked ? '' : buildRawCommands(project)),
-    [project, blocked],
-  );
+  const rawCommands = useMemo(() => (blocked ? '' : buildRawCommands(project)), [project, blocked]);
   const guide = useMemo(
     () => installGuide(project.platform, namespace, projectLocale),
     [project.platform, namespace, projectLocale],
@@ -47,6 +54,7 @@ export function ExportPanel() {
       return {} as Record<string, string>;
     }
   }, [project]);
+  const fileEntries = Object.entries(files);
 
   async function handleCopy() {
     await navigator.clipboard.writeText(rawCommands);
@@ -66,99 +74,33 @@ export function ExportPanel() {
 
   return (
     <div className="export-panel content-inner">
-      <h1 className="step-title">{t('title')}</h1>
-      <p className="step-sub">{t('subtitle')}</p>
+      <PageHeader title={t('title')} lead={t('subtitle')} hint={t('subtitleHint')} />
 
-      <div className="card" style={{ borderColor: 'var(--color-accent)' }}>
-        <h3 style={{ marginTop: 0 }}>{t('testPack.title')}</h3>
-        <p className="muted" style={{ marginTop: -4, lineHeight: 1.6 }}>
-          {t('testPack.description')}
-        </p>
-        <p className="muted" style={{ marginBottom: 8, lineHeight: 1.6 }}>
-          {t('testPack.guideCommand', { namespace: TEST_DATAPACK_NAMESPACE })}
-        </p>
-        <details style={{ marginBottom: 12 }}>
-          <summary style={{ cursor: 'pointer', fontWeight: 600 }}>{t('testPack.setupSummary')}</summary>
-          <ol style={{ margin: '8px 0 0', paddingLeft: 18, lineHeight: 1.7 }}>
-            <li>{t('testPack.steps.flatWorld')}</li>
-            <li>{t('testPack.steps.spawnAll', { namespace: TEST_DATAPACK_NAMESPACE })}</li>
-            <li>{t('testPack.steps.giveKit', { namespace: TEST_DATAPACK_NAMESPACE })}</li>
-            <li>{t('testPack.steps.syncJobs', { namespace: TEST_DATAPACK_NAMESPACE })}</li>
-            <li>{t('testPack.steps.debug', { namespace: TEST_DATAPACK_NAMESPACE })}</li>
-            <li>{t('testPack.steps.questLayout', { y: TEST_DATAPACK_SURFACE_Y })}</li>
-            <li>
-              {t('testPack.steps.jobStations', {
-                x: JOB_STATION_X,
-                stations: JOB_STATION_LABELS.map((s) => s.name).join(', '),
-              })}
-            </li>
-            <li>{t('testPack.steps.reset', { namespace: TEST_DATAPACK_NAMESPACE })}</li>
-          </ol>
-        </details>
-        {testDownloaded && (
-          <div className="success-banner" style={{ marginBottom: 12 }}>
-            {t('testPack.downloaded', { y: TEST_DATAPACK_SURFACE_Y })}
-          </div>
-        )}
-        {testError && (
-          <div className="issue" style={{ marginBottom: 12 }}>
-            <span className="badge error">{tc('validation.error')}</span>
-            {testError}
-          </div>
-        )}
-        <button
-          type="button"
-          className="btn primary"
-          disabled={busy}
-          onClick={downloadTestDatapack}
-        >
-          {busy ? tc('actions.building') : t('testPack.downloadButton')}
-        </button>
-      </div>
-
-      <div className={`card validation-summary ${blocked ? 'blocked' : warnings.length ? 'warn' : 'ok'}`}>
-        <div className="row-between" style={{ marginBottom: 12 }}>
-          <h3 style={{ margin: 0 }}>{t('validation.title')}</h3>
+      <section
+        className={`card export-primary ${blocked ? 'blocked' : warnings.length ? 'warn' : 'ok'}`}
+      >
+        <div className="export-primary-head">
           <div>
-            <span className="badge error" style={{ marginRight: 8 }}>
-              {tc('validation.errors', { count: errors.length })}
+            <h2 className="export-section-title">{t('exportCard.title')}</h2>
+            {!blocked && issues.length === 0 && (
+              <p className="export-status-text ok">{t('validation.allGood')}</p>
+            )}
+            {blocked && <p className="export-status-text blocked">{t('exportCard.blockedHint')}</p>}
+            {!blocked && warnings.length > 0 && issues.length > 0 && (
+              <p className="export-status-text warn">{t('exportCard.warningsHint')}</p>
+            )}
+          </div>
+          <div className="export-badges">
+            <span className="badge error">{tc('validation.errors', { count: errors.length })}</span>
+            <span className="badge warning">
+              {tc('validation.warnings', { count: warnings.length })}
             </span>
-            <span className="badge warning">{tc('validation.warnings', { count: warnings.length })}</span>
           </div>
         </div>
 
-        {issues.length === 0 && (
-          <div className="success-banner">{t('validation.allGood')}</div>
-        )}
-
-        {issues.map((issue, i) => (
-          <div key={i} className="issue">
-            <span className={`badge ${issue.level}`}>{issue.level}</span>
-            <div>
-              {issue.questName && (
-                <strong>{t('validation.questPrefix', { name: issue.questName })}</strong>
-              )}
-              {issue.message}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="card">
-        <h3>{guide.title}</h3>
-        <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.7 }}>
-          {guide.steps.map((step, i) => (
-            <li key={i}>{step}</li>
-          ))}
-        </ol>
-      </div>
-
-      <div className="card">
-        <div className="row-between" style={{ marginBottom: 12 }}>
-          <h3 style={{ margin: 0 }}>{t('exportCard.title')}</h3>
-        </div>
-        {downloaded && (
-          <div className="success-banner">{t('exportCard.downloaded')}</div>
+        {downloaded && <div className="success-banner">{t('exportCard.downloaded')}</div>}
+        {resourcePackDownloaded && (
+          <div className="success-banner">{t('exportCard.resourcePackDownloaded')}</div>
         )}
         {error && (
           <div className="issue">
@@ -166,7 +108,14 @@ export function ExportPanel() {
             {error}
           </div>
         )}
-        <div className="toolbar">
+        {resourcePackError && (
+          <div className="issue">
+            <span className="badge error">{tc('validation.error')}</span>
+            {resourcePackError}
+          </div>
+        )}
+
+        <div className="toolbar export-toolbar">
           <button
             type="button"
             className="btn primary"
@@ -175,6 +124,16 @@ export function ExportPanel() {
           >
             {busy ? tc('actions.building') : t('exportCard.downloadButton')}
           </button>
+          {hasSkins && (
+            <button
+              type="button"
+              className="btn"
+              disabled={blocked || busy}
+              onClick={downloadResourcePack}
+            >
+              {busy ? tc('actions.building') : t('exportCard.downloadResourcePackButton')}
+            </button>
+          )}
           <button type="button" className="btn" disabled={blocked} onClick={handleCopy}>
             {copied ? tc('actions.copied') : t('exportCard.copyCommands')}
           </button>
@@ -184,33 +143,103 @@ export function ExportPanel() {
             </button>
           )}
         </div>
-        {blocked && (
-          <p className="muted" style={{ marginTop: 8 }}>
-            {t('exportCard.blockedHint')}
-          </p>
-        )}
-      </div>
+      </section>
 
-      {!blocked && (
-        <div className="card">
-          <h3>{t('files.title', { count: Object.keys(files).length })}</h3>
-          <p className="muted" style={{ marginTop: -6, marginBottom: 12 }}>
-            {t('files.subtitle')}
-          </p>
+      {issues.length > 0 && (
+        <details className="card export-issues" open={blocked}>
+          <summary className="export-details-summary">
+            {t('validation.detailsSummary', { count: issues.length })}
+          </summary>
+          <div className="export-issues-list">
+            {issues.map((issue, i) => (
+              <div key={i} className="issue">
+                <span className={`badge ${issue.level}`}>{issue.level}</span>
+                <div>
+                  {issue.questName && (
+                    <strong>{t('validation.questPrefix', { name: issue.questName })}</strong>
+                  )}
+                  {issue.message}
+                </div>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+
+      <section className="card">
+        <h2 className="export-section-title">{guide.title}</h2>
+        <ol className="export-steps">
+          {guide.steps.map((step, i) => (
+            <li key={i}>{step}</li>
+          ))}
+        </ol>
+      </section>
+
+      <details className="card export-test-pack">
+        <summary className="export-details-summary">{t('testPack.title')}</summary>
+        <p className="muted export-test-pack-desc">{t('testPack.description')}</p>
+        <p className="muted">
+          {t('testPack.guideCommand', { namespace: TEST_DATAPACK_NAMESPACE })}
+        </p>
+        <details className="export-nested-details">
+          <summary className="export-details-summary subtle">{t('testPack.setupSummary')}</summary>
+          <ol className="export-steps">
+            <li>{t('testPack.steps.flatWorld')}</li>
+            <li>{t('testPack.steps.spawnAll', { namespace: TEST_DATAPACK_NAMESPACE })}</li>
+            <li>{t('testPack.steps.giveKit', { namespace: TEST_DATAPACK_NAMESPACE })}</li>
+            <li>{t('testPack.steps.syncJobs', { namespace: TEST_DATAPACK_NAMESPACE })}</li>
+            <li>{t('testPack.steps.debug', { namespace: TEST_DATAPACK_NAMESPACE })}</li>
+            <li>{t('testPack.steps.questLayout', { y: TEST_DATAPACK_SURFACE_Y })}</li>
+            <li>
+              {t('testPack.steps.jobStations', {
+                x: JOB_STATION_X,
+                stations: JOB_STATION_LABELS.map((s) => tDefaults(`starterJobs.${s.nameKey}`)).join(
+                  ', ',
+                ),
+              })}
+            </li>
+            <li>{t('testPack.steps.reset', { namespace: TEST_DATAPACK_NAMESPACE })}</li>
+          </ol>
+        </details>
+        {testDownloaded && (
+          <div className="success-banner">
+            {t('testPack.downloaded', { y: TEST_DATAPACK_SURFACE_Y })}
+          </div>
+        )}
+        {testError && (
+          <div className="issue">
+            <span className="badge error">{tc('validation.error')}</span>
+            {testError}
+          </div>
+        )}
+        <button type="button" className="btn" disabled={busy} onClick={downloadTestDatapack}>
+          {busy ? tc('actions.building') : t('testPack.downloadButton')}
+        </button>
+      </details>
+
+      {!blocked && fileEntries.length > 0 && (
+        <details className="card export-files">
+          <summary className="export-details-summary">
+            {t('files.title', { count: fileEntries.length })}
+          </summary>
+          <p className="muted export-files-sub">{t('files.subtitle')}</p>
           <div className="export-file-list">
-            {Object.entries(files).slice(0, 12).map(([name, content]) => (
+            {fileEntries.slice(0, 12).map(([name, content]) => (
               <details key={name} className="export-file-item">
                 <summary>
                   <code>{name}</code>
                 </summary>
-                <pre className="code">{content.slice(0, 600)}{content.length > 600 ? `\n${t('files.truncated')}` : ''}</pre>
+                <pre className="code">
+                  {content.slice(0, 600)}
+                  {content.length > 600 ? `\n${t('files.truncated')}` : ''}
+                </pre>
               </details>
             ))}
-            {Object.keys(files).length > 12 && (
-              <p className="muted">{t('files.moreFiles', { count: Object.keys(files).length - 12 })}</p>
+            {fileEntries.length > 12 && (
+              <p className="muted">{t('files.moreFiles', { count: fileEntries.length - 12 })}</p>
             )}
           </div>
-        </div>
+        </details>
       )}
     </div>
   );

@@ -1,13 +1,9 @@
 import i18n from 'i18next';
 import { useTranslation } from 'react-i18next';
-import {
-  type Platform,
-  type QuestType,
-  type RewardType,
-} from '../types/quest';
-import { type JobAction, type JobMilestoneRewardType } from '../types/job';
-import { type CustomItemKind } from '../types/item';
-import { type AppLocale } from './types';
+import type { CustomItemKind } from '../types/item';
+import type { JobAction, JobMilestoneRewardType } from '../types/job';
+import type { Platform, QuestType, RewardType } from '../types/quest';
+import type { AppLocale } from './types';
 
 export function useQuestTypeLabels(): Record<QuestType, string> {
   const { t } = useTranslation('quest');

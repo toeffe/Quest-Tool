@@ -1,21 +1,39 @@
-import { type Project, type Quest } from '../types/quest';
-import { type CustomItem } from '../types/item';
-import { type CustomMob } from '../types/customMob';
-import { type Job } from '../types/job';
-import { type Dungeon, type DungeonRoom, createDungeon, createDungeonRoom } from '../types/dungeon';
+import JSZip from 'jszip';
+import i18n from '../i18n';
+import type { AppLocale } from '../i18n/types';
+import { defaultsT } from '../i18n/useLabels';
+import type { CustomMob } from '../types/customMob';
 import {
-  type Dimension,
-  type TeleportPad,
-  type LegacyPortalLink,
   createDimension,
   createTeleportPad,
+  type Dimension,
+  type LegacyPortalLink,
+  type TeleportPad,
 } from '../types/dimension';
-import { createProject, createCustomItem, createCustomMob, createJob, mergeStarterJobs, PROJECT_SCHEMA_VERSION } from '../types/factory';
+import { createDungeon, createDungeonRoom, type Dungeon, type DungeonRoom } from '../types/dungeon';
+import {
+  createCustomItem,
+  createCustomMob,
+  createJob,
+  createProject,
+  mergeStarterJobs,
+  PROJECT_SCHEMA_VERSION,
+} from '../types/factory';
 import { uid } from '../types/ids';
-
-import JSZip from 'jszip';
+import type { CustomItem } from '../types/item';
+import type { Job } from '../types/job';
+import type { Project, Quest } from '../types/quest';
+import { sanitizeProjectStrings } from './sanitizeStrings';
 
 const STORAGE_KEY = 'quest-tool-mc.project';
+
+function projectLocale(project: Project): AppLocale {
+  return project.locale === 'en' ? 'en' : 'da';
+}
+
+function duplicateName(name: string, locale: AppLocale): string {
+  return `${name} ${i18n.getFixedT(locale, 'common')('actions.duplicateSuffix')}`;
+}
 
 /** Bundled inside every generated datapack ZIP for restore in Quest Tool MC. */
 export const PROJECT_BACKUP_FILENAME = 'quest-tool-project.json';
@@ -33,11 +51,13 @@ export function loadProject(): Project {
 }
 
 /** Persist the project to localStorage. Safe to call frequently (auto-save). */
-export function saveProject(project: Project): void {
+export function saveProject(project: Project): boolean {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(project));
+    return true;
   } catch {
-    // Storage may be full or unavailable; fail silently so the UI keeps working.
+    // Storage may be full or unavailable.
+    return false;
   }
 }
 
@@ -45,7 +65,7 @@ export function saveProject(project: Project): void {
 function migrate(project: Project): Project {
   const next: Project = { ...createProject(project.name), ...project };
   next.version = PROJECT_SCHEMA_VERSION;
-  if (!Array.isArray(next.quests) || next.quests.length === 0) {
+  if (!Array.isArray(next.quests)) {
     next.quests = createProject().quests;
   }
   if (!Array.isArray(next.customItems)) {
@@ -74,11 +94,7 @@ function migrate(project: Project): Project {
   }
   if (fromVersion < 6) {
     const jobs = [...(next.jobs ?? [])];
-    if (
-      jobs.length === 1 &&
-      jobs[0].action === 'fish' &&
-      !jobs[0].starterKey
-    ) {
+    if (jobs.length === 1 && jobs[0].action === 'fish' && !jobs[0].starterKey) {
       jobs[0] = { ...jobs[0], starterKey: 'starter_fishing' };
     }
     next.jobs = mergeStarterJobs(jobs, next.locale ?? 'da');
@@ -109,7 +125,7 @@ function migrate(project: Project): Project {
   if (!next.locale) {
     next.locale = 'da';
   }
-  return next;
+  return sanitizeProjectStrings(next);
 }
 
 /** Convert removed portal links (schema v9) into teleport pads. */
@@ -212,11 +228,7 @@ export function updateQuest(project: Project, quest: Quest): Project {
  * `oldName` so it points at `newName` instead. Keeps storylines intact when a
  * quest is renamed. Returns the project unchanged when there is nothing to do.
  */
-export function renameQuestReferences(
-  project: Project,
-  oldName: string,
-  newName: string,
-): Project {
+export function renameQuestReferences(project: Project, oldName: string, newName: string): Project {
   if (!oldName || oldName === newName) return project;
   let changed = false;
   const quests = project.quests.map((q) => {
@@ -230,6 +242,7 @@ export function renameQuestReferences(
 }
 
 export function deleteQuest(project: Project, questId: string): Project {
+  if (project.quests.length <= 1) return project;
   return { ...project, quests: project.quests.filter((q) => q.id !== questId) };
 }
 
@@ -239,7 +252,7 @@ export function duplicateQuest(project: Project, questId: string): Project {
   const copy: Quest = {
     ...structuredClone(original),
     id: uid(),
-    name: `${original.name} (copy)`,
+    name: duplicateName(original.name, projectLocale(project)),
   };
   const index = project.quests.findIndex((q) => q.id === questId);
   const quests = [...project.quests];
@@ -301,7 +314,7 @@ export function duplicateCustomItem(project: Project, itemId: string): Project {
   const copy: CustomItem = {
     ...structuredClone(original),
     id: uid(),
-    name: `${original.name} (copy)`,
+    name: duplicateName(original.name, projectLocale(project)),
     tag: `${original.tag}_copy`,
   };
   const items = [...(project.customItems ?? [])];
@@ -314,8 +327,10 @@ export function createAndAddCustomItem(
   project: Project,
   kind: CustomItem['kind'] = 'general',
 ): { project: Project; item: CustomItem } {
+  const locale = projectLocale(project);
+  const t = defaultsT(locale);
   const n = (project.customItems ?? []).length + 1;
-  const item = createCustomItem(kind, `Item ${n}`);
+  const item = createCustomItem(kind, t('customItem.numberedName', { n }), locale);
   return { project: addCustomItem(project, item), item };
 }
 
@@ -346,9 +361,7 @@ export function deleteCustomMob(project: Project, mobId: string): Project {
     ...d,
     rooms: d.rooms.map((r) => ({
       ...r,
-      spawns: r.spawns.map((s) =>
-        s.customMobId === mobId ? { ...s, customMobId: undefined } : s,
-      ),
+      spawns: r.spawns.map((s) => (s.customMobId === mobId ? { ...s, customMobId: undefined } : s)),
     })),
   }));
   return { ...project, customMobs: mobs, quests, dungeons };
@@ -360,7 +373,7 @@ export function duplicateCustomMob(project: Project, mobId: string): Project {
   const copy: CustomMob = {
     ...structuredClone(original),
     id: uid(),
-    name: `${original.name} (copy)`,
+    name: duplicateName(original.name, projectLocale(project)),
     tag: `${original.tag}_copy`,
   };
   const mobs = [...(project.customMobs ?? [])];
@@ -369,11 +382,11 @@ export function duplicateCustomMob(project: Project, mobId: string): Project {
   return { ...project, customMobs: mobs };
 }
 
-export function createAndAddCustomMob(
-  project: Project,
-): { project: Project; mob: CustomMob } {
+export function createAndAddCustomMob(project: Project): { project: Project; mob: CustomMob } {
+  const locale = projectLocale(project);
+  const t = defaultsT(locale);
   const n = (project.customMobs ?? []).length + 1;
-  const mob = createCustomMob(`Mob ${n}`, project.locale ?? 'da');
+  const mob = createCustomMob(t('customMob.numberedName', { n }), locale);
   return { project: addCustomMob(project, mob), mob };
 }
 
@@ -413,7 +426,7 @@ export function duplicateJob(project: Project, jobId: string): Project {
   const copy: Job = {
     ...structuredClone(original),
     id: uid(),
-    name: `${original.name} (copy)`,
+    name: duplicateName(original.name, projectLocale(project)),
     starterKey: undefined,
   };
   const jobs = [...(project.jobs ?? [])];
@@ -423,8 +436,10 @@ export function duplicateJob(project: Project, jobId: string): Project {
 }
 
 export function createAndAddJob(project: Project): { project: Project; job: Job } {
+  const locale = projectLocale(project);
+  const t = defaultsT(locale);
   const n = (project.jobs ?? []).length + 1;
-  const job = createJob(`Job ${n}`);
+  const job = createJob(t('job.numberedName', { n }), 'fish', {}, locale);
   return { project: addJob(project, job), job };
 }
 
@@ -454,7 +469,7 @@ export function duplicateDungeon(project: Project, dungeonId: string): Project {
   const copy: Dungeon = {
     ...structuredClone(original),
     id: uid(),
-    name: `${original.name} (copy)`,
+    name: duplicateName(original.name, projectLocale(project)),
     tag: `${original.tag}_copy`,
     rooms: original.rooms.map((r) => ({ ...structuredClone(r), id: uid() })),
   };
@@ -500,27 +515,22 @@ export function deleteRoom(project: Project, dungeonId: string, roomId: string):
   return {
     ...project,
     dungeons: dungeons.map((d) =>
-      d.id === dungeonId
-        ? { ...d, rooms: d.rooms.filter((r) => r.id !== roomId) }
-        : d,
+      d.id === dungeonId ? { ...d, rooms: d.rooms.filter((r) => r.id !== roomId) } : d,
     ),
   };
 }
 
-export function createAndAddDungeon(
-  project: Project,
-): { project: Project; dungeon: Dungeon } {
+export function createAndAddDungeon(project: Project): { project: Project; dungeon: Dungeon } {
+  const locale = projectLocale(project);
+  const t = defaultsT(locale);
   const n = (project.dungeons ?? []).length + 1;
-  const dungeon = createDungeon(`Dungeon ${n}`, project.locale ?? 'da');
+  const dungeon = createDungeon(t('dungeon.numberedName', { n }), locale);
   return { project: addDungeon(project, dungeon), dungeon };
 }
 
 // ---- Dimension operations ----
 
-function clearDimensionRef(
-  dimensionId: string | undefined,
-  deletedId: string,
-): string | undefined {
+function clearDimensionRef(dimensionId: string | undefined, deletedId: string): string | undefined {
   return dimensionId === deletedId ? undefined : dimensionId;
 }
 
@@ -601,7 +611,7 @@ export function duplicateDimension(project: Project, dimensionId: string): Proje
   const copy: Dimension = {
     ...structuredClone(original),
     id: uid(),
-    name: `${original.name} (copy)`,
+    name: duplicateName(original.name, projectLocale(project)),
     tag: `${original.tag}_copy`,
   };
   const dimensions = [...(project.dimensions ?? [])];
@@ -610,11 +620,14 @@ export function duplicateDimension(project: Project, dimensionId: string): Proje
   return { ...project, dimensions };
 }
 
-export function createAndAddDimension(
-  project: Project,
-): { project: Project; dimension: Dimension } {
+export function createAndAddDimension(project: Project): {
+  project: Project;
+  dimension: Dimension;
+} {
+  const locale = projectLocale(project);
+  const t = defaultsT(locale);
   const n = (project.dimensions ?? []).length + 1;
-  const dimension = createDimension(`Dimension ${n}`, project.locale ?? 'da');
+  const dimension = createDimension(t('dimension.numberedName', { n }), locale);
   return { project: addDimension(project, dimension), dimension };
 }
 
@@ -644,7 +657,7 @@ export function duplicateTeleportPad(project: Project, padId: string): Project {
   const copy: TeleportPad = {
     ...structuredClone(original),
     id: uid(),
-    name: `${original.name} (copy)`,
+    name: duplicateName(original.name, projectLocale(project)),
   };
   const teleportPads = [...(project.teleportPads ?? [])];
   const index = teleportPads.findIndex((p) => p.id === padId);
@@ -652,10 +665,10 @@ export function duplicateTeleportPad(project: Project, padId: string): Project {
   return { ...project, teleportPads };
 }
 
-export function createAndAddTeleportPad(
-  project: Project,
-): { project: Project; pad: TeleportPad } {
+export function createAndAddTeleportPad(project: Project): { project: Project; pad: TeleportPad } {
+  const locale = projectLocale(project);
+  const t = defaultsT(locale);
   const n = (project.teleportPads ?? []).length + 1;
-  const pad = createTeleportPad(`Pad ${n}`, project.locale ?? 'da');
+  const pad = createTeleportPad(t('pad.numberedName', { n }), locale);
   return { project: addTeleportPad(project, pad), pad };
 }

@@ -76,6 +76,27 @@ After each job levels: boss bar flash, `/function <ns>:debug` shows new Lv, Esc 
 - `/function <ns>:reset` — your quest + job progress
 - `/function <ns>:spawn_all` — re-place NPCs and stations
 
+## Performance (large quest packs)
+
+The datapack calls every quest's `tick` function on each game tick. Designed for **tens** of quests on a small server; **hundreds** may increase MSPT noticeably.
+
+1. Export a project with 50+ quests (duplicate quests in the tool if needed).
+2. Install the pack on a test world with `/reload`.
+3. Run `/function <ns>:debug` with zero players mid-quest vs. all quests completed.
+4. Use F3 debug screen (or server `/mspt` on Paper) to compare idle MSPT before and after loading the pack.
+5. Completed quests should show reduced tick work (per-quest early-exit); if MSPT stays high with many incomplete quests, consider splitting into multiple smaller datapacks.
+
+## Custom mob drops (project mobs)
+
+If your project defines **Custom mobs** with a drop list:
+
+1. Re-export and reinstall the datapack; **rejoin the world** (loot tables are cached at load).
+2. `/loot spawn ~ ~1 ~ loot <ns>:mobs/<mob_tag>` — should drop the configured item(s).
+3. `/function <ns>:spawn_mob/<mob_tag>` → kill mob → same drops.
+4. `/gamerule doMobLoot` must be `true`.
+
+Loot tables use `type: minecraft:generic` and split loot functions for custom items (see [custom-mob-drops.md](custom-mob-drops.md)).
+
 ## Reporting issues
 
 Include Minecraft version, platform, exported ZIP, `/function <ns>:debug` output, and which quest/job step failed.

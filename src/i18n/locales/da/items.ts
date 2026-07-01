@@ -1,7 +1,8 @@
 export const itemsDa = {
   title: 'Brugerdefinerede genstande',
-  subtitle:
-    'Definér genbrugelige genstande med brugerdefinerede navne, lore og adfærd. Brug dem som questbelønninger eller saml-/leveringsmål. Genstande bruger Minecraft-genstandskomponenter (ingen brugerdefinerede teksturer i v1).',
+  subtitle: 'Genbrugelige genstande til belønninger og questmål.',
+  subtitleHint:
+    'Brugerdefinerede navne, lore og adfærd via genstandskomponenter. Ingen brugerdefinerede teksturer i v1 — tilføj resource pack separat om nødvendigt.',
 
   kinds: {
     general: 'Generel',
@@ -32,8 +33,7 @@ export const itemsDa = {
 
   editor: {
     itemKind: 'Genstandstype',
-    itemKindHint:
-      'Samlere er trofæ-lignende belønninger med fornuftige standarder.',
+    itemKindHint: 'Samlere er trofæ-lignende belønninger med fornuftige standarder.',
     editorName: 'Editornavn',
     editorNameHint: 'Internt label i dette værktøj kun.',
     identityTag: 'Identitetstag',
@@ -46,8 +46,7 @@ export const itemsDa = {
     displayNameHint: 'Vises for spilleren in-game.',
     lore: 'Lore',
     loreHint: 'Én linje pr. række.',
-    loreCollectibleHint:
-      'Én linje pr. række. f.eks. "Tildelt for at fuldføre dragequesten."',
+    loreCollectibleHint: 'Én linje pr. række. f.eks. "Tildelt for at fuldføre dragequesten."',
     lorePlaceholder: 'Linje et\nLinje to',
   },
 
@@ -94,7 +93,6 @@ export const itemsDa = {
 
   preview: {
     title: 'Forhåndsvisning af genereret kommando',
-    hint:
-      'Efter eksport, kør /function {{namespace}}:give_custom_items for at modtage én af hver brugerdefineret genstand til test.',
+    hint: 'Efter eksport, kør /function {{namespace}}:give_custom_items for at modtage én af hver brugerdefineret genstand til test.',
   },
 } as const;

@@ -1,23 +1,8 @@
 import JSZip from 'jszip';
-import { type Project } from '../types/quest';
+import i18n from '../i18n';
 import { exportProjectJson, PROJECT_BACKUP_FILENAME } from '../state/projectStore';
-import { buildPackMeta, MINECRAFT_VERSION } from './packFormat';
-import { buildContext, type CompileContext } from './context';
-import {
-  buildLoadFunction,
-  buildTickFunction,
-  buildResetFunction,
-  buildResetAllFunction,
-} from './load';
-import { compileQuest, buildKillZoneAdvancementFiles, buildZoneLootTableFiles } from './questFunctions';
-import { compileJob, buildJobsTickFunction, buildJobsSyncAllFunction, buildJobDebugLines } from './jobFunctions';
-import { buildJobBossBarSupportFiles } from './jobBossBar';
-import { buildJobAdvancementFiles } from './jobAdvancements';
-import { spawnFunctionLines } from './npc';
-import { installGuide } from './platform';
-import { tellraw, escapeSnbtString } from './text';
-import { questObjectives } from './context';
-import { buildGiveCustomItemsFunction } from './items';
+import type { Project } from '../types/quest';
+import { buildContext, type CompileContext, questObjectives } from './context';
 import { buildCustomMobBossBarSupportFiles } from './customMobBossBar';
 import { buildCustomMobPhaseSupportFiles } from './customMobPhases';
 import {
@@ -25,16 +10,42 @@ import {
   buildGiveCustomMobsFunction,
   buildSpawnMobFunctions,
 } from './customMobs';
-import { compileDungeons } from './dungeons';
 import { compileDimensions, dimensionResourceId } from './dimensions';
-import { compilePads } from './pads';
+import { compileDungeons } from './dungeons';
+import { buildGiveCustomItemsFunction } from './items';
+import { buildJobAdvancementFiles } from './jobAdvancements';
+import { buildJobBossBarSupportFiles } from './jobBossBar';
 import {
-  buildEmptyEntityLootTable,
-  emptyLootTablePath,
-  needsEmptyLootTable,
-} from './lootTables';
+  buildJobDebugLines,
+  buildJobsSyncAllFunction,
+  buildJobsTickFunction,
+  compileJob,
+} from './jobFunctions';
+import {
+  buildLoadFunction,
+  buildResetAllFunction,
+  buildResetFunction,
+  buildTickFunction,
+} from './load';
+import { buildEmptyEntityLootTable, emptyLootTablePath, needsEmptyLootTable } from './lootTables';
+import { buildMobVariantFiles, projectHasSkinTextures } from './mobSkins';
+import { spawnFunctionLines } from './npc';
+import { buildPackMeta, MINECRAFT_VERSION } from './packFormat';
+import { compilePads } from './pads';
+import { installGuide } from './platform';
+import {
+  buildKillZoneAdvancementFiles,
+  buildZoneLootTableFiles,
+  compileQuest,
+} from './questFunctions';
+import { buildResourcePackFiles } from './resourcePack';
+import { escapeSnbtString, tellraw } from './text';
+
 /** A flat map of file paths (inside the ZIP) to their text contents. */
 export type FileMap = Record<string, string>;
+
+/** Export ZIP may include binary PNG textures. */
+export type ExportFileMap = Record<string, string | Uint8Array>;
 
 function mapJobBossBarFiles(fnRoot: string, relFiles: Record<string, string>): FileMap {
   const out: FileMap = {};
@@ -117,7 +128,10 @@ function setupGuideFunction(ctx: CompileContext): string {
     }
     lines.push(
       tellraw('@s', [
-        { text: 'Build a small platform in void dimensions before testing dungeons or pads.', color: 'gray' },
+        {
+          text: 'Build a small platform in void dimensions before testing dungeons or pads.',
+          color: 'gray',
+        },
       ]),
     );
   }
@@ -159,103 +173,119 @@ function debugFunction(ctx: CompileContext): string {
 
 function readmeText(project: Project, ctx: CompileContext): string {
   const STR = ctx.str;
-  const guide = installGuide(project.platform, ctx.namespace, ctx.locale);
+  const t = i18n.getFixedT(ctx.locale, 'datapack');
+  const ns = ctx.namespace;
+  const guide = installGuide(project.platform, ns, ctx.locale);
+  const section = (title: string) => [`${title}`, `${'='.repeat(title.length)}`];
+
   const lines: string[] = [
-    `Quest Tool MC - ${project.name}`,
-    `Generated for Minecraft Java Edition ${MINECRAFT_VERSION}`,
+    t('readme.header', { projectName: project.name }),
+    t('readme.generatedFor', { version: MINECRAFT_VERSION }),
     ``,
     guide.title,
     `${'='.repeat(guide.title.length)}`,
   ];
-  guide.steps.forEach((s, i) => lines.push(`${i + 1}. ${s}`));
+  for (let i = 0; i < guide.steps.length; i++) {
+    lines.push(`${i + 1}. ${guide.steps[i]}`);
+  }
   lines.push(
     ``,
-    `How playing works`,
-    `=================`,
-    `- Walk up to a quest giver NPC; dialogue appears in chat automatically.`,
-    `- Click the [ Accept Quest ] message (uses /trigger, no cheats needed).`,
-    `- Progress shows on your action bar. Complete the objective, then return to the giver.`,
-    `- Click [ Turn In Quest ] to claim rewards. Chained quests unlock automatically.`,
+    ...section(t('readme.playingTitle')),
+    t('readme.playingStep1'),
+    t('readme.playingStep2'),
+    t('readme.playingStep3'),
+    t('readme.playingStep4'),
     ``,
-    `Jobs (passive skills)`,
-    `====================`,
-    `- Fishing, mining, combat, and other jobs level up automatically from player actions.`,
-    `- Open Esc → Advancements → ${ctx.namespace} to see skill trees and levels.`,
-    `- Milestone rewards (custom items, XP, etc.) are granted on level-up when configured on the Jobs tab.`,
-    `- While earning job XP, a personal boss bar briefly shows your level, total XP, and progress to the next level, then hides after a few seconds.`,
-    `- Job progress is also shown in /function ${ctx.namespace}:debug.`,
-    `- Use /function ${ctx.namespace}:reset to clear job XP and levels along with quest progress.`,
+    ...section(t('readme.jobsTitle')),
+    t('readme.jobsStep1'),
+    t('readme.jobsStep2', { namespace: ns }),
+    t('readme.jobsStep3'),
+    t('readme.jobsStep4'),
+    t('readme.jobsStep5', { namespace: ns }),
+    t('readme.jobsStep6', { namespace: ns }),
     ``,
-    `Admin commands`,
-    `==============`,
-    `- /function ${ctx.namespace}:setup_guide   - list NPC spawn commands`,
-    `- /function ${ctx.namespace}:spawn_all     - spawn every NPC at your feet`,
-    `- /function ${ctx.namespace}:debug         - check NPCs and your quest state`,
-    `- /function ${ctx.namespace}:give_custom_items - give one of each custom item (testing)`,
-    ...(project.customMobs?.length
-      ? [
-          `- /function ${ctx.namespace}:give_custom_mobs - spawn one of each custom mob (testing)`,
-        ]
-      : []),
-    ...(ctx.jobs.length > 0
-      ? [
-          `- /function ${ctx.namespace}:jobs/sync_all - refresh job advancement tabs for everyone online`,
-        ]
-      : []),
-    `- /function ${ctx.namespace}:reset         - reset YOUR quest progress`,
-    `- /execute as <player> run function ${ctx.namespace}:reset   - reset one player`,
-    `- /function ${ctx.namespace}:reset_all     - reset everyone's quest progress`,
+    ...section(t('readme.adminTitle')),
+    t('readme.adminSetupGuide', { namespace: ns }),
+    t('readme.adminSpawnAll', { namespace: ns }),
+    t('readme.adminDebug', { namespace: ns }),
+    t('readme.adminGiveItems', { namespace: ns }),
+    ...(project.customMobs?.length ? [t('readme.adminGiveMobs', { namespace: ns })] : []),
+    ...(ctx.jobs.length > 0 ? [t('readme.adminJobsSync', { namespace: ns })] : []),
+    t('readme.adminReset', { namespace: ns }),
+    t('readme.adminResetPlayer', { namespace: ns }),
+    t('readme.adminResetAll', { namespace: ns }),
     `  (${STR.resetJobsNote})`,
     ``,
-    `Editor project backup`,
-    `=====================`,
-    `This ZIP also contains ${PROJECT_BACKUP_FILENAME} — your full Quest Tool MC project`,
-    `(quests, custom items, spawn zones, etc.). Import it in the app to restore or edit`,
-    `your work later. Minecraft ignores this file when loading the datapack.`,
+    ...section(t('readme.backupTitle')),
+    t('readme.backupLine1', { filename: PROJECT_BACKUP_FILENAME }),
+    t('readme.backupLine2'),
+    t('readme.backupLine3'),
     ``,
-    `Note: this pack runs "gamerule send_command_feedback false" on load so the`,
-    `[ Accept ]/[ Turn In ] buttons do not spam "Triggered [..]" into chat.`,
-    `To restore command feedback, run: gamerule send_command_feedback true`,
+    t('readme.feedbackNote1'),
+    t('readme.feedbackNote2'),
+    t('readme.feedbackNote3'),
     ``,
-    `Quests in this pack`,
-    `===================`,
+    ...section(t('readme.questsTitle')),
   );
   for (const qc of ctx.quests) {
-    lines.push(`- ${qc.quest.name} (${qc.quest.type}) - giver: ${qc.quest.npc.name}`);
+    lines.push(
+      t('readme.questLine', {
+        name: qc.quest.name,
+        type: qc.quest.type,
+        giver: qc.quest.npc.name,
+      }),
+    );
   }
   if ((project.jobs ?? []).length > 0) {
-    lines.push(``, `Jobs in this pack`, `================`);
+    lines.push(``, ...section(t('readme.jobsListTitle')));
     for (const jc of ctx.jobs) {
-      lines.push(`- ${jc.job.name} (${jc.job.action}) - ${jc.job.xpPerAction} XP per action, max level ${jc.job.maxLevel}`);
+      lines.push(
+        t('readme.jobLine', {
+          name: jc.job.name,
+          action: jc.job.action,
+          xp: jc.job.xpPerAction,
+          maxLevel: jc.job.maxLevel,
+        }),
+      );
     }
   }
   const dimensions = project.dimensions ?? [];
   if (dimensions.length > 0) {
     lines.push(
       ``,
-      `Custom dimensions`,
-      `=================`,
-      `- Restart the world after installing or updating this pack (not just /reload).`,
-      `- Dimension/worldgen changes require leaving and re-opening the world.`,
-      `- Build a small platform in void dimensions before testing dungeons or pads.`,
+      ...section(t('readme.dimensionsTitle')),
+      t('readme.dimensionsStep1'),
+      t('readme.dimensionsStep2'),
+      t('readme.dimensionsStep3'),
     );
     for (const dim of dimensions) {
       const id = dimensionResourceId(ctx, dim);
-      lines.push(`- ${dim.name} (${id}) — test: /execute in ${id} run tp @s 0 64 0`);
+      lines.push(t('readme.dimensionLine', { name: dim.name, id }));
     }
   }
-  if (project.platform !== 'paper') {
+  if (projectHasSkinTextures(project)) {
     lines.push(
       ``,
-      `Note: Money is tracked on an internal "money" scoreboard and permission`,
-      `rewards display a chat message only, since no plugins are available.`,
+      ...section(t('readme.skinsTitle')),
+      t('readme.skinsStep1'),
+      t('readme.skinsStep2'),
+      t('readme.skinsStep3'),
+      t('readme.skinsStep4'),
+      t('readme.skinsStep5'),
+      t('readme.skinsStep6'),
+      t('readme.skinsStep7'),
+      t('readme.skinsStep8'),
+      t('readme.skinsStep9'),
     );
+  }
+  if (project.platform !== 'paper') {
+    lines.push(``, t('readme.platformVanillaNote1'), t('readme.platformVanillaNote2'));
   } else {
     lines.push(
       ``,
-      `Note: Money/permission rewards run eco/lp commands as the player (@s).`,
-      `They require an economy plugin + LuckPerms that accept target selectors.`,
-      `Money also always updates an internal "money" scoreboard as a fallback.`,
+      t('readme.platformPaperNote1'),
+      t('readme.platformPaperNote2'),
+      t('readme.platformPaperNote3'),
     );
   }
   return lines.join('\n') + '\n';
@@ -289,7 +319,8 @@ export function buildDatapackFiles(project: Project): FileMap {
     for (const [rel, content] of Object.entries(questFiles)) {
       files[`${fnRoot}/${rel}`] = content;
     }
-    files[`${fnRoot}/${qc.spawnFn}.mcfunction`] = spawnFunctionLines(ctx, qc, ctx.str).join('\n') + '\n';
+    files[`${fnRoot}/${qc.spawnFn}.mcfunction`] =
+      spawnFunctionLines(ctx, qc, ctx.str).join('\n') + '\n';
     Object.assign(files, buildKillZoneAdvancementFiles(ctx, qc));
     Object.assign(files, buildZoneLootTableFiles(ctx, qc));
   }
@@ -308,8 +339,7 @@ export function buildDatapackFiles(project: Project): FileMap {
   }
 
   if (needsEmptyLootTable(project.quests)) {
-    files[emptyLootTablePath(ns)] =
-      JSON.stringify(buildEmptyEntityLootTable(), null, 2) + '\n';
+    files[emptyLootTablePath(ns)] = JSON.stringify(buildEmptyEntityLootTable(), null, 2) + '\n';
   }
 
   files[`${fnRoot}/spawn_all.mcfunction`] = spawnAllFunction(ctx);
@@ -338,6 +368,8 @@ export function buildDatapackFiles(project: Project): FileMap {
   Object.assign(files, compilePads(ctx));
   Object.assign(files, compileDungeons(ctx));
 
+  Object.assign(files, buildMobVariantFiles(project, ns));
+
   files['install.txt'] = readmeText(project, ctx);
 
   return files;
@@ -358,10 +390,20 @@ export async function buildDatapackZip(project: Project): Promise<Blob> {
   return buildDatapackZipFromFiles(project, buildDatapackFiles(project));
 }
 
+/** Build the downloadable resource pack ZIP as a Blob (empty when no skins). */
+export async function buildResourcePackZip(project: Project): Promise<Blob> {
+  const files = buildResourcePackFiles(project);
+  const zip = new JSZip();
+  for (const [path, content] of Object.entries(files)) {
+    zip.file(path, content);
+  }
+  return zip.generateAsync({ type: 'blob' });
+}
+
 /** Build a ZIP from a pre-built file map (used by the test datapack export). */
 export async function buildDatapackZipFromFiles(
   project: Project,
-  files: FileMap,
+  files: ExportFileMap,
 ): Promise<Blob> {
   const zip = new JSZip();
   for (const [path, content] of Object.entries(files)) {
@@ -371,8 +413,17 @@ export async function buildDatapackZipFromFiles(
   return zip.generateAsync({ type: 'blob' });
 }
 
-/** A safe file name for the downloaded ZIP. */
-export function datapackFileName(project: Project): string {
+function exportZipBaseName(project: Project): string {
   const base = (project.name || 'quest-pack').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  return `${base || 'quest-pack'}-datapack.zip`;
+  return base || 'quest-pack';
+}
+
+/** A safe file name for the downloaded datapack ZIP. */
+export function datapackFileName(project: Project): string {
+  return `${exportZipBaseName(project)}-datapack.zip`;
+}
+
+/** A safe file name for the downloaded resource pack ZIP. */
+export function resourcePackFileName(project: Project): string {
+  return `${exportZipBaseName(project)}-resourcepack.zip`;
 }

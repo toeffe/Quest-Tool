@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuestTypeLabels } from '../../i18n/useLabels';
-import { useProjectStore } from '../../store/useProjectStore';
-import { useUIStore } from '../../store/uiStore';
 import { useValidation } from '../../hooks/useValidation';
+import { useQuestTypeLabels } from '../../i18n/useLabels';
+import { useUIStore } from '../../store/uiStore';
+import { useProjectStore } from '../../store/useProjectStore';
 
 export function Sidebar() {
   const { t } = useTranslation('common');
@@ -55,7 +55,12 @@ export function Sidebar() {
     <aside className="quest-sidebar">
       <div className="quest-sidebar-head">
         <span className="quest-sidebar-title">{t('sidebar.title')}</span>
-        <button type="button" className="btn small primary" onClick={handleAdd} title={t('sidebar.newQuestTitle')}>
+        <button
+          type="button"
+          className="btn small primary"
+          onClick={handleAdd}
+          title={t('sidebar.newQuestTitle')}
+        >
           {t('actions.new')}
         </button>
       </div>
@@ -110,15 +115,23 @@ export function Sidebar() {
                 ⋮⋮
               </span>
               <div className="quest-sidebar-item-main">
-                <span className="quest-sidebar-item-name">{q.name || t('sidebar.untitledQuest')}</span>
+                <span className="quest-sidebar-item-name">
+                  {q.name || t('sidebar.untitledQuest')}
+                </span>
                 <span className="quest-sidebar-item-type">{questTypeLabels[q.type]}</span>
               </div>
               <div className="quest-sidebar-item-badges">
                 {errs > 0 && (
-                  <span className="validation-dot error" title={t('sidebar.errorCountTitle', { count: errs })} />
+                  <span
+                    className="validation-dot error"
+                    title={t('sidebar.errorCountTitle', { count: errs })}
+                  />
                 )}
                 {errs === 0 && warns > 0 && (
-                  <span className="validation-dot warning" title={t('sidebar.warningCountTitle', { count: warns })} />
+                  <span
+                    className="validation-dot warning"
+                    title={t('sidebar.warningCountTitle', { count: warns })}
+                  />
                 )}
               </div>
               {selected && (

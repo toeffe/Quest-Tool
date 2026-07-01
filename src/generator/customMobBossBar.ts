@@ -1,15 +1,15 @@
-import { type CompileContext } from './context';
-import { type CustomMob } from '../types/customMob';
-import { type Project } from '../types/quest';
-import { CUSTOM_MOB_REGISTRY_TAG } from './customMobs';
+import type { CustomMob } from '../types/customMob';
+import type { Project } from '../types/quest';
+import type { CompileContext } from './context';
 import {
   bossBarColorForMobPhase,
   bossBarNameForMobPhase,
   mobMaxHealthForPhases,
   QT_MPHASE_OBJECTIVE,
 } from './customMobPhases';
+import { CUSTOM_MOB_REGISTRY_TAG } from './customMobs';
 import { SYS_OBJECTIVE } from './sys';
-import { escapeSnbtString } from './text';
+import { escapeSnbtString, sanitizeMcComment } from './text';
 
 const SYS = SYS_OBJECTIVE;
 const BOSSBAR_SCALE = 1000;
@@ -67,7 +67,7 @@ function buildCustomMobBossBarUpdateLines(ctx: CompileContext, mob: CustomMob): 
   const phaseCount = mob.phases?.length ?? 1;
 
   const lines: string[] = [
-    `# Boss bar: ${mob.displayName || mob.name}`,
+    `# Boss bar: ${sanitizeMcComment(mob.displayName || mob.name)}`,
     `execute unless entity ${selector} run bossbar set ${id} visible false`,
     `execute unless entity ${selector} run return 0`,
     `execute store result score ${hp} ${SYS} run data get entity ${one} Health`,
@@ -104,9 +104,7 @@ export function buildCustomMobBossBarSetupLines(ctx: CompileContext): string[] {
   const mobs = bossBarMobs(ctx.project);
   if (!mobs.length) return [];
 
-  const lines: string[] = [
-    `scoreboard players set #qt_mob_bb_scale ${SYS} ${BOSSBAR_SCALE}`,
-  ];
+  const lines: string[] = [`scoreboard players set #qt_mob_bb_scale ${SYS} ${BOSSBAR_SCALE}`];
 
   for (const mob of mobs) {
     const id = customMobBossBarId(ctx.namespace, mob.tag);

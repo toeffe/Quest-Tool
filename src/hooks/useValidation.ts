@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { validateProject, type ValidationIssue } from '../generator/validate';
-import { useProject } from '../store/useProjectStore';
+import { type ValidationIssue, validateProject } from '../generator/validate';
 import { useLocaleStore } from '../store/localeStore';
+import { useProject } from '../store/useProjectStore';
 
 const DEBOUNCE_MS = 300;
 

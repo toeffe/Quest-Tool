@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { type Coordinates } from '../../types/quest';
+import type { Coordinates } from '../../types/quest';
 import { Select } from '../ui/Field';
 import { CoordsRow } from './StepNPC';
 
@@ -17,9 +17,7 @@ export function CoordsWithDimension({ value, onChange, dimensionOptions }: Props
         label={t('editor.dimension')}
         value={value.dimensionId ?? ''}
         options={dimensionOptions}
-        onChange={(dimensionId) =>
-          onChange({ ...value, dimensionId: dimensionId || undefined })
-        }
+        onChange={(dimensionId) => onChange({ ...value, dimensionId: dimensionId || undefined })}
       />
       <CoordsRow value={value} onChange={onChange} />
     </>

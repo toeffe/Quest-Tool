@@ -1,6 +1,7 @@
 export const dungeonsEn = {
   title: 'Dungeons',
-  subtitle: 'Define dungeon rooms with bounding boxes, mob spawns, and triggers.',
+  subtitle: 'Rooms with bounds, spawns, and triggers.',
+  subtitleHint: 'Define dungeon areas, mob spawns, quest gates, and room events for your datapack.',
 
   list: {
     title: 'Dungeons ({{count}})',
@@ -19,7 +20,8 @@ export const dungeonsEn = {
     dungeonTag: 'Function tag',
     description: 'Description (optional)',
     dimension: 'Dimension',
-    dimensionHint: 'Room bounds are relative to the selected dimension (Overworld or a custom void dimension).',
+    dimensionHint:
+      'Room bounds are relative to the selected dimension (Overworld or a custom void dimension).',
     roomName: 'Room name',
     roomType: 'Room type',
     customTypeLabel: 'Custom type label',

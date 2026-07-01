@@ -1,9 +1,12 @@
-import { describe, it, expect } from 'vitest';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildTestDatapackFiles, buildTestDatapackZip } from '../../src/fixtures/testDatapackProject';
+import { describe, expect, it } from 'vitest';
 import { TEST_DATAPACK_NAMESPACE } from '../../src/fixtures/testDatapackConstants';
+import {
+  buildTestDatapackFiles,
+  buildTestDatapackZip,
+} from '../../src/fixtures/testDatapackProject';
 
 const outputDir = join(dirname(fileURLToPath(import.meta.url)), 'output');
 const fnRoot = `data/${TEST_DATAPACK_NAMESPACE}/function`;

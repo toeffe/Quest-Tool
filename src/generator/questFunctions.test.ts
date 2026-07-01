@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { createProject, createQuest, createCustomItem } from '../types/factory';
+import { describe, expect, it } from 'vitest';
 import { createDimension } from '../types/dimension';
+import { createCustomItem, createProject, createQuest } from '../types/factory';
 import { buildContext } from './context';
-import { compileQuest, buildZoneLootTableFiles } from './questFunctions';
+import { buildZoneLootTableFiles, compileQuest } from './questFunctions';
 
 function compileFirst(type: Parameters<typeof createQuest>[1]) {
   const project = createProject('P', 'en');
@@ -16,6 +16,8 @@ describe('quest tick generation', () => {
   it('kill quests count the killed criterion toward the done aggregate', () => {
     const files = compileFirst('kill');
     const tick = files['quests/0_q/tick.mcfunction'];
+    expect(tick).toContain('run return 0');
+    expect(tick).toContain('scores={q0=3..}');
     expect(tick).toContain('scoreboard players enable @a q0t');
     expect(tick).toContain('scores={q0=1,q0k0=5..}');
     expect(tick).toContain('scores={q0=1,q0d=1..}');
@@ -42,6 +44,19 @@ describe('quest tick generation', () => {
     expect(tick).toContain('scores={q0=1,q0k1=3..}');
     // Completes only when both objectives are counted into the done aggregate.
     expect(tick).toContain('scores={q0=1,q0d=2..}');
+  });
+
+  it('sanitizes newlines in quest names used in mcfunction comment headers', () => {
+    const project = createProject('P', 'en');
+    project.namespace = 'p';
+    const q = createQuest('Evil\nsay injected', 'kill');
+    project.quests = [q];
+    const ctx = buildContext(project);
+    const files = compileQuest(ctx, ctx.quests[0]);
+    const tick = Object.values(files).find((content) => content.includes('- tick')) ?? '';
+    expect(tick).toMatch(/^# Evil say injected \(kill\) - tick/m);
+    expect(tick).not.toContain('\nsay injected');
+    expect(tick.split('\n').some((line) => line.trim() === 'say injected')).toBe(false);
   });
 
   it('exploration quests use a positioned distance check', () => {
@@ -136,7 +151,12 @@ describe('quest tick generation', () => {
     project.namespace = 'p';
     const q = createQuest('Gather', 'gather');
     q.objectives = [
-      { target: 'minecraft:wheat', amount: 10, description: 'Collect wheat', consumeOnTurnIn: true },
+      {
+        target: 'minecraft:wheat',
+        amount: 10,
+        description: 'Collect wheat',
+        consumeOnTurnIn: true,
+      },
     ];
     project.quests = [q];
     const ctx = buildContext(project);
@@ -155,7 +175,12 @@ describe('quest tick generation', () => {
     project.namespace = 'p';
     const q = createQuest('Gather', 'gather');
     q.objectives = [
-      { target: 'minecraft:wheat', amount: 10, description: 'Collect wheat', consumeOnTurnIn: false },
+      {
+        target: 'minecraft:wheat',
+        amount: 10,
+        description: 'Collect wheat',
+        consumeOnTurnIn: false,
+      },
     ];
     project.quests = [q];
     const ctx = buildContext(project);
@@ -202,7 +227,9 @@ describe('quest tick generation', () => {
     expect(files['quests/0_chickens/spawn_mob_0.mcfunction']).not.toContain('NoAI:1b');
     expect(files['quests/0_chickens/spawn_mob_0.mcfunction']).toContain('spreadplayers');
     expect(files['quests/0_chickens/spawn_mob_0.mcfunction']).toContain('matches 5.. run return 0');
-    expect(files['quests/0_chickens/kill_credit_0.mcfunction']).toContain('scoreboard players add @s q0k0 1');
+    expect(files['quests/0_chickens/kill_credit_0.mcfunction']).toContain(
+      'scoreboard players add @s q0k0 1',
+    );
     const accept = files['quests/0_chickens/accept.mcfunction'];
     expect(accept).toContain('kill @e[tag=qk_0_0]');
     expect(accept).toContain('scoreboard players set #qk_0_0_t qt_sys 0');
@@ -280,9 +307,7 @@ describe('quest tick generation', () => {
     project.quests = [q];
     const ctx = buildContext(project);
     const files = compileQuest(ctx, ctx.quests[0]);
-    expect(files['quests/0_chickens/spawn_mob_0.mcfunction']).toContain(
-      'DeathLootTable:"p:empty"',
-    );
+    expect(files['quests/0_chickens/spawn_mob_0.mcfunction']).toContain('DeathLootTable:"p:empty"');
   });
 
   it('zoned kill quests with vanilla drops omit DeathLootTable', () => {
@@ -350,11 +375,15 @@ describe('quest chains', () => {
 
     const bFiles = compileQuest(ctx, ctx.quests[1]);
     // Quest B initializes to locked state (-1).
-    expect(bFiles['quests/1_second/tick.mcfunction']).toContain('run scoreboard players set @s q1 -1');
+    expect(bFiles['quests/1_second/tick.mcfunction']).toContain(
+      'run scoreboard players set @s q1 -1',
+    );
 
     const aFiles = compileQuest(ctx, ctx.quests[0]);
     // Completing A unlocks B via try_unlock.
-    expect(aFiles['quests/0_first/turnin.mcfunction']).toContain('function c:quests/1_second/try_unlock');
+    expect(aFiles['quests/0_first/turnin.mcfunction']).toContain(
+      'function c:quests/1_second/try_unlock',
+    );
   });
 
   it('locks a quest that requires a job level', () => {
@@ -366,7 +395,9 @@ describe('quest chains', () => {
     project.quests = [quest];
     const ctx = buildContext(project);
     const files = compileQuest(ctx, ctx.quests[0]);
-    expect(files['quests/0_pro_fisher/tick.mcfunction']).toContain('run scoreboard players set @s q0 -1');
+    expect(files['quests/0_pro_fisher/tick.mcfunction']).toContain(
+      'run scoreboard players set @s q0 -1',
+    );
     expect(files['quests/0_pro_fisher/try_unlock.mcfunction']).toContain(`j0lvl`);
     expect(files['quests/0_pro_fisher/try_unlock.mcfunction']).toContain('matches 5..');
     expect(files['quests/0_pro_fisher/try_unlock.mcfunction']).toContain('run return 0');

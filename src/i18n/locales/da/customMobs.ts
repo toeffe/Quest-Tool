@@ -1,7 +1,8 @@
 export const customMobsDa = {
   title: 'Brugerdefinerede mobs',
-  subtitle:
-    'Definér genbrugelige mobs med navne, stats og drops. Brug dem i dræb-objektiver på tværs af projektet. Udseendet følger vanilla-modellen medmindre du tilføjer en resource pack.',
+  subtitle: 'Genbrugelige mobs til dræb-quests og spawn-zoner.',
+  subtitleHint:
+    'Stats, skala, drops og valgfri skins. Variant-typer (gris, ko, ulv, kat, kylling, frø, zombie nautilus) kan bruge teksturer via separat resource pack ved eksport. Humanoids understøtter kun skala i vanilla.',
 
   list: {
     title: 'Mobs ({{count}})',
@@ -20,9 +21,9 @@ export const customMobsDa = {
     identityTagHint: 'Entity-tag der identificerer mobben in-game. Skal være unik.',
     baseEntity: 'Basis-entity',
     baseEntityHint:
-      'Vanilla mob-type. Udseendet matcher denne entity medmindre du tilføjer en resource pack.',
+      'Vanilla mob-type. Brugerdefineret tekstur på variant-typer (resource pack ved eksport). Humanoids: kun skala.',
     baseEntityNote:
-      'Udseendet er baseret på vanilla-entityen. Tilføj en resource pack for brugerdefinerede modeller.',
+      'Eksport giver en separat resource pack-download når du uploader en skin. Humanoid-baser (zombie, skeleton) kan ikke bruge brugerdefinerede teksturer i vanilla — brug skala eller vælg en anden base entity.',
     baseEntityPlaceholder: 'minecraft:zombie',
     displayName: 'Visningsnavn',
     displayNameHint: 'Vises over mobben in-game.',
@@ -30,6 +31,19 @@ export const customMobsDa = {
     healthHint: 'Tilsidesæt max liv (tom = vanilla standard).',
     damage: 'Angrebsskade',
     damageHint: 'Tilsidesæt angrebsskade (tom = vanilla standard).',
+    scale: 'Skala',
+    scaleHint: 'Størrelsesmultiplikator (1 = vanilla). Tom = standard.',
+    skin: 'Brugerdefineret tekstur',
+    skinHint:
+      'PNG-tekstur for denne mob. Download resource pack ZIP separat ved eksport. Kun for gris, ko, kylling, ulv, kat, frø, zombie nautilus.',
+    skinPaths: 'Eksportstier',
+    skinAssetId: 'asset_id: {{path}}',
+    skinTexturePath: 'Tekstur: {{path}}',
+    skinFrogNote:
+      'Frø-skins skal være 64×48 PNG med transparent baggrund, layout til vanilla frø-model UV (brug temperate_frog.png fra 1.21.11-jaren som skabelon).',
+    skinUnsupported:
+      'Brugerdefinerede teksturer understøttes ikke for denne base entity i vanilla. Brug skala eller vælg en variant-type.',
+    skinClear: 'Fjern tekstur',
     glowing: 'Glødende',
     glowingHint: 'Gør mobben synlig gennem vægge.',
     bossBar: 'Boss liv-bar',
@@ -41,19 +55,20 @@ export const customMobsDa = {
 
   phases: {
     title: 'Faser',
-    hint:
-      'Liv-baserede faser. Fase 1 bruger mob-stats ved spawn. Hver senere fase skal have en Start ved HP % tærskel — uden den starter fasen aldrig. Eksporter igen efter ændringer. Test med /function <namespace>:spawn_mob/<tag> (anbefalet); summon-forhåndsvisning initialiseres kun på første tick.',
+    hint: 'Liv-baserede faser. Fase 1 bruger mob-stats ved spawn. Hver senere fase skal have en Start ved HP % tærskel — uden den starter fasen aldrig. Eksporter igen efter ændringer. Test med /function <namespace>:spawn_mob/<tag> (anbefalet); summon-forhåndsvisning initialiseres kun på første tick.',
     addPhase: '+ Tilføj fase',
     empty: 'Ingen faser konfigureret. Tilføj en anden fase for at aktivere liv-baserede overgange.',
     phaseLabel: 'Fase {{index}}',
     phaseName: 'Fasenavn',
     phaseNameHint: 'Kun redaktør-label.',
     atHealthPercent: 'Start ved HP %',
-    atHealthPercentHint: 'Fasen starter når liv falder til denne procent eller derunder. Gælder ikke fase 1.',
+    atHealthPercentHint:
+      'Fasen starter når liv falder til denne procent eller derunder. Gælder ikke fase 1.',
     displayName: 'Visningsnavn',
     displayNameHint: 'Tilsidesæt in-game navn for denne fase.',
     damage: 'Angrebsskade',
     damageHint: 'Tilsidesæt angrebsskade for denne fase.',
+    scaleHint: 'Tilsidesæt størrelse for denne fase (tom = behold nuværende størrelse).',
     glowing: 'Glødende',
     bossBarColor: 'Boss bar-farve',
     bossBarColorDefault: 'Standard (rød)',
@@ -74,7 +89,7 @@ export const customMobsDa = {
 
   drops: {
     title: 'Brugerdefinerede drops',
-    hint: 'Items der droppes når mobben dør. Kræver at mobben spawnes af datapacken eller manuelt.',
+    hint: 'Items der droppes når mobben dør (erstatter vanilla-loot for den mob). Virker kun på mobs spawnet af datapacken — gen-eksportér efter ændringer, brug derefter /function <namespace>:spawn_mob/<tag> eller et quest spawn zone.',
     addDrop: '+ Tilføj drop',
     empty: 'Ingen brugerdefinerede drops konfigureret.',
   },

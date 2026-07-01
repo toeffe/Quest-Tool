@@ -1,24 +1,16 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
-import { useProjectStore } from './store/useProjectStore';
-import { useUIStore } from './store/uiStore';
-import { getSavedView, saveView } from './store/viewStorage';
-import { useAutosave } from './hooks/useAutosave';
-import { useValidation } from './hooks/useValidation';
-import { useKeyboard } from './hooks/useKeyboard';
-import { TopBar } from './components/layout/TopBar';
-import { Sidebar } from './components/layout/Sidebar';
-import { SettingsDialog } from './components/layout/SettingsDialog';
+import { useTranslation } from 'react-i18next';
 import { CommandPalette } from './components/layout/CommandPalette';
-import { QuestEditor } from './components/editor/QuestEditor';
-import { ExportPanel } from './components/export/ExportPanel';
-import { ItemsPage } from './components/ItemsPage';
-import { CustomMobsPage } from './components/CustomMobsPage';
-import { DungeonsPage } from './components/DungeonsPage';
-import { DimensionsPage } from './components/DimensionsPage';
-import { JobsPage } from './components/JobsPage';
-import { AdvancementsPage } from './components/AdvancementsPage';
-import { HelpPanel } from './components/HelpPanel';
-import { type Theme, getInitialTheme, applyTheme } from './state/theme';
+import { SettingsDialog } from './components/layout/SettingsDialog';
+import { Sidebar } from './components/layout/Sidebar';
+import { TopBar } from './components/layout/TopBar';
+import { useAutosave } from './hooks/useAutosave';
+import { useKeyboard } from './hooks/useKeyboard';
+import { useValidation } from './hooks/useValidation';
+import { applyTheme, getInitialTheme, type Theme } from './state/theme';
+import { useUIStore } from './store/uiStore';
+import { useProjectStore } from './store/useProjectStore';
+import { getSavedView, saveView } from './store/viewStorage';
 
 const FlowCanvas = lazy(() =>
   import('./components/flow/FlowCanvas').then((m) => ({ default: m.FlowCanvas })),
@@ -26,16 +18,43 @@ const FlowCanvas = lazy(() =>
 const CommandsPage = lazy(() =>
   import('./components/CommandsPage').then((m) => ({ default: m.CommandsPage })),
 );
+const QuestEditor = lazy(() =>
+  import('./components/editor/QuestEditor').then((m) => ({ default: m.QuestEditor })),
+);
+const ExportPanel = lazy(() =>
+  import('./components/export/ExportPanel').then((m) => ({ default: m.ExportPanel })),
+);
+const HelpPanel = lazy(() =>
+  import('./components/HelpPanel').then((m) => ({ default: m.HelpPanel })),
+);
+const ItemsPage = lazy(() =>
+  import('./components/ItemsPage').then((m) => ({ default: m.ItemsPage })),
+);
+const CustomMobsPage = lazy(() =>
+  import('./components/CustomMobsPage').then((m) => ({ default: m.CustomMobsPage })),
+);
+const DungeonsPage = lazy(() =>
+  import('./components/DungeonsPage').then((m) => ({ default: m.DungeonsPage })),
+);
+const DimensionsPage = lazy(() =>
+  import('./components/DimensionsPage').then((m) => ({ default: m.DimensionsPage })),
+);
+const JobsPage = lazy(() => import('./components/JobsPage').then((m) => ({ default: m.JobsPage })));
+const AdvancementsPage = lazy(() =>
+  import('./components/AdvancementsPage').then((m) => ({ default: m.AdvancementsPage })),
+);
 
 function ViewFallback() {
+  const { t } = useTranslation('common');
   return (
     <div className="view-loading muted" role="status">
-      Loading…
+      {t('actions.loading')}
     </div>
   );
 }
 
 export default function App() {
+  const { t } = useTranslation('common');
   const project = useProjectStore((s) => s.project);
   const setProject = useProjectStore((s) => s.setProject);
   const updateQuest = useProjectStore((s) => s.updateQuest);
@@ -67,6 +86,8 @@ export default function App() {
   const settingsOpen = useUIStore((s) => s.settingsOpen);
   const helpOpen = useUIStore((s) => s.helpOpen);
   const setHelpOpen = useUIStore((s) => s.setHelpOpen);
+  const saveError = useUIStore((s) => s.saveError);
+  const setSaveError = useUIStore((s) => s.setSaveError);
 
   const [theme, setTheme] = useState<Theme>(() => getInitialTheme());
   const issues = useValidation();
@@ -104,22 +125,40 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <TopBar theme={theme} onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))} />
+      <TopBar
+        theme={theme}
+        onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+      />
 
-      {helpOpen && <HelpPanel onClose={() => setHelpOpen(false)} />}
+      {saveError && (
+        <div className="save-error-banner" role="alert">
+          <span>{saveError}</span>
+          <button type="button" className="btn small" onClick={() => setSaveError(null)}>
+            {t('actions.dismiss')}
+          </button>
+        </div>
+      )}
+
+      {helpOpen && (
+        <Suspense fallback={<ViewFallback />}>
+          <HelpPanel onClose={() => setHelpOpen(false)} />
+        </Suspense>
+      )}
 
       <div className="app-body">
         {showSidebar && <Sidebar />}
 
         <main className="app-main">
           {activeView === 'editor' && selectedQuest && (
-            <QuestEditor
-              quest={selectedQuest}
-              project={project}
-              issues={issues}
-              onChange={updateQuest}
-              onChangeProject={setProject}
-            />
+            <Suspense fallback={<ViewFallback />}>
+              <QuestEditor
+                quest={selectedQuest}
+                project={project}
+                issues={issues}
+                onChange={updateQuest}
+                onChangeProject={setProject}
+              />
+            </Suspense>
           )}
 
           {activeView === 'editor' && !selectedQuest && (
@@ -127,7 +166,7 @@ export default function App() {
               <div className="empty-editor-icon" aria-hidden>
                 📋
               </div>
-              <p>Select a quest to edit, or create a new one from the sidebar.</p>
+              <p>{t('editor.emptyState')}</p>
             </div>
           )}
 
@@ -145,99 +184,111 @@ export default function App() {
           )}
 
           {activeView === 'items' && (
-            <div className="content">
-              <div className="content-inner">
-                <ItemsPage
-                  project={project}
-                  onChange={setProject}
-                  onAdd={(kind) => {
-                    addCustomItem(kind);
-                  }}
-                  onDuplicate={duplicateCustomItem}
-                  onDelete={deleteCustomItem}
-                />
+            <Suspense fallback={<ViewFallback />}>
+              <div className="content">
+                <div className="content-inner">
+                  <ItemsPage
+                    project={project}
+                    onChange={setProject}
+                    onAdd={(kind) => {
+                      addCustomItem(kind);
+                    }}
+                    onDuplicate={duplicateCustomItem}
+                    onDelete={deleteCustomItem}
+                  />
+                </div>
               </div>
-            </div>
+            </Suspense>
           )}
 
           {activeView === 'mobs' && (
-            <div className="content">
-              <div className="content-inner">
-                <CustomMobsPage
-                  project={project}
-                  onChange={setProject}
-                  onAdd={() => {
-                    addCustomMob();
-                  }}
-                  onDuplicate={duplicateCustomMob}
-                  onDelete={deleteCustomMob}
-                />
+            <Suspense fallback={<ViewFallback />}>
+              <div className="content">
+                <div className="content-inner">
+                  <CustomMobsPage
+                    project={project}
+                    onChange={setProject}
+                    onAdd={() => {
+                      addCustomMob();
+                    }}
+                    onDuplicate={duplicateCustomMob}
+                    onDelete={deleteCustomMob}
+                  />
+                </div>
               </div>
-            </div>
+            </Suspense>
           )}
 
           {activeView === 'dungeons' && (
-            <div className="content">
-              <div className="content-inner">
-                <DungeonsPage
-                  project={project}
-                  issues={issues}
-                  onChange={setProject}
-                  onAdd={() => {
-                    addDungeon();
-                  }}
-                  onDuplicate={duplicateDungeon}
-                  onDelete={deleteDungeon}
-                  onAddRoom={(dungeonId) => {
-                    addRoom(dungeonId);
-                  }}
-                  onDeleteRoom={deleteRoom}
-                />
+            <Suspense fallback={<ViewFallback />}>
+              <div className="content">
+                <div className="content-inner">
+                  <DungeonsPage
+                    project={project}
+                    issues={issues}
+                    onChange={setProject}
+                    onAdd={() => {
+                      addDungeon();
+                    }}
+                    onDuplicate={duplicateDungeon}
+                    onDelete={deleteDungeon}
+                    onAddRoom={(dungeonId) => {
+                      addRoom(dungeonId);
+                    }}
+                    onDeleteRoom={deleteRoom}
+                  />
+                </div>
               </div>
-            </div>
+            </Suspense>
           )}
 
           {activeView === 'dimensions' && (
-            <div className="content">
-              <div className="content-inner">
-                <DimensionsPage
-                  project={project}
-                  issues={issues}
-                  onChange={setProject}
-                  onAddDimension={addDimension}
-                  onDuplicateDimension={duplicateDimension}
-                  onDeleteDimension={deleteDimension}
-                  onAddPad={addTeleportPad}
-                  onDuplicatePad={duplicateTeleportPad}
-                  onDeletePad={deleteTeleportPad}
-                />
+            <Suspense fallback={<ViewFallback />}>
+              <div className="content">
+                <div className="content-inner">
+                  <DimensionsPage
+                    project={project}
+                    issues={issues}
+                    onChange={setProject}
+                    onAddDimension={addDimension}
+                    onDuplicateDimension={duplicateDimension}
+                    onDeleteDimension={deleteDimension}
+                    onAddPad={addTeleportPad}
+                    onDuplicatePad={duplicateTeleportPad}
+                    onDeletePad={deleteTeleportPad}
+                  />
+                </div>
               </div>
-            </div>
+            </Suspense>
           )}
 
           {activeView === 'jobs' && (
-            <div className="content">
-              <div className="content-inner">
-                <JobsPage
-                  project={project}
-                  issues={issues}
-                  onChange={setProject}
-                  onAdd={() => {
-                    addJob();
-                  }}
-                  onDuplicate={duplicateJob}
-                  onDelete={deleteJob}
-                />
+            <Suspense fallback={<ViewFallback />}>
+              <div className="content">
+                <div className="content-inner">
+                  <JobsPage
+                    project={project}
+                    issues={issues}
+                    onChange={setProject}
+                    onAdd={() => {
+                      addJob();
+                    }}
+                    onDuplicate={duplicateJob}
+                    onDelete={deleteJob}
+                  />
+                </div>
               </div>
-            </div>
+            </Suspense>
           )}
 
           {activeView === 'advancements' && (
-            <div className="content">
-              <div className="content-inner">
-                <AdvancementsPage project={project} />
+            <Suspense fallback={<ViewFallback />}>
+              <div className="content">
+                <div className="content-inner">
+                  <AdvancementsPage project={project} />
+                </div>
               </div>
-            </div>
+            </Suspense>
           )}
 
           {activeView === 'commands' && (
@@ -251,9 +302,11 @@ export default function App() {
           )}
 
           {activeView === 'export' && (
-            <div className="content">
-              <ExportPanel />
-            </div>
+            <Suspense fallback={<ViewFallback />}>
+              <div className="content">
+                <ExportPanel />
+              </div>
+            </Suspense>
           )}
         </main>
       </div>

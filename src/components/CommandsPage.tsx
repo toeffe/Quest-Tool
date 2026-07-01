@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type Project } from '../types/quest';
 import { buildCommandReference } from '../generator/commands';
+import type { Project } from '../types/quest';
 import { CopyButton } from './ui/CopyButton';
+import { PageHeader } from './ui/PageHeader';
 
 interface Props {
   project: Project;
@@ -14,8 +15,7 @@ export function CommandsPage({ project }: Props) {
 
   return (
     <div>
-      <h1 className="step-title">{t('page.title')}</h1>
-      <p className="step-sub">{t('page.subtitle')}</p>
+      <PageHeader title={t('page.title')} lead={t('page.subtitle')} hint={t('page.subtitleHint')} />
 
       {groups.map((group) => (
         <div className="card" key={group.title}>

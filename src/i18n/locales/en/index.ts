@@ -1,21 +1,21 @@
-import { commonEn } from './common';
-import { editorEn } from './editor';
-import { flowEn } from './flow';
-import { exportEn } from './export';
-import { helpEn } from './help';
-import { jobsEn } from './jobs';
-import { itemsEn } from './items';
-import { questEn } from './quest';
-import { datapackEn } from './datapack';
-import { platformEn } from './platform';
-import { commandsEn } from './commands';
-import { defaultsEn } from './defaults';
-import { advancementsEn } from './advancements';
-import { validationEn } from './validation';
-import { customMobsEn } from './customMobs';
-import { dungeonsEn } from './dungeons';
-import { dimensionsEn } from './dimensions';
 import { mobsEn } from '../mobs.generated';
+import { advancementsEn } from './advancements';
+import { commandsEn } from './commands';
+import { commonEn } from './common';
+import { customMobsEn } from './customMobs';
+import { datapackEn } from './datapack';
+import { defaultsEn } from './defaults';
+import { dimensionsEn } from './dimensions';
+import { dungeonsEn } from './dungeons';
+import { editorEn } from './editor';
+import { exportEn } from './export';
+import { flowEn } from './flow';
+import { helpEn } from './help';
+import { itemsEn } from './items';
+import { jobsEn } from './jobs';
+import { platformEn } from './platform';
+import { questEn } from './quest';
+import { validationEn } from './validation';
 
 export const enResources = {
   common: commonEn,

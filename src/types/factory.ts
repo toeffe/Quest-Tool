@@ -1,21 +1,12 @@
-import {
-  type Npc,
-  type Project,
-  type Quest,
-  type QuestType,
-  type Reward,
-} from './quest';
-import {
-  type CustomItem,
-  type CustomItemKind,
-} from './item';
-import { type CustomMob, type CustomMobPhase } from './customMob';
-import { type Job, type JobAction } from './job';
-import { uid, toIdentifier } from './ids';
-import { getBalancedDefaults, emptyMilestoneSlots } from '../generator/jobBalance';
+import { emptyMilestoneSlots, getBalancedDefaults } from '../generator/jobBalance';
 import { defaultPresetForAction } from '../generator/jobStats';
 import { type AppLocale, DEFAULT_LOCALE } from '../i18n/types';
 import { defaultsT } from '../i18n/useLabels';
+import type { CustomMob, CustomMobPhase } from './customMob';
+import { toIdentifier, uid } from './ids';
+import type { CustomItem, CustomItemKind } from './item';
+import type { Job, JobAction } from './job';
+import type { Npc, Project, Quest, QuestType, Reward } from './quest';
 
 export const PROJECT_SCHEMA_VERSION = 10;
 
@@ -45,14 +36,34 @@ interface StarterJobDef {
 const STARTER_DEFS: StarterJobDef[] = [
   { starterKey: 'starter_fishing', nameKey: 'starter_fishing', action: 'fish' },
   { starterKey: 'starter_mining', nameKey: 'starter_mining', action: 'mine', statPreset: 'ores' },
-  { starterKey: 'starter_woodcutting', nameKey: 'starter_woodcutting', action: 'woodcut', statPreset: 'logs' },
-  { starterKey: 'starter_farming', nameKey: 'starter_farming', action: 'farm', statPreset: 'crops' },
+  {
+    starterKey: 'starter_woodcutting',
+    nameKey: 'starter_woodcutting',
+    action: 'woodcut',
+    statPreset: 'logs',
+  },
+  {
+    starterKey: 'starter_farming',
+    nameKey: 'starter_farming',
+    action: 'farm',
+    statPreset: 'crops',
+  },
   { starterKey: 'starter_combat', nameKey: 'starter_combat', action: 'combat' },
-  { starterKey: 'starter_hunting', nameKey: 'starter_hunting', action: 'hunt', statPreset: 'hostile_mobs' },
+  {
+    starterKey: 'starter_hunting',
+    nameKey: 'starter_hunting',
+    action: 'hunt',
+    statPreset: 'hostile_mobs',
+  },
   { starterKey: 'starter_breeding', nameKey: 'starter_breeding', action: 'breeding' },
   { starterKey: 'starter_enchanting', nameKey: 'starter_enchanting', action: 'enchanting' },
   { starterKey: 'starter_trading', nameKey: 'starter_trading', action: 'trading' },
-  { starterKey: 'starter_crafting', nameKey: 'starter_crafting', action: 'craft', statPreset: 'basic_crafts' },
+  {
+    starterKey: 'starter_crafting',
+    nameKey: 'starter_crafting',
+    action: 'craft',
+    statPreset: 'basic_crafts',
+  },
   { starterKey: 'starter_pvp', nameKey: 'starter_pvp', action: 'pvp' },
 ];
 
@@ -76,7 +87,13 @@ export function createJob(
     distanceUnit: balanced.distanceUnit,
     ...overrides,
   };
-  if (job.action === 'mine' || job.action === 'woodcut' || job.action === 'farm' || job.action === 'hunt' || job.action === 'craft') {
+  if (
+    job.action === 'mine' ||
+    job.action === 'woodcut' ||
+    job.action === 'farm' ||
+    job.action === 'hunt' ||
+    job.action === 'craft'
+  ) {
     job.statPreset = job.statPreset ?? defaultPresetForAction(job.action);
   }
   return job;
@@ -139,7 +156,10 @@ export function createNpc(locale: AppLocale = DEFAULT_LOCALE): Npc {
 }
 
 /** A single fresh objective for a quest type (used for defaults and "add objective"). */
-export function newObjectiveFor(type: QuestType, locale: AppLocale = DEFAULT_LOCALE): Quest['objectives'][number] {
+export function newObjectiveFor(
+  type: QuestType,
+  locale: AppLocale = DEFAULT_LOCALE,
+): Quest['objectives'][number] {
   const t = defaultsT(locale);
   switch (type) {
     case 'kill':
@@ -181,7 +201,10 @@ export function newObjectiveFor(type: QuestType, locale: AppLocale = DEFAULT_LOC
   }
 }
 
-export function defaultObjectiveFor(type: QuestType, locale: AppLocale = DEFAULT_LOCALE): Quest['objectives'] {
+export function defaultObjectiveFor(
+  type: QuestType,
+  locale: AppLocale = DEFAULT_LOCALE,
+): Quest['objectives'] {
   return [newObjectiveFor(type, locale)];
 }
 
@@ -254,10 +277,7 @@ export function createCustomItem(
   }
 }
 
-export function createCustomMob(
-  name?: string,
-  locale: AppLocale = DEFAULT_LOCALE,
-): CustomMob {
+export function createCustomMob(name?: string, locale: AppLocale = DEFAULT_LOCALE): CustomMob {
   const t = defaultsT(locale);
   const mobName = name ?? t('customMob.name');
   const tag = toIdentifier(mobName, 'mob');

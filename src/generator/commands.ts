@@ -1,10 +1,10 @@
-import { type Project } from '../types/quest';
+import i18n from '../i18n';
+import type { AppLocale } from '../i18n/types';
+import { toIdentifier } from '../types/ids';
+import type { Project } from '../types/quest';
 import { buildContext, projectLocale } from './context';
 import { mobHasPhaseTransitions } from './customMobPhases';
 import { buildDungeonCommandEntries } from './dungeons';
-import { toIdentifier } from '../types/ids';
-import i18n from '../i18n';
-import { type AppLocale } from '../i18n/types';
 
 export interface CommandEntry {
   command: string;
@@ -21,10 +21,7 @@ export interface CommandGroup {
  * Build the list of in-game commands for a project, using the real datapack
  * namespace and per-NPC spawn function names so each command is copy-paste ready.
  */
-export function buildCommandReference(
-  project: Project,
-  locale?: AppLocale,
-): CommandGroup[] {
+export function buildCommandReference(project: Project, locale?: AppLocale): CommandGroup[] {
   const ctx = buildContext(project);
   const lng = locale ?? projectLocale(project);
   const t = i18n.getFixedT(lng, 'commands');

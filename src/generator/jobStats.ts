@@ -1,8 +1,4 @@
-import {
-  type Job,
-  type JobAction,
-  jobUsesPresets,
-} from '../types/job';
+import { type Job, type JobAction, jobUsesPresets } from '../types/job';
 import { namespaced, statId } from './context';
 
 export const JOB_STAT_PRESET_LABELS: Record<string, string> = {
@@ -124,7 +120,10 @@ export const JOB_STAT_PRESETS: Record<string, string[]> = {
   basic_crafts: BASIC_CRAFTS,
 };
 
-const CUSTOM_STATS: Record<Exclude<JobAction, 'custom' | 'mine' | 'woodcut' | 'farm' | 'hunt' | 'craft' | 'use'>, string> = {
+const CUSTOM_STATS: Record<
+  Exclude<JobAction, 'custom' | 'mine' | 'woodcut' | 'farm' | 'hunt' | 'craft' | 'use'>,
+  string
+> = {
   fish: 'minecraft.custom:minecraft.fish_caught',
   combat: 'minecraft.custom:minecraft.mob_kills',
   breeding: 'minecraft.custom:minecraft.animals_bred',

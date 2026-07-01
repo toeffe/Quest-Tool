@@ -1,26 +1,28 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type Project, type Quest, type QuestType, type SpawnMode, type TargetNpc, type Objective } from '../../types/quest';
-import {
-  TextInput,
-  TextArea,
-  NumberInput,
-  Select,
-  PillSelect,
-  Field,
-  DataListInput,
-} from '../ui/Field';
+import { isVillager, useMobOptions } from '../../data/mobs';
+import { useDimensionOptions } from '../../hooks/useDimensionOptions';
+import { useQuestTypeLabels } from '../../i18n/useLabels';
+import type { CustomMob } from '../../types/customMob';
 import { defaultObjectiveFor, newObjectiveFor } from '../../types/factory';
 import { toIdentifier } from '../../types/ids';
-import { CoordsWithDimension } from './CoordsWithDimension';
-import { useDimensionOptions } from '../../hooks/useDimensionOptions';
-import { useMobOptions, isVillager } from '../../data/mobs';
-import { VariantFields, BabySelect } from './VariantFields';
-import { type CustomItem } from '../../types/item';
-import { type CustomMob } from '../../types/customMob';
-import { useQuestTypeLabels } from '../../i18n/useLabels';
+import type { CustomItem } from '../../types/item';
+import type { Objective, Project, Quest, QuestType, SpawnMode, TargetNpc } from '../../types/quest';
 import { QuestPreview } from '../preview/QuestPreview';
+import {
+  DataListInput,
+  Field,
+  NumberInput,
+  PillSelect,
+  Select,
+  TextArea,
+  TextInput,
+} from '../ui/Field';
+import { PageHeader } from '../ui/PageHeader';
+import { SectionHeading } from '../ui/SectionHeading';
+import { CoordsWithDimension } from './CoordsWithDimension';
 import { SpawnZoneFields } from './SpawnZoneFields';
+import { BabySelect, VariantFields } from './VariantFields';
 
 interface Props {
   quest: Quest;
@@ -93,21 +95,23 @@ export function StepQuest({ quest, project, customItems, customMobs, onChange }:
   }
 
   function setTarget(patch: Partial<TargetNpc>) {
-    const base: TargetNpc =
-      quest.targetNpc ?? {
-        name: 'Target NPC',
-        tag: 'target_npc',
-        entityType: 'minecraft:villager',
-        dialogue: 'You found me! Now return to the quest giver.',
-        spawnMode: 'player',
-      };
+    const base: TargetNpc = quest.targetNpc ?? {
+      name: 'Target NPC',
+      tag: 'target_npc',
+      entityType: 'minecraft:villager',
+      dialogue: 'You found me! Now return to the quest giver.',
+      spawnMode: 'player',
+    };
     onChange({ ...quest, targetNpc: { ...base, ...patch } });
   }
 
   return (
     <div>
-      <h1 className="step-title">{t('quest.title')}</h1>
-      <p className="step-sub">{t('quest.subtitle')}</p>
+      <PageHeader
+        title={t('quest.title')}
+        lead={t('quest.subtitle')}
+        hint={t('quest.subtitleHint')}
+      />
 
       <div className="card">
         <h3>{t('quest.type')}</h3>
@@ -137,24 +141,21 @@ export function StepQuest({ quest, project, customItems, customMobs, onChange }:
       </div>
 
       <div className="card">
-        <div className="row-between" style={{ marginBottom: 14 }}>
-          <h3 style={{ margin: 0 }}>{isMultiType ? t('quest.objectives') : t('quest.objective')}</h3>
-          {isMultiType && (
-            <button className="btn small" onClick={addObjective}>
-              {t('quest.addObjective')}
-            </button>
-          )}
-        </div>
+        <SectionHeading
+          title={isMultiType ? t('quest.objectives') : t('quest.objective')}
+          hint={t('quest.objectivesHint')}
+          actions={
+            isMultiType ? (
+              <button className="btn small" onClick={addObjective}>
+                {t('quest.addObjective')}
+              </button>
+            ) : undefined
+          }
+        />
 
-        {isMultiType && objectives.length > 1 && (
-          <p className="muted" style={{ marginTop: -6, marginBottom: 14, fontSize: 13 }}>
-            {t('quest.multiObjectiveHint')}
-          </p>
-        )}
-
-        {usesItemTarget(quest.type) && (
-          <p className="muted" style={{ marginTop: -6, marginBottom: 14, fontSize: 13 }}>
-            {t('quest.turnInHint')}
+        {quest.type === 'delivery' && (
+          <p className="field-note warn" style={{ marginTop: -6, marginBottom: 14 }}>
+            {t('quest.onTurnInDeliveryHint')}
           </p>
         )}
 
@@ -221,9 +222,7 @@ export function StepQuest({ quest, project, customItems, customMobs, onChange }:
                             })
                           }
                         >
-                          {!obj.eliteMobId && (
-                            <option value="">{tc('mobSource.selectMob')}</option>
-                          )}
+                          {!obj.eliteMobId && <option value="">{tc('mobSource.selectMob')}</option>}
                           {customMobs.map((mob) => (
                             <option key={mob.id} value={mob.id}>
                               {mob.name} ({mob.displayName})
@@ -298,7 +297,9 @@ export function StepQuest({ quest, project, customItems, customMobs, onChange }:
                             })
                           }
                         >
-                          {!obj.customItemId && <option value="">{tc('actions.selectItem')}</option>}
+                          {!obj.customItemId && (
+                            <option value="">{tc('actions.selectItem')}</option>
+                          )}
                           {customItems.map((item) => (
                             <option key={item.id} value={item.id}>
                               {item.name} ({item.displayName})
@@ -336,9 +337,7 @@ export function StepQuest({ quest, project, customItems, customMobs, onChange }:
                           { value: 'keep', label: tc('actions.keep') },
                           { value: 'remove', label: tc('actions.remove') },
                         ]}
-                        onChange={(v) =>
-                          setObjectiveAt(i, { consumeOnTurnIn: v === 'remove' })
-                        }
+                        onChange={(v) => setObjectiveAt(i, { consumeOnTurnIn: v === 'remove' })}
                       />
                     )}
                   </Field>
@@ -399,7 +398,9 @@ export function StepQuest({ quest, project, customItems, customMobs, onChange }:
             hint={t('quest.cooldownHint')}
             min={1}
             value={quest.cooldownSeconds}
-            onChange={(cooldownSeconds) => onChange({ ...quest, cooldownSeconds })}
+            onChange={(cooldownSeconds) =>
+              cooldownSeconds != null && onChange({ ...quest, cooldownSeconds })
+            }
           />
         )}
 
@@ -421,9 +422,7 @@ export function StepQuest({ quest, project, customItems, customMobs, onChange }:
                 { value: 'yes', label: t('quest.visitTarget') },
               ]}
               onChange={(v) =>
-                v === 'yes'
-                  ? setTarget({})
-                  : onChange({ ...quest, targetNpc: undefined })
+                v === 'yes' ? setTarget({}) : onChange({ ...quest, targetNpc: undefined })
               }
             />
           </Field>
@@ -454,10 +453,7 @@ export function StepQuest({ quest, project, customItems, customMobs, onChange }:
                 placeholder={t('quest.villagerPlaceholder')}
               />
               {isVillager(quest.targetNpc.entityType) ? (
-                <BabySelect
-                  value={quest.targetNpc.baby}
-                  onChange={(baby) => setTarget({ baby })}
-                />
+                <BabySelect value={quest.targetNpc.baby} onChange={(baby) => setTarget({ baby })} />
               ) : (
                 <VariantFields
                   entityType={quest.targetNpc.entityType}
@@ -480,7 +476,7 @@ export function StepQuest({ quest, project, customItems, customMobs, onChange }:
                     spawnMode,
                     coordinates:
                       spawnMode === 'fixed'
-                        ? quest.targetNpc!.coordinates ?? { x: 0, y: 64, z: 0 }
+                        ? (quest.targetNpc!.coordinates ?? { x: 0, y: 64, z: 0 })
                         : quest.targetNpc!.coordinates,
                   })
                 }

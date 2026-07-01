@@ -1,24 +1,30 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type Project } from '../types/quest';
+import { useMobOptions } from '../data/mobs';
+import type { ValidationIssue } from '../generator/validate';
+import { useUIStore } from '../store/uiStore';
 import {
-  type Dungeon,
-  type DungeonRoom,
-  type RoomType,
-  type TriggerEvent,
-  type TriggerAction,
-  type QuestState,
-  type BoundingBox,
-  normalizeBounds,
-  boundsVolume,
   createRoomSpawn,
   createRoomTrigger,
+  type Dungeon,
+  type DungeonRoom,
+  type QuestState,
+  type RoomType,
+  type TriggerAction,
+  type TriggerEvent,
 } from '../types/dungeon';
-import { toIdentifier } from '../types/ids';
-import { useMobOptions } from '../data/mobs';
-import { type ValidationIssue } from '../generator/validate';
-import { TextInput, NumberInput, Field, Select, PillSelect } from './ui/Field';
-import { useUIStore } from '../store/uiStore';
+import type { Project } from '../types/quest';
+import { DungeonBoundsEditor } from './dungeons/DungeonBoundsEditor';
+import { DungeonForm } from './dungeons/DungeonForm';
+import { DungeonRoomGateList } from './dungeons/DungeonRoomGateList';
+import {
+  QUEST_STATES,
+  ROOM_TYPE_OPTIONS,
+  TRIGGER_ACTION_TYPES,
+  TRIGGER_EVENTS,
+} from './dungeons/dungeonConstants';
+import { asRequiredNumber, Field, NumberInput, PillSelect, Select, TextInput } from './ui/Field';
+import { PageHeader } from './ui/PageHeader';
 
 interface Props {
   project: Project;
@@ -29,101 +35,6 @@ interface Props {
   onDelete: (id: string) => void;
   onAddRoom: (dungeonId: string) => void;
   onDeleteRoom: (dungeonId: string, roomId: string) => void;
-}
-
-const ROOM_TYPE_OPTIONS: RoomType[] = [
-  'boss_room',
-  'patrol_corridor',
-  'treasure_vault',
-  'entrance',
-  'puzzle_room',
-  'safe_room',
-  'custom',
-];
-
-const TRIGGER_EVENTS: TriggerEvent[] = [
-  'on_entry',
-  'on_all_mobs_killed',
-  'on_quest_complete',
-  'on_exit',
-];
-
-const TRIGGER_ACTION_TYPES: TriggerAction['type'][] = [
-  'set_quest_state',
-  'dialogue',
-  'unlock_chest',
-  'custom_command',
-];
-
-const QUEST_STATES: QuestState[] = [-1, 0, 1, 2, 3];
-
-function BoundsEditor({
-  bounds,
-  onChange,
-  t,
-  tc,
-}: {
-  bounds: BoundingBox;
-  onChange: (b: BoundingBox) => void;
-  t: (key: string, opts?: Record<string, unknown>) => string;
-  tc: (key: string) => string;
-}) {
-  const update = (patch: Partial<BoundingBox>) => {
-    onChange(normalizeBounds({ ...bounds, ...patch }));
-  };
-
-  const vol = boundsVolume(bounds);
-  const norm = normalizeBounds(bounds);
-
-  return (
-    <Field label={t('editor.bounds')} hint={t('editor.boundsVolume', { count: vol })}>
-      <div className="bounds-editor">
-        <div>
-          <span className="bounds-corner-label">{t('editor.boundsMin')}</span>
-          <div className="grid-3">
-            <NumberInput
-              label={tc('coords.x')}
-              value={bounds.x1}
-              onChange={(x1) => update({ x1 })}
-            />
-            <NumberInput
-              label={tc('coords.y')}
-              value={bounds.y1}
-              onChange={(y1) => update({ y1 })}
-            />
-            <NumberInput
-              label={tc('coords.z')}
-              value={bounds.z1}
-              onChange={(z1) => update({ z1 })}
-            />
-          </div>
-        </div>
-        <div>
-          <span className="bounds-corner-label">{t('editor.boundsMax')}</span>
-          <div className="grid-3">
-            <NumberInput
-              label={tc('coords.x')}
-              value={bounds.x2}
-              onChange={(x2) => update({ x2 })}
-            />
-            <NumberInput
-              label={tc('coords.y')}
-              value={bounds.y2}
-              onChange={(y2) => update({ y2 })}
-            />
-            <NumberInput
-              label={tc('coords.z')}
-              value={bounds.z2}
-              onChange={(z2) => update({ z2 })}
-            />
-          </div>
-        </div>
-      </div>
-      <div className="bounds-summary">
-        ({norm.x1}, {norm.y1}, {norm.z1}) → ({norm.x2}, {norm.y2}, {norm.z2})
-      </div>
-    </Field>
-  );
 }
 
 export function DungeonsPage({
@@ -141,7 +52,6 @@ export function DungeonsPage({
   const mobOptions = useMobOptions();
   const dungeons = project.dungeons ?? [];
   const customMobs = project.customMobs ?? [];
-  const dimensions = project.dimensions ?? [];
   const quests = project.quests;
 
   const [selectedDungeonId, setSelectedDungeonId] = useState(() => dungeons[0]?.id ?? '');
@@ -174,9 +84,7 @@ export function DungeonsPage({
     if (!selectedDungeon) return;
     onChange({
       ...project,
-      dungeons: dungeons.map((d) =>
-        d.id === selectedDungeon.id ? { ...d, ...patch } : d,
-      ),
+      dungeons: dungeons.map((d) => (d.id === selectedDungeon.id ? { ...d, ...patch } : d)),
     });
   };
 
@@ -188,9 +96,7 @@ export function DungeonsPage({
         d.id === selectedDungeon.id
           ? {
               ...d,
-              rooms: d.rooms.map((r) =>
-                r.id === selectedRoom.id ? { ...r, ...patch } : r,
-              ),
+              rooms: d.rooms.map((r) => (r.id === selectedRoom.id ? { ...r, ...patch } : r)),
             }
           : d,
       ),
@@ -201,14 +107,6 @@ export function DungeonsPage({
     issues.filter((i) => i.field?.includes(roomId) || i.dungeonRoomId === roomId);
 
   const questOptions = quests.map((q) => ({ value: q.name, label: q.name }));
-
-  const dimensionOptions = useMemo(
-    () => [
-      { value: '', label: tc('actions.noneDash') },
-      ...dimensions.map((d) => ({ value: d.id, label: d.name })),
-    ],
-    [dimensions, tc],
-  );
 
   const toggleExpanded = (id: string) => {
     setExpandedDungeons((prev) => {
@@ -234,8 +132,7 @@ export function DungeonsPage({
 
   return (
     <div className="items-page">
-      <h1 className="step-title">{t('title')}</h1>
-      <p className="step-sub">{t('subtitle')}</p>
+      <PageHeader title={t('title')} lead={t('subtitle')} hint={t('subtitleHint')} />
 
       <div className="items-layout">
         <aside className="items-list card">
@@ -302,8 +199,7 @@ export function DungeonsPage({
                         const ri = roomIssues(room.id);
                         const hasError = ri.some((i) => i.level === 'error');
                         const hasWarn = ri.some((i) => i.level === 'warning');
-                        const isRoomActive =
-                          isDungeonActive && selectedRoom?.id === room.id;
+                        const isRoomActive = isDungeonActive && selectedRoom?.id === room.id;
                         return (
                           <button
                             key={room.id}
@@ -344,9 +240,7 @@ export function DungeonsPage({
         </aside>
 
         <div className="items-editor">
-          {!selectedDungeon && (
-            <div className="card muted">{t('editor.selectDungeon')}</div>
-          )}
+          {!selectedDungeon && <div className="card muted">{t('editor.selectDungeon')}</div>}
 
           {selectedDungeon && !selectedRoom && (
             <div className="card">
@@ -373,31 +267,26 @@ export function DungeonsPage({
                   </button>
                 </div>
               </div>
-              <TextInput
-                label={t('editor.dungeonName')}
-                value={selectedDungeon.name}
-                onChange={(name) => {
-                  updateDungeon({ name, tag: toIdentifier(name, selectedDungeon.tag || 'dungeon') });
+              <DungeonForm dungeon={selectedDungeon} project={project} onChange={updateDungeon} />
+              <DungeonRoomGateList
+                dungeon={selectedDungeon}
+                quests={quests}
+                selectedRoomId={selectedRoomId}
+                onChangeRoom={(roomId, patch) => {
+                  onChange({
+                    ...project,
+                    dungeons: dungeons.map((d) =>
+                      d.id === selectedDungeon.id
+                        ? {
+                            ...d,
+                            rooms: d.rooms.map((r) =>
+                              r.id === roomId ? { ...r, ...patch } : r,
+                            ),
+                          }
+                        : d,
+                    ),
+                  });
                 }}
-              />
-              <TextInput
-                label={t('editor.dungeonTag')}
-                value={selectedDungeon.tag}
-                onChange={(tag) => updateDungeon({ tag: toIdentifier(tag, 'dungeon') })}
-              />
-              <TextInput
-                label={t('editor.description')}
-                value={selectedDungeon.description ?? ''}
-                onChange={(description) => updateDungeon({ description: description || undefined })}
-              />
-              <Select
-                label={t('editor.dimension')}
-                hint={t('editor.dimensionHint')}
-                value={selectedDungeon.dimensionId ?? ''}
-                options={dimensionOptions}
-                onChange={(dimensionId) =>
-                  updateDungeon({ dimensionId: dimensionId || undefined })
-                }
               />
               <p className="muted">{t('editor.selectRoom')}</p>
             </div>
@@ -447,7 +336,7 @@ export function DungeonsPage({
                 />
               )}
 
-              <BoundsEditor
+              <DungeonBoundsEditor
                 bounds={selectedRoom.bounds}
                 onChange={(bounds) => updateRoom({ bounds })}
                 t={t}
@@ -474,7 +363,11 @@ export function DungeonsPage({
                     <Select
                       label={t('editor.gateQuest')}
                       value={selectedRoom.questGate.questName}
-                      options={questOptions.length ? questOptions : [{ value: '', label: tc('actions.none') }]}
+                      options={
+                        questOptions.length
+                          ? questOptions
+                          : [{ value: '', label: tc('actions.none') }]
+                      }
                       onChange={(questName) =>
                         updateRoom({
                           questGate: { ...selectedRoom.questGate!, questName },
@@ -505,7 +398,10 @@ export function DungeonsPage({
                 label={t('editor.respawnCooldown')}
                 value={selectedRoom.respawnCooldown ?? 0}
                 min={0}
-                onChange={(v) => updateRoom({ respawnCooldown: v > 0 ? v : undefined })}
+                allowClear
+                onChange={(v) =>
+                  updateRoom({ respawnCooldown: v != null && v > 0 ? v : undefined })
+                }
               />
 
               <PillSelect
@@ -531,9 +427,7 @@ export function DungeonsPage({
                       {t('spawns.add')}
                     </button>
                   </div>
-                  {selectedRoom.spawns.length === 0 && (
-                    <p className="muted">{t('spawns.empty')}</p>
-                  )}
+                  {selectedRoom.spawns.length === 0 && <p className="muted">{t('spawns.empty')}</p>}
                   {selectedRoom.spawns.map((spawn) => (
                     <div key={spawn.id} className="card editor-subcard">
                       <Field label={tc('mobSource.label')}>
@@ -592,13 +486,13 @@ export function DungeonsPage({
                         label={t('spawns.count')}
                         value={spawn.count}
                         min={1}
-                        onChange={(count) =>
+                        onChange={asRequiredNumber((count) =>
                           updateRoom({
                             spawns: selectedRoom.spawns.map((s) =>
                               s.id === spawn.id ? { ...s, count: Math.max(1, count) } : s,
                             ),
-                          })
-                        }
+                          }),
+                        )}
                       />
                       <label className="checkbox-row">
                         <input
@@ -800,41 +694,41 @@ export function DungeonsPage({
                           <NumberInput
                             label={tc('coords.x')}
                             value={trigger.action.x}
-                            onChange={(x) =>
+                            onChange={asRequiredNumber((x) =>
                               updateRoom({
                                 triggers: selectedRoom.triggers.map((tr) =>
                                   tr.id === trigger.id && tr.action.type === 'unlock_chest'
                                     ? { ...tr, action: { ...tr.action, x } }
                                     : tr,
                                 ),
-                              })
-                            }
+                              }),
+                            )}
                           />
                           <NumberInput
                             label={tc('coords.y')}
                             value={trigger.action.y}
-                            onChange={(y) =>
+                            onChange={asRequiredNumber((y) =>
                               updateRoom({
                                 triggers: selectedRoom.triggers.map((tr) =>
                                   tr.id === trigger.id && tr.action.type === 'unlock_chest'
                                     ? { ...tr, action: { ...tr.action, y } }
                                     : tr,
                                 ),
-                              })
-                            }
+                              }),
+                            )}
                           />
                           <NumberInput
                             label={tc('coords.z')}
                             value={trigger.action.z}
-                            onChange={(z) =>
+                            onChange={asRequiredNumber((z) =>
                               updateRoom({
                                 triggers: selectedRoom.triggers.map((tr) =>
                                   tr.id === trigger.id && tr.action.type === 'unlock_chest'
                                     ? { ...tr, action: { ...tr.action, z } }
                                     : tr,
                                 ),
-                              })
-                            }
+                              }),
+                            )}
                           />
                         </div>
                       )}

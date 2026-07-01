@@ -1,17 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type Project, type Quest } from '../../types/quest';
-import { type ValidationIssue } from '../../generator/validate';
+import type { ValidationIssue } from '../../generator/validate';
+import type { Project, Quest } from '../../types/quest';
+import { StepChain } from '../steps/StepChain';
 import { StepNPC } from '../steps/StepNPC';
 import { StepQuest } from '../steps/StepQuest';
 import { StepRewards } from '../steps/StepRewards';
-import { StepChain } from '../steps/StepChain';
-import {
-  ValidationBar,
-  useEditorTabs,
-  issueMatchesTab,
-  type EditorTab,
-} from './ValidationBar';
+import { type EditorTab, issueMatchesTab, useEditorTabs, ValidationBar } from './ValidationBar';
 
 interface Props {
   quest: Quest;
@@ -65,7 +60,9 @@ export function QuestEditor({
               }}
             >
               {label}
-              {hasError && <span className="validation-dot error" aria-label={t('validation.hasErrors')} />}
+              {hasError && (
+                <span className="validation-dot error" aria-label={t('validation.hasErrors')} />
+              )}
               {!hasError && hasWarning && (
                 <span className="validation-dot warning" aria-label={t('validation.hasWarnings')} />
               )}
@@ -89,6 +86,7 @@ export function QuestEditor({
           <StepRewards
             quest={quest}
             platform={project.platform}
+            projectLocale={project.locale === 'en' ? 'en' : 'da'}
             customItems={project.customItems ?? []}
             jobs={project.jobs ?? []}
             onChange={onChange}

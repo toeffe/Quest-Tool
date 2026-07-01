@@ -1,6 +1,8 @@
 export const commonDa = {
   appName: 'Quest Tool MC',
   appTitle: 'Quest Tool MC — Minecraft Quest Creator',
+  saveError:
+    'Kunne ikke gemme dit projekt i denne browser (lageret kan være fuldt). Eksportér en sikkerhedskopi fra Eksport-siden.',
 
   nav: {
     mainViewsAria: 'Hovedvisninger',
@@ -8,10 +10,10 @@ export const commonDa = {
     editor: 'Editor',
     items: 'Brugerdefinerede genstande',
     mobs: 'Brugerdefinerede mobs',
-    dungeons: 'Dungeons',
+    dungeons: 'Dungeoner',
     dimensions: 'Dimensioner',
-    jobs: 'Jobs',
-    advancements: 'Advancements',
+    jobs: 'Erhverv',
+    advancements: 'Fremskridt',
     commands: 'Kommandoer',
     export: 'Eksport',
     exportBlockedAria: 'Eksport blokeret af fejl',
@@ -25,6 +27,7 @@ export const commonDa = {
     add: '+ Tilføj',
     remove: 'Fjern',
     copy: 'Kopiér',
+    duplicateSuffix: '(kopi)',
     settings: 'Indstillinger',
     help: '? Hjælp',
     closeHelp: 'Luk hjælp',
@@ -33,6 +36,7 @@ export const commonDa = {
     building: 'Bygger…',
     copied: 'Kopieret!',
     loading: 'Indlæser…',
+    dismiss: 'Luk',
     ready: 'Klar',
     unlink: 'Fjern link',
     fullEditor: 'Fuld editor',
@@ -40,6 +44,7 @@ export const commonDa = {
     no: 'Nej',
     off: 'Fra',
     on: 'Til',
+    more: 'Mere',
     keep: 'Behold genstande',
     selectItem: 'Vælg en genstand…',
     selectJob: 'Vælg et job…',
@@ -49,6 +54,10 @@ export const commonDa = {
 
   theme: {
     toggleTitle: 'Skift mellem lyst / mørkt tema',
+  },
+
+  editor: {
+    emptyState: 'Vælg en quest at redigere, eller opret en ny i sidepanelet.',
   },
 
   settings: {
@@ -154,15 +163,18 @@ export const commonDa = {
     vanilla: 'Vanilla-genstand',
     custom: 'Brugerdefineret genstand',
     vanillaHint: 'Brugerdefinerede genstande matches via deres interne tag, ikke visningsnavn.',
-    noCustomItems: 'Ingen brugerdefinerede genstande endnu. Åbn fanen Brugerdefinerede genstande for at oprette en.',
-    noCustomItemsShort: 'Ingen brugerdefinerede genstande endnu. Åbn fanen Brugerdefinerede genstande.',
+    noCustomItems:
+      'Ingen brugerdefinerede genstande endnu. Åbn fanen Brugerdefinerede genstande for at oprette en.',
+    noCustomItemsShort:
+      'Ingen brugerdefinerede genstande endnu. Åbn fanen Brugerdefinerede genstande.',
   },
 
   mobSource: {
     label: 'Mob-kilde',
     vanilla: 'Vanilla-mob',
     custom: 'Brugerdefineret mob',
-    noCustomMobs: 'Ingen brugerdefinerede mobs endnu. Åbn fanen Brugerdefinerede mobs for at oprette en.',
+    noCustomMobs:
+      'Ingen brugerdefinerede mobs endnu. Åbn fanen Brugerdefinerede mobs for at oprette en.',
     noCustomMobsShort: 'Ingen brugerdefinerede mobs endnu. Åbn fanen Brugerdefinerede mobs.',
     selectMob: 'Vælg en mob…',
   },

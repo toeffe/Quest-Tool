@@ -147,7 +147,19 @@ export function CommandPalette() {
     }
 
     return items;
-  }, [query, project.quests, project.jobs, project.dimensions, project.teleportPads, setActiveView, setOpen, setSelectedQuestId, setDimensionsFocus, setSettingsOpen, t]);
+  }, [
+    query,
+    project.quests,
+    project.jobs,
+    project.dimensions,
+    project.teleportPads,
+    setActiveView,
+    setOpen,
+    setSelectedQuestId,
+    setDimensionsFocus,
+    setSettingsOpen,
+    t,
+  ]);
 
   if (!open) return null;
 

@@ -2,43 +2,47 @@ export const helpEn = {
   title: 'Getting started',
   closeTitle: 'Close help',
   intro:
-    'Build quests for Minecraft Java 1.21.11, then export a ready-to-install datapack. Your work auto-saves in this browser. Story Flow is the default view. Use Settings (gear icon) → Import to restore a JSON file or a datapack ZIP you downloaded earlier. Shortcuts: Ctrl/Cmd+K command palette, Ctrl/Cmd+E jump to Export, Ctrl/Cmd+Shift+E next error (in Story Flow).',
+    'Build quests for Minecraft Java 1.21.11 and export a datapack. Work auto-saves in this browser.',
+  introHint:
+    'Story Flow is the default view. Settings → Import restores JSON or a datapack ZIP. Shortcuts: Ctrl/Cmd+K palette, Ctrl/Cmd+E Export, Ctrl/Cmd+Shift+E next error.',
+
+  shortcutsTitle: 'Keyboard shortcuts',
 
   views: {
     flow: {
       title: 'Story flow',
-      body:
-        'The main quest workspace — opens by default. Each card shows the player playthrough step-by-step. Drag the right port (→) to another quest\'s left port (←). Click a link to unlink or set auto-start. Click any step to edit in the resizable inspector. Chain tab in the inspector sets job gates and follow-up behavior. Sidebar: drag the grip to reorder quests. Shortcuts: Ctrl/Cmd+Shift+A auto-arrange, Ctrl/Cmd+Shift+F fit view, Ctrl/Cmd+Shift+E next error, Esc close inspector. Toolbar: Fit errors, Next error, Errors only filter.',
+      summary: 'Main quest workspace — drag-connect quests, edit in the inspector.',
+      body: "Each card shows the player playthrough. Drag right port (→) to another's left port (←). Click a link to unlink or set auto-start. Chain tab sets job gates. Sidebar grip reorders quests. Ctrl/Cmd+Shift+A arrange, +F fit view, +E next error, Esc close inspector.",
     },
     editor: {
       title: 'Editor',
-      body:
-        'Full-width tabbed quest editor — use when you want more room than the flow inspector. Open via the Editor tab or the Full editor button in the flow inspector. Edit Objectives, NPC, Rewards, and Chain with a validation bar at the bottom.',
+      summary: 'Full-width tabbed quest editor.',
+      body: 'More room than the flow inspector. Open via Editor tab or Full editor in the inspector. Objectives, NPC, Rewards, Chain tabs with validation at the bottom.',
     },
     items: {
       title: 'Custom items',
-      body:
-        'Define trophy collectibles, food, tools, and more. Use them as quest rewards, gather/delivery targets, or spawn-zone mob drops. Items use component syntax — no custom textures unless you add a resource pack.',
+      summary: 'Trophy items, food, tools for rewards and objectives.',
+      body: 'Use in quest rewards, gather/delivery targets, or spawn-zone drops. Component syntax — no custom textures unless you add a resource pack.',
     },
     jobs: {
       title: 'Jobs',
-      body:
-        'Passive skills (fishing, mining, combat, and more) level up from player actions. New projects include 11 starter jobs. Configure XP curves, stat presets, and milestone rewards that grant custom items on level-up.',
+      summary: 'Passive skills from player actions.',
+      body: 'New projects include 11 starter jobs. Configure XP curves, presets, and milestone rewards with custom items.',
     },
     advancements: {
       title: 'Advancements',
-      body:
-        'Preview the in-game skill trees exported with your datapack. Players open Esc → Advancements → your namespace tab to track job levels.',
+      summary: 'Preview in-game job trees.',
+      body: 'Players open Esc → Advancements → your namespace tab to track job levels.',
     },
     commands: {
       title: 'Commands',
-      body:
-        'A reference of the admin commands the generated datapack adds (spawning NPCs, resets, debug, job sync).',
+      summary: 'Datapack admin command reference.',
+      body: 'Spawn NPCs, reset progress, debug, job sync — for setup and administration.',
     },
     export: {
       title: 'Export',
-      body:
-        'Review validation, read the platform install guide, preview generated files, and download the datapack ZIP. The ZIP includes quest-tool-project.json so you can re-import your work via Settings.',
+      summary: 'Validate and download the datapack ZIP.',
+      body: 'Install guide, file preview, and download. ZIP includes quest-tool-project.json for re-import.',
     },
   },
 } as const;

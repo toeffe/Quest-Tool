@@ -26,3 +26,8 @@ docs/dungeon-editor-strategy.md
 .gitignore
 .cursor/rules/minecraft-1.21.11-commands.mdc
 docs/dimensions.md
+docs/custom-mob-drops.md
+docs/INGAME_QA.da.md
+docs/INGAME_QA.md
+docs/Quest-Tool-Engineering-Audit.md
+CONTRIBUTING.md

@@ -1,4 +1,4 @@
-import { type ActiveView } from './uiStore';
+import type { ActiveView } from './uiStore';
 
 const STORAGE_KEY = 'quest-tool-active-view';
 

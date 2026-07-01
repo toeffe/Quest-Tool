@@ -3,15 +3,9 @@
  * Custom mobs are stat-modified vanilla entities identified by entity tags.
  */
 
-import { type ZoneDrop } from './quest';
+import type { ZoneDrop } from './quest';
 
-export type CustomMobEquipmentSlot =
-  | 'head'
-  | 'chest'
-  | 'legs'
-  | 'feet'
-  | 'mainhand'
-  | 'offhand';
+export type CustomMobEquipmentSlot = 'head' | 'chest' | 'legs' | 'feet' | 'mainhand' | 'offhand';
 
 export type CustomMobBossBarColor =
   | 'pink'
@@ -53,6 +47,10 @@ export interface CustomMobPhase {
   bossBarColor?: CustomMobBossBarColor;
   /** Appearance overrides for this phase. */
   variants?: Record<string, string>;
+  /** Size multiplier (1 = vanilla). Uses minecraft:scale attribute. */
+  scale?: number;
+  /** PNG as data URL. Emits mob variant + resource pack texture when base entity supports it. */
+  skinTexture?: string;
   /** Equipment replaced when entering this phase. */
   equipment?: CustomMobEquipment[];
   /** Status effects applied when entering this phase. */
@@ -83,6 +81,10 @@ export interface CustomMob {
   phases?: CustomMobPhase[];
   /** Appearance sub-variants, keyed by NBT field name (reuse mobVariants.ts). */
   variants?: Record<string, string>;
+  /** Size multiplier (1 = vanilla). Uses minecraft:scale attribute. */
+  scale?: number;
+  /** PNG as data URL. Emits mob variant + resource pack texture when base entity supports it. */
+  skinTexture?: string;
   /** Optional equipment slots. */
   equipment?: CustomMobEquipment[];
   /** Custom drop table when mob dies. */

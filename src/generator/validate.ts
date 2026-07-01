@@ -1,18 +1,20 @@
-import { type Project, type Quest } from '../types/quest';
-import { TYPED_JOB_ACTIONS } from '../types/job';
-import { normalizeBounds, type BoundingBox } from '../types/dungeon';
-import { isRewardSupported } from './platform';
-import { toIdentifier } from '../types/ids';
-import { type AppLocale } from '../i18n/types';
-import { getAppLocale } from '../i18n';
-import { tValidation } from '../i18n/translate';
+import { findQuestIdsInChainCycles } from '../chain/chainGraph';
 import {
   getEnchantmentMaxLevel,
   isKnownEnchantment,
   normalizeEnchantmentId,
 } from '../data/enchantments';
+import { supportsCustomSkin } from '../data/mobVariantRegistry';
+import { getAppLocale } from '../i18n';
+import { tValidation } from '../i18n/translate';
+import type { AppLocale } from '../i18n/types';
+import type { PortalEndpoint } from '../types/dimension';
+import { type BoundingBox, normalizeBounds } from '../types/dungeon';
+import { toIdentifier } from '../types/ids';
+import { TYPED_JOB_ACTIONS } from '../types/job';
+import type { Project, Quest } from '../types/quest';
 import { endpointToSelector } from './coordinates';
-import { type PortalEndpoint } from '../types/dimension';
+import { isRewardSupported } from './platform';
 
 export type IssueLevel = 'error' | 'warning';
 
@@ -52,7 +54,8 @@ function objectiveIssues(quest: Quest, locale: AppLocale): string[] {
       case 'delivery':
       case 'daily':
         if (quest.type === 'kill') {
-          if (!o.target && !o.eliteMobId) out.push(tValidation('missingTargetMob', { where }, locale));
+          if (!o.target && !o.eliteMobId)
+            out.push(tValidation('missingTargetMob', { where }, locale));
         } else if (!o.target && !o.customItemId) {
           out.push(tValidation('missingTargetItem', { where }, locale));
         }
@@ -258,11 +261,80 @@ function customMobIssues(project: Project, locale: AppLocale): ValidationIssue[]
         message: tValidation('customMobHighHealth', { name: mob.name, health: mob.health }, locale),
       });
     }
+    if (mob.skinTexture?.trim() && !supportsCustomSkin(mob.baseEntity)) {
+      issues.push({
+        level: 'error',
+        message: tValidation(
+          'customMobSkinUnsupported',
+          { name: mob.name, entity: mob.baseEntity },
+          locale,
+        ),
+      });
+    }
+    if (mob.scale != null && mob.scale > 0 && (mob.scale < 0.25 || mob.scale > 4)) {
+      issues.push({
+        level: 'warning',
+        message: tValidation('customMobScaleExtreme', { name: mob.name, scale: mob.scale }, locale),
+      });
+    }
+    if (mob.skinTexture?.trim() && supportsCustomSkin(mob.baseEntity)) {
+      issues.push({
+        level: 'warning',
+        message: tValidation('customMobSkinResourcePack', { name: mob.name }, locale),
+      });
+    }
+    if (mob.skinTexture?.trim() && mob.baseEntity.trim() === 'minecraft:wolf') {
+      issues.push({
+        level: 'warning',
+        message: tValidation('customMobWolfSkinInfo', { name: mob.name }, locale),
+      });
+    }
+    for (const phase of mob.phases ?? []) {
+      if (phase.skinTexture?.trim() && !supportsCustomSkin(mob.baseEntity)) {
+        issues.push({
+          level: 'error',
+          message: tValidation(
+            'customMobSkinUnsupported',
+            { name: mob.name, entity: mob.baseEntity },
+            locale,
+          ),
+        });
+      }
+    }
     if ((mob.drops ?? []).length > 0) {
+      for (const [di, d] of mob.drops!.entries()) {
+        const dropLabel =
+          mob.drops!.length > 1
+            ? tValidation('dropN', { where: mob.name, n: di + 1 }, locale)
+            : tValidation('drop', { where: mob.name }, locale);
+        if (!d.target?.trim() && !d.customItemId) {
+          issues.push({
+            level: 'error',
+            message: tValidation('dropMissingItem', { where: dropLabel }, locale),
+          });
+        }
+        if (d.customItemId && !(project.customItems ?? []).some((i) => i.id === d.customItemId)) {
+          issues.push({
+            level: 'error',
+            message: tValidation('spawnDropMissingCustomItem', undefined, locale),
+          });
+        }
+        if (d.amount != null && d.amount < 1) {
+          issues.push({
+            level: 'error',
+            message: tValidation('dropAmountMin', { where: dropLabel }, locale),
+          });
+        }
+        if (d.chance != null && (d.chance < 1 || d.chance > 100)) {
+          issues.push({
+            level: 'error',
+            message: tValidation('dropChanceRange', { where: dropLabel }, locale),
+          });
+        }
+      }
       const usedInSpawnZone = project.quests.some(
         (q) =>
-          q.type === 'kill' &&
-          q.objectives.some((o) => o.eliteMobId === mob.id && o.spawnZone),
+          q.type === 'kill' && q.objectives.some((o) => o.eliteMobId === mob.id && o.spawnZone),
       );
       if (!usedInSpawnZone) {
         issues.push({
@@ -404,10 +476,14 @@ function dungeonIssues(project: Project, locale: AppLocale): ValidationIssue[] {
         if (!questNames.has(room.questGate.questName)) {
           issues.push({
             level: 'error',
-            message: tValidation('dungeonGateMissingQuest', {
-              room: room.name,
-              quest: room.questGate.questName,
-            }, locale),
+            message: tValidation(
+              'dungeonGateMissingQuest',
+              {
+                room: room.name,
+                quest: room.questGate.questName,
+              },
+              locale,
+            ),
             dungeonId: dungeon.id,
             dungeonRoomId: room.id,
           });
@@ -415,7 +491,11 @@ function dungeonIssues(project: Project, locale: AppLocale): ValidationIssue[] {
       }
 
       for (const spawn of room.spawns) {
-        if (spawn.sourceType === 'customMob' && spawn.customMobId && !customMobIds.has(spawn.customMobId)) {
+        if (
+          spawn.sourceType === 'customMob' &&
+          spawn.customMobId &&
+          !customMobIds.has(spawn.customMobId)
+        ) {
           issues.push({
             level: 'error',
             message: tValidation('dungeonSpawnMissingMob', { room: room.name }, locale),
@@ -431,10 +511,14 @@ function dungeonIssues(project: Project, locale: AppLocale): ValidationIssue[] {
           if (!questNames.has(trigger.action.questName)) {
             issues.push({
               level: 'error',
-              message: tValidation('dungeonTriggerMissingQuest', {
-                room: room.name,
-                quest: trigger.action.questName,
-              }, locale),
+              message: tValidation(
+                'dungeonTriggerMissingQuest',
+                {
+                  room: room.name,
+                  quest: trigger.action.questName,
+                },
+                locale,
+              ),
               dungeonId: dungeon.id,
               dungeonRoomId: room.id,
             });
@@ -467,11 +551,15 @@ function dungeonIssues(project: Project, locale: AppLocale): ValidationIssue[] {
         if (boxesOverlap(dungeon.rooms[i].bounds, dungeon.rooms[j].bounds)) {
           issues.push({
             level: 'warning',
-            message: tValidation('dungeonOverlappingRooms', {
-              a: dungeon.rooms[i].name,
-              b: dungeon.rooms[j].name,
-              dungeon: dungeon.name,
-            }, locale),
+            message: tValidation(
+              'dungeonOverlappingRooms',
+              {
+                a: dungeon.rooms[i].name,
+                b: dungeon.rooms[j].name,
+                dungeon: dungeon.name,
+              },
+              locale,
+            ),
             dungeonId: dungeon.id,
           });
         }
@@ -511,12 +599,7 @@ function pointInEndpointBox(
 ): boolean {
   const s = endpointToSelector(endpoint);
   return (
-    px >= s.x &&
-    px <= s.x + s.dx &&
-    py >= s.y &&
-    py <= s.y + s.dy &&
-    pz >= s.z &&
-    pz <= s.z + s.dz
+    px >= s.x && px <= s.x + s.dx && py >= s.y && py <= s.y + s.dy && pz >= s.z && pz <= s.z + s.dz
   );
 }
 
@@ -608,11 +691,7 @@ function dimensionIssues(project: Project, locale: AppLocale): ValidationIssue[]
       if (!pointInEndpointBox(from.to.x, from.to.y, from.to.z, to.at)) continue;
       issues.push({
         level: 'warning',
-        message: tValidation(
-          'padDestinationOverlapsAt',
-          { from: from.name, to: to.name },
-          locale,
-        ),
+        message: tValidation('padDestinationOverlapsAt', { from: from.name, to: to.name }, locale),
         teleportPadId: from.id,
         field: `teleportPads.${from.id}.to`,
       });
@@ -850,7 +929,8 @@ export function validateProject(project: Project, locale?: AppLocale): Validatio
 
   for (const quest of project.quests) {
     const name = quest.name.trim();
-    if (!name) add('error', tValidation('questEmptyName', undefined, effectiveLocale), quest, 'name');
+    if (!name)
+      add('error', tValidation('questEmptyName', undefined, effectiveLocale), quest, 'name');
     nameCounts.set(name, (nameCounts.get(name) ?? 0) + 1);
 
     if (!quest.npc.name.trim()) {
@@ -883,12 +963,24 @@ export function validateProject(project: Project, locale?: AppLocale): Validatio
     }
 
     if (quest.npc.spawnMode === 'fixed' && !quest.npc.coordinates) {
-      add('error', tValidation('npcFixedNoCoords', undefined, effectiveLocale), quest, 'npc.coordinates');
-    }
-    if (quest.npc.coordinates?.dimensionId && !dimensionIds.has(quest.npc.coordinates.dimensionId)) {
       add(
         'error',
-        tValidation('dimensionRefMissing', { entity: quest.npc.name || quest.name }, effectiveLocale),
+        tValidation('npcFixedNoCoords', undefined, effectiveLocale),
+        quest,
+        'npc.coordinates',
+      );
+    }
+    if (
+      quest.npc.coordinates?.dimensionId &&
+      !dimensionIds.has(quest.npc.coordinates.dimensionId)
+    ) {
+      add(
+        'error',
+        tValidation(
+          'dimensionRefMissing',
+          { entity: quest.npc.name || quest.name },
+          effectiveLocale,
+        ),
         quest,
         'npc.coordinates.dimensionId',
       );
@@ -896,7 +988,12 @@ export function validateProject(project: Project, locale?: AppLocale): Validatio
 
     if (quest.type === 'talk' && quest.targetNpc) {
       if (!quest.targetNpc.name.trim()) {
-        add('error', tValidation('targetNpcNoName', undefined, effectiveLocale), quest, 'targetNpc.name');
+        add(
+          'error',
+          tValidation('targetNpcNoName', undefined, effectiveLocale),
+          quest,
+          'targetNpc.name',
+        );
       }
       if (quest.targetNpc.spawnMode === 'fixed' && !quest.targetNpc.coordinates) {
         add(
@@ -949,7 +1046,12 @@ export function validateProject(project: Project, locale?: AppLocale): Validatio
         );
       }
       if (quest.chain.requires === quest.name) {
-        add('error', tValidation('chainSelfRequire', undefined, effectiveLocale), quest, 'chain.requires');
+        add(
+          'error',
+          tValidation('chainSelfRequire', undefined, effectiveLocale),
+          quest,
+          'chain.requires',
+        );
       }
     }
     if (quest.chain.unlocks) {
@@ -970,13 +1072,28 @@ export function validateProject(project: Project, locale?: AppLocale): Validatio
         add(support.ok ? 'warning' : 'warning', support.note, quest);
       }
       if (reward.type === 'item' && !reward.value && !reward.customItemId) {
-        add('error', tValidation('rewardMissingItem', undefined, effectiveLocale), quest, 'rewards');
+        add(
+          'error',
+          tValidation('rewardMissingItem', undefined, effectiveLocale),
+          quest,
+          'rewards',
+        );
       }
       if (reward.customItemId && !customItemIds.has(reward.customItemId)) {
-        add('error', tValidation('rewardMissingCustomItem', undefined, effectiveLocale), quest, 'rewards');
+        add(
+          'error',
+          tValidation('rewardMissingCustomItem', undefined, effectiveLocale),
+          quest,
+          'rewards',
+        );
       }
       if (reward.type === 'command' && !reward.value) {
-        add('error', tValidation('rewardMissingCommand', undefined, effectiveLocale), quest, 'rewards');
+        add(
+          'error',
+          tValidation('rewardMissingCommand', undefined, effectiveLocale),
+          quest,
+          'rewards',
+        );
       }
     }
 
@@ -993,6 +1110,13 @@ export function validateProject(project: Project, locale?: AppLocale): Validatio
   for (const [tag, count] of npcTagCounts) {
     if (count > 1) {
       add('error', tValidation('duplicateNpcTag', { tag, count }, effectiveLocale));
+    }
+  }
+
+  const cyclicQuestIds = findQuestIdsInChainCycles(project.quests);
+  for (const quest of project.quests) {
+    if (cyclicQuestIds.has(quest.id)) {
+      add('error', tValidation('chainCycleDetected', undefined, effectiveLocale), quest, 'chain');
     }
   }
 

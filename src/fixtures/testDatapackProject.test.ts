@@ -1,14 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import { STARTER_JOB_KEYS } from '../types/factory';
+import { TEST_DATAPACK_NAMESPACE, TEST_DATAPACK_SURFACE_Y } from './testDatapackConstants';
 import {
-  buildTestDatapackProject,
   buildTestDatapackFiles,
+  buildTestDatapackProject,
   buildTestDatapackZip,
 } from './testDatapackProject';
-import {
-  TEST_DATAPACK_NAMESPACE,
-  TEST_DATAPACK_SURFACE_Y,
-} from './testDatapackConstants';
-import { STARTER_JOB_KEYS } from '../types/factory';
 
 const fnRoot = `data/${TEST_DATAPACK_NAMESPACE}/function`;
 
@@ -55,7 +52,9 @@ describe('buildTestDatapackProject', () => {
     }
 
     const milestoneTypes = new Set(
-      project.jobs!.flatMap((j) => j.milestones?.flatMap((m) => m.rewards.map((r) => r.type)) ?? []),
+      project.jobs!.flatMap(
+        (j) => j.milestones?.flatMap((m) => m.rewards.map((r) => r.type)) ?? [],
+      ),
     );
     expect(milestoneTypes.has('item')).toBe(true);
     expect(milestoneTypes.has('xp')).toBe(true);
@@ -64,7 +63,9 @@ describe('buildTestDatapackProject', () => {
 
     const { files } = buildTestDatapackFiles();
     expect(files[`${fnRoot}/place_test_stations.mcfunction`]).toContain('minecraft:coal_ore');
-    expect(files[`${fnRoot}/place_test_stations.mcfunction`]).toContain('minecraft:enchanting_table');
+    expect(files[`${fnRoot}/place_test_stations.mcfunction`]).toContain(
+      'minecraft:enchanting_table',
+    );
     expect(files[`${fnRoot}/place_test_stations.mcfunction`]).toContain('minecraft:villager');
     expect(files[`${fnRoot}/spawn_all.mcfunction`]).toContain('place_test_stations');
     expect(files[`${fnRoot}/give_test_kit.mcfunction`]).toBeDefined();

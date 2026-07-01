@@ -3,9 +3,10 @@
  * kill-quest target. The scoreboard `killed` criterion works with any entity
  * type id, so users can still type a custom/modded id if it is not listed here.
  */
+
+import { useMemo } from 'react';
 import { mobLabelI18n } from '../i18n/useLabels';
 import { useLocaleStore } from '../store/localeStore';
-import { useMemo } from 'react';
 
 export const MOB_IDS: string[] = [
   'minecraft:allay',
@@ -105,9 +106,6 @@ export function useMobOptions() {
     [locale],
   );
 }
-
-/** @deprecated Use useMobOptions() for localized labels */
-export const MOB_OPTIONS = MOB_IDS.map((value) => ({ value, label: mobLabel(value) }));
 
 /** Ensure an entity id has a namespace, defaulting to villager if blank. */
 export function normalizeEntityId(value: string): string {

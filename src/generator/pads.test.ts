@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import { createProject } from '../types/factory';
+import { describe, expect, it } from 'vitest';
 import { createDimension, createTeleportPad } from '../types/dimension';
+import { createProject } from '../types/factory';
 import { buildContext } from './context';
-import { compilePads } from './pads';
 import { buildLoadFunction, buildTickFunction } from './load';
+import { compilePads } from './pads';
 import { PAD_GRACE_OBJECTIVE, PAD_INIT_OBJECTIVE, PAD_REQ_OBJECTIVE } from './sys';
 
 function buildRoundTripProject() {
@@ -80,7 +80,9 @@ describe('pads generator', () => {
     expect(tick).toContain(
       `execute as @a[scores={${PAD_REQ_OBJECTIVE}=0}] run function questpack:pads/jump_pad/teleport`,
     );
-    expect(teleport).toContain(`scoreboard players operation @s ${PAD_GRACE_OBJECTIVE} = #now qt_sys`);
+    expect(teleport).toContain(
+      `scoreboard players operation @s ${PAD_GRACE_OBJECTIVE} = #now qt_sys`,
+    );
     expect(teleport).toContain(`scoreboard players add @s ${PAD_GRACE_OBJECTIVE} 80`);
     expect(teleport).toContain('execute in questpack:arena run tp @s 100.5 64 100.5');
     expect(teleport).toContain('scoreboard players add @s pad0_cd 60');
@@ -142,8 +144,7 @@ describe('pads generator', () => {
     const project = buildUserLayoutProject();
     const ctx = buildContext(project);
     const files = compilePads(ctx);
-    const teleport =
-      files['data/questpack/function/pads/pad_1_enter/teleport.mcfunction'];
+    const teleport = files['data/questpack/function/pads/pad_1_enter/teleport.mcfunction'];
     const tick = files['data/questpack/function/pads/tick.mcfunction'];
 
     expect(teleport).not.toContain('tp @s 12 -60 12');

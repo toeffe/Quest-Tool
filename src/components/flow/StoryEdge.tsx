@@ -1,7 +1,7 @@
+import { BaseEdge, EdgeLabelRenderer, type EdgeProps, getSmoothStepPath } from '@xyflow/react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, type EdgeProps } from '@xyflow/react';
-import { type FlowEdgeData } from './chainEdges';
+import type { FlowEdgeData } from './chainEdges';
 
 export const StoryEdge = memo(function StoryEdge({
   id,
@@ -20,6 +20,7 @@ export const StoryEdge = memo(function StoryEdge({
   const broken = edgeData?.broken;
   const autoStart = edgeData?.autoStart;
   const requiresOnly = edgeData?.requiresOnly;
+  const world = edgeData?.world;
 
   const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourceX,
@@ -35,6 +36,7 @@ export const StoryEdge = memo(function StoryEdge({
     broken ? 'broken' : '',
     autoStart ? 'auto-start' : '',
     requiresOnly ? 'requires-only' : '',
+    world ? 'world' : '',
     selected ? 'selected' : '',
   ]
     .filter(Boolean)
@@ -54,7 +56,7 @@ export const StoryEdge = memo(function StoryEdge({
       {labelText && (
         <EdgeLabelRenderer>
           <div
-            className={`flow-edge-label ${broken ? 'broken' : ''} ${autoStart ? 'auto-start' : ''} ${selected ? 'selected' : ''}`}
+            className={`flow-edge-label ${broken ? 'broken' : ''} ${autoStart ? 'auto-start' : ''} ${world ? 'world' : ''} ${selected ? 'selected' : ''}`}
             style={{
               position: 'absolute',
               transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
@@ -62,7 +64,9 @@ export const StoryEdge = memo(function StoryEdge({
             }}
           >
             {labelText}
-            {!broken && <span className="flow-edge-label-hint">{t('edges.clickToUnlink')}</span>}
+            {!broken && !world && (
+              <span className="flow-edge-label-hint">{t('edges.clickToUnlink')}</span>
+            )}
           </div>
         </EdgeLabelRenderer>
       )}

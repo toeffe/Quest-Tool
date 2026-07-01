@@ -1,13 +1,11 @@
+import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
-import { type Quest } from '../../types/quest';
-import { type ValidationIssue } from '../../generator/validate';
+import type { ValidationIssue } from '../../generator/validate';
 import { useQuestTypeLabels } from '../../i18n/useLabels';
-import { type PlaythroughStep } from './questPlaythrough';
-import { isStoryLocked, prerequisiteResolved } from './questPlaythrough';
+import type { Project, Quest } from '../../types/quest';
 import { PlaythroughTimeline } from './PlaythroughTimeline';
-import { type Project } from '../../types/quest';
+import { isStoryLocked, type PlaythroughStep, prerequisiteResolved } from './questPlaythrough';
 
 export interface QuestNodeData {
   quest: Quest;
@@ -46,44 +44,44 @@ export const QuestNode = memo(function QuestNode({ data }: NodeProps<QuestFlowNo
       />
 
       <div className="flow-node">
-      <div className="flow-node-header">
-        <div className="flow-node-header-main">
-          <span className="flow-node-title">{quest.name || t('questNode.untitled')}</span>
-          <div className="flow-node-badges">
-            {showStart && (
-              <span className="flow-node-badge start" title={t('questNode.startTitle')}>
-                {t('questNode.startBadge')}
-              </span>
-            )}
-            {showLocked && !showBrokenPrereq && (
-              <span
-                className="flow-node-badge locked"
-                title={
-                  quest.chain.requires
-                    ? t('questNode.lockedRequires', { name: quest.chain.requires })
-                    : t('questNode.lockedPrereq')
-                }
-              >
-                {t('questNode.lockedBadge')}
-              </span>
-            )}
-            {showBrokenPrereq && (
-              <span className="flow-node-badge broken" title={t('questNode.orphanTitle')}>
-                {t('questNode.orphanBadge')}
-              </span>
-            )}
+        <div className="flow-node-header">
+          <div className="flow-node-header-main">
+            <span className="flow-node-title">{quest.name || t('questNode.untitled')}</span>
+            <div className="flow-node-badges">
+              {showStart && (
+                <span className="flow-node-badge start" title={t('questNode.startTitle')}>
+                  {t('questNode.startBadge')}
+                </span>
+              )}
+              {showLocked && !showBrokenPrereq && (
+                <span
+                  className="flow-node-badge locked"
+                  title={
+                    quest.chain.requires
+                      ? t('questNode.lockedRequires', { name: quest.chain.requires })
+                      : t('questNode.lockedPrereq')
+                  }
+                >
+                  {t('questNode.lockedBadge')}
+                </span>
+              )}
+              {showBrokenPrereq && (
+                <span className="flow-node-badge broken" title={t('questNode.orphanTitle')}>
+                  {t('questNode.orphanBadge')}
+                </span>
+              )}
+            </div>
           </div>
+          <span className="flow-node-type">{questTypeLabels[quest.type]}</span>
         </div>
-        <span className="flow-node-type">{questTypeLabels[quest.type]}</span>
-      </div>
 
-      <PlaythroughTimeline
-        quest={quest}
-        project={project}
-        issues={issues}
-        selectedStepId={selectedStepId}
-        onOpenStep={onOpenStep}
-      />
+        <PlaythroughTimeline
+          quest={quest}
+          project={project}
+          issues={issues}
+          selectedStepId={selectedStepId}
+          onOpenStep={onOpenStep}
+        />
       </div>
 
       <Handle

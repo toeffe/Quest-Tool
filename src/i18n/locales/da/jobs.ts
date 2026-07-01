@@ -1,7 +1,8 @@
 export const jobsDa = {
   title: 'Jobs',
-  subtitle:
-    'Passive færdigheder der stiger i niveau, når spillere udfører handlinger — fiskeri, minedrift, kamp og mere. Jobfremgang sendes i samme datapack som dine quests. Konfigurer milestone-belønninger for at give brugerdefinerede genstande ved nøgleniveauer.',
+  subtitle: 'Passive færdigheder der stiger fra spillerhandlinger.',
+  subtitleHint:
+    'Jobs følger med samme datapack som quests. Sæt XP-kurver, presets og milepælsbelønninger med genstande på nøgleniveauer.',
 
   list: {
     title: 'Jobs ({{count}})',
@@ -49,16 +50,14 @@ export const jobsDa = {
     xpPerAction: 'XP pr. handling',
     xpPerDistance: 'XP pr. distanceenhed',
     xpPerActionHint: 'Hvor meget job-XP der gives hver gang den sporede handling sker.',
-    xpPerDistanceHint:
-      'Centimeter pr. enhed sættes nedenfor (standard 1000 cm = 10 blokke).',
+    xpPerDistanceHint: 'Centimeter pr. enhed sættes nedenfor (standard 1000 cm = 10 blokke).',
     xpPerLevel: 'XP pr. niveau',
     xpPerLevelHint: 'Flad kurve: total XP til niveau L = XP pr. niveau × L.',
     maxLevel: 'Maks. niveau',
     showActionBar: 'Vis XP-gevinst på action bar',
     showActionBarHint: 'Kort action bar-besked når XP optjenes',
     progressDisplay: 'Fremgangsvisning',
-    progressDisplayHint:
-      'Personlig boss bar øverst (niveau, XP, fremgang — én pr. spiller)',
+    progressDisplayHint: 'Personlig boss bar øverst (niveau, XP, fremgang — én pr. spiller)',
   },
 
   statPresets: {
@@ -74,13 +73,10 @@ export const jobsDa = {
   milestones: {
     title: 'Milestone-belønninger',
     add: '+ Tilføj milestone',
-    hint:
-      'Gives automatisk når en spiller når niveauet in-game. Link brugerdefinerede genstande fra fanen Brugerdefinerede genstande.',
-    empty:
-      'Ingen milestones endnu. Tilføj niveau 5, 10, 25, 50 for at belønne loyale spillere.',
+    hint: 'Gives automatisk når en spiller når niveauet in-game. Link brugerdefinerede genstande fra fanen Brugerdefinerede genstande.',
+    empty: 'Ingen milestones endnu. Tilføj niveau 5, 10, 25, 50 for at belønne loyale spillere.',
     atLevel: 'Ved niveau',
-    noRewards:
-      'Ingen belønninger konfigureret — denne milestone springes over i datapacken.',
+    noRewards: 'Ingen belønninger konfigureret — denne milestone springes over i datapacken.',
     addReward: '+ Tilføj belønning',
     vanillaOption: 'Vanilla: {{item}}',
     type: 'Type',
@@ -99,13 +95,11 @@ export const jobsDa = {
 
   advancements: {
     title: 'Advancements',
-    hint:
-      'Spillere ser job-faneblade under Esc → Advancements efter at have joinet verdenen (eller /reload).',
+    hint: 'Spillere ser job-faneblade under Esc → Advancements efter at have joinet verdenen (eller /reload).',
     icon: 'Advancement-ikon',
     iconHint: 'Vanilla-genstand-id vist på advancement-træet.',
     background: 'Fanebaggrund',
-    backgroundHint:
-      'Tekstur bag det in-game advancement-træ (Minecraft 1.21.11-format).',
+    backgroundHint: 'Tekstur bag det in-game advancement-træ (Minecraft 1.21.11-format).',
     rootDescription: 'Rodbeskrivelse',
     rootDescriptionHint: 'Vises på rod-noden for dette job.',
     levelTitle: 'Niveautitel-skabelon',
@@ -126,8 +120,7 @@ export const jobsDa = {
     xpPerAction: 'Hver handling giver {{xp}} XP.',
     level2: 'Niveau 2 kræver {{xp}} total XP (~{{actions}} handlinger).',
     level5: 'Niveau 5 kræver {{xp}} total XP (~{{actions}} handlinger).',
-    noRetroactive:
-      'Handlinger udført før installation af datapacken giver ikke retroaktiv XP.',
+    noRetroactive: 'Handlinger udført før installation af datapacken giver ikke retroaktiv XP.',
   },
 
   rootDescriptions: {

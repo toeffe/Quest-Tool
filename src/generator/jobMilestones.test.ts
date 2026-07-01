@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { createProject, createCustomItem, createJob } from '../types/factory';
+import { describe, expect, it } from 'vitest';
+import { createCustomItem, createJob, createProject } from '../types/factory';
 import { buildContext } from './context';
 import { jobMilestoneRewardCommands } from './jobMilestones';
 

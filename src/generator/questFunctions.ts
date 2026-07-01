@@ -1,31 +1,25 @@
-import {
-  type CompileContext,
-  type QuestContext,
-  namespaced,
-  questObjectives,
-} from './context';
-import { type Quest } from '../types/quest';
-import { type CustomMob } from '../types/customMob';
-import { killQuestMobsCommand, spawnOneInZone, zonePopulationCap, containMobsInZone } from './npc';
 import { normalizeEntityId } from '../data/mobs';
+import type { CustomMob } from '../types/customMob';
+import type { Quest, ZoneDropMode } from '../types/quest';
+import { type CompileContext, namespaced, type QuestContext, questObjectives } from './context';
+import { scopeCommandInDimension } from './coordinates';
 import {
-  findCustomMob,
   buildCustomMobKillAdvancement,
-  spawnCustomMobInZone,
-  resolveCustomMobDeathLootTable,
   customMobDisplayLabel,
+  findCustomMob,
+  resolveCustomMobDeathLootTable,
+  spawnCustomMobInZone,
 } from './customMobs';
-import { rewardCommands } from './platform';
-import { resolveObjectiveStack, itemDisplayLabel } from './items';
+import { itemDisplayLabel, resolveObjectiveStack } from './items';
 import {
-  resolveDeathLootTableRef,
   buildZoneDropLootTable,
+  resolveDeathLootTableRef,
   zoneDropLootTablePath,
 } from './lootTables';
-import { type ZoneDropMode } from '../types/quest';
+import { containMobsInZone, killQuestMobsCommand, spawnOneInZone, zonePopulationCap } from './npc';
+import { rewardCommands } from './platform';
 import { NOW_HOLDER, SYS_OBJECTIVE } from './sys';
-import { scopeCommandInDimension } from './coordinates';
-import { escapeSnbtString, tellraw, type TextPart } from './text';
+import { escapeSnbtString, sanitizeMcComment, type TextPart, tellraw } from './text';
 
 const RANGE_ALL = '-2147483648..2147483647';
 
@@ -148,8 +142,7 @@ function killObjectiveLabel(ctx: CompileContext, o: Quest['objectives'][number])
 function objectiveInfos(ctx: CompileContext, qc: QuestContext): ObjectiveInfo[] {
   return questObjectives(qc.quest).map((o, j) => {
     const amount = Math.max(1, o.amount ?? 1);
-    const item =
-      resolveObjectiveStack(ctx.project, o) ?? namespaced(o.target ?? 'minecraft:stone');
+    const item = resolveObjectiveStack(ctx.project, o) ?? namespaced(o.target ?? 'minecraft:stone');
     const customMob = o.eliteMobId ? findCustomMob(ctx.project, o.eliteMobId) : undefined;
     const entity = spawnZoneEntity(ctx, qc.quest, o);
     const zoneDropMode = o.spawnZone ? (o.zoneDropMode ?? 'vanilla') : undefined;
@@ -159,8 +152,7 @@ function objectiveInfos(ctx: CompileContext, qc: QuestContext): ObjectiveInfo[] 
       ? resolveDeathLootTableRef(zoneDropMode, ctx.namespace, qc.fnBase, j)
       : undefined;
     if (customMob) {
-      deathLootTable =
-        resolveCustomMobDeathLootTable(customMob, ctx.namespace) ?? deathLootTable;
+      deathLootTable = resolveCustomMobDeathLootTable(customMob, ctx.namespace, ctx.project) ?? deathLootTable;
     }
     return {
       amount,
@@ -251,11 +243,12 @@ export function buildKillZoneAdvancementFiles(
           2,
         ) + '\n';
     } else if (o.spawnZone) {
-      files[path] = JSON.stringify(
-        buildKillZoneAdvancement(ctx, qc, j, infos[j].entity, infos[j].entityTag),
-        null,
-        2,
-      ) + '\n';
+      files[path] =
+        JSON.stringify(
+          buildKillZoneAdvancement(ctx, qc, j, infos[j].entity, infos[j].entityTag),
+          null,
+          2,
+        ) + '\n';
     }
   }
   return files;
@@ -275,8 +268,7 @@ export function buildZoneLootTableFiles(
     const drops = o.zoneDrops ?? [];
     if (!drops.length) continue;
     const path = zoneDropLootTablePath(ctx.namespace, qc.fnBase, j);
-    files[path] =
-      JSON.stringify(buildZoneDropLootTable(ctx.project, drops), null, 2) + '\n';
+    files[path] = JSON.stringify(buildZoneDropLootTable(ctx.project, drops), null, 2) + '\n';
   }
   return files;
 }
@@ -286,9 +278,7 @@ function cleanupSpawnZoneLines(ctx: CompileContext, qc: QuestContext): string[] 
   const lines: string[] = [];
   for (const info of objectiveInfos(ctx, qc)) {
     if (info.spawnZone) {
-      lines.push(
-        scopeWorldLine(ctx, info.dimensionId, killQuestMobsCommand(info.entityTag)),
-      );
+      lines.push(scopeWorldLine(ctx, info.dimensionId, killQuestMobsCommand(info.entityTag)));
     }
   }
   return lines;
@@ -322,7 +312,11 @@ function containZoneMobs(info: ObjectiveInfo): string[] {
   return containMobsInZone(info.entity, info.entityTag, info.x, info.y, info.z, info.radius);
 }
 
-function buildZoneTickLines(ctx: CompileContext, qc: QuestContext, infos: ObjectiveInfo[]): string[] {
+function buildZoneTickLines(
+  ctx: CompileContext,
+  qc: QuestContext,
+  infos: ObjectiveInfo[],
+): string[] {
   const lines: string[] = [];
   const ns = ctx.namespace;
   for (let j = 0; j < infos.length; j++) {
@@ -353,7 +347,11 @@ function buildZoneTickLines(ctx: CompileContext, qc: QuestContext, infos: Object
   return lines;
 }
 
-function buildSpawnMobFunction(ctx: CompileContext, info: ObjectiveInfo, namespace?: string): string {
+function buildSpawnMobFunction(
+  ctx: CompileContext,
+  info: ObjectiveInfo,
+  namespace?: string,
+): string {
   const cap = info.cap;
   const spawnLines = info.customMob
     ? spawnCustomMobInZone(
@@ -392,7 +390,12 @@ function buildSpawnMobFunction(ctx: CompileContext, info: ObjectiveInfo, namespa
   return body.join('\n') + '\n';
 }
 
-function buildKillCreditFunction(ctx: CompileContext, qc: QuestContext, j: number, info: ObjectiveInfo): string {
+function buildKillCreditFunction(
+  ctx: CompileContext,
+  qc: QuestContext,
+  j: number,
+  info: ObjectiveInfo,
+): string {
   const advId = killAdvancementId(ctx, qc, j);
   return (
     [
@@ -441,7 +444,7 @@ function buildTryUnlockLines(ctx: CompileContext, qc: QuestContext): string[] {
   const STR = ctx.str;
   const quest = qc.quest;
   const lines: string[] = [
-    `# Try unlock "${quest.name}"`,
+    `# Try unlock "${sanitizeMcComment(quest.name)}"`,
     `execute unless score @s ${qc.state} matches -1 run return 0`,
   ];
 
@@ -475,9 +478,7 @@ function unlockTargets(ctx: CompileContext, qc: QuestContext): QuestContext[] {
     if (other.quest.chain.requires === qc.quest.name) names.add(other.quest.name);
   }
   if (qc.quest.chain.unlocks) names.add(qc.quest.chain.unlocks);
-  return [...names]
-    .map((n) => ctx.byName.get(n))
-    .filter((x): x is QuestContext => !!x && x !== qc);
+  return [...names].map((n) => ctx.byName.get(n)).filter((x): x is QuestContext => !!x && x !== qc);
 }
 
 /** Reward + completion + chain + done lines, shared by turn-in and instant talk quests. */
@@ -518,9 +519,8 @@ function completionBody(ctx: CompileContext, qc: QuestContext): string[] {
   lines.push(`scoreboard players set @s ${qc.near} 0`);
 
   for (const next of unlockTargets(ctx, qc)) {
-    lines.push(`# Chain: unlock "${next.quest.name}"`);
-    const canAutoStart =
-      next.quest.chain.autoStart && !next.quest.chain.requiresJob;
+    lines.push(`# Chain: unlock "${sanitizeMcComment(next.quest.name)}"`);
+    const canAutoStart = next.quest.chain.autoStart && !next.quest.chain.requiresJob;
     if (canAutoStart) {
       lines.push(`scoreboard players set @s ${next.state} 1`);
       lines.push(`scoreboard players set @s ${next.near} 0`);
@@ -593,23 +593,27 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
   const initState = questStartsLocked(ctx, quest) ? -1 : 0;
 
   if (questStartsLocked(ctx, quest)) {
-    files[`${qc.fnBase}/try_unlock.mcfunction`] =
-      buildTryUnlockLines(ctx, qc).join('\n') + '\n';
+    files[`${qc.fnBase}/try_unlock.mcfunction`] = buildTryUnlockLines(ctx, qc).join('\n') + '\n';
   }
 
   const giverDim = giverDimensionId(qc);
   const targetDim = talkTargetDimensionId(qc);
 
   // ---- tick.mcfunction (dispatcher per quest) ----
+  const onlineHolder = `#q${qc.index}_on`;
+  const doneOnlineHolder = `#q${qc.index}_dn`;
   const tick: string[] = [
-    `# ${quest.name} (${quest.type}) - tick`,
+    `# ${sanitizeMcComment(quest.name)} (${quest.type}) - tick`,
+    `# Skip when every online player has completed this quest (re-activates if a new player joins)`,
+    `execute store result score ${onlineHolder} ${SYS_OBJECTIVE} if entity @a`,
+    `execute if score ${onlineHolder} ${SYS_OBJECTIVE} matches 0 run return 0`,
+    `execute store result score ${doneOnlineHolder} ${SYS_OBJECTIVE} if entity @a[scores={${qc.state}=3..}]`,
+    `execute if score ${doneOnlineHolder} ${SYS_OBJECTIVE} >= ${onlineHolder} ${SYS_OBJECTIVE} run return 0`,
     `scoreboard players enable @a ${qc.trigger}`,
     `execute as @a unless score @s ${qc.state} matches ${RANGE_ALL} run scoreboard players set @s ${qc.state} ${initState}`,
   ];
   if (questStartsLocked(ctx, quest)) {
-    tick.push(
-      `execute as @a[scores={${qc.state}=-1}] run function ${ns}:${qc.fnBase}/try_unlock`,
-    );
+    tick.push(`execute as @a[scores={${qc.state}=-1}] run function ${ns}:${qc.fnBase}/try_unlock`);
   }
   tick.push(
     scopeWorldLine(
@@ -743,10 +747,7 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
     ].join('\n') + '\n';
 
   // ---- accept.mcfunction ----
-  const accept: string[] = [
-    `# Accept`,
-    `scoreboard players set @s ${qc.trigger} 0`,
-  ];
+  const accept: string[] = [`# Accept`, `scoreboard players set @s ${qc.trigger} 0`];
   if (isInstantTalk) {
     accept.push(...completionBody(ctx, qc));
   } else {
@@ -782,9 +783,7 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
       tellraw('@s', [
         {
           text:
-            objCount === 1
-              ? STR.objectiveSingle(infos[0].desc)
-              : STR.objectivesMultiple(objCount),
+            objCount === 1 ? STR.objectiveSingle(infos[0].desc) : STR.objectivesMultiple(objCount),
           color: 'gray',
         },
       ]),
@@ -855,7 +854,11 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
   const objectives = questObjectives(quest);
   for (let j = 0; j < infos.length; j++) {
     if (infos[j].spawnZone) {
-      files[`${qc.fnBase}/spawn_mob_${j}.mcfunction`] = buildSpawnMobFunction(ctx, infos[j], ctx.namespace);
+      files[`${qc.fnBase}/spawn_mob_${j}.mcfunction`] = buildSpawnMobFunction(
+        ctx,
+        infos[j],
+        ctx.namespace,
+      );
     }
     if (quest.type === 'kill' && (infos[j].spawnZone || objectives[j].eliteMobId)) {
       files[`${qc.fnBase}/kill_credit_${j}.mcfunction`] = buildKillCreditFunction(

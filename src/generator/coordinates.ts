@@ -1,14 +1,11 @@
-import { type CompileContext } from './context';
-import { type PortalEndpoint } from '../types/dimension';
+import type { PortalEndpoint } from '../types/dimension';
 import { toIdentifier } from '../types/ids';
+import type { CompileContext } from './context';
 
 export const OVERWORLD_DIMENSION = 'minecraft:overworld';
 
 /** Resolve a project dimension id to a Minecraft dimension resource location. */
-export function resolveDimensionId(
-  ctx: CompileContext,
-  dimensionId?: string,
-): string {
+export function resolveDimensionId(ctx: CompileContext, dimensionId?: string): string {
   if (!dimensionId) return OVERWORLD_DIMENSION;
   const dim = (ctx.project.dimensions ?? []).find((d) => d.id === dimensionId);
   if (!dim) return OVERWORLD_DIMENSION;

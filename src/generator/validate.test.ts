@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { createProject, createQuest, createCustomItem, createCustomMob } from '../types/factory';
-import { type Objective } from '../types/quest';
-import { validateProject, hasBlockingErrors } from './validate';
+import { describe, expect, it } from 'vitest';
+import { createCustomItem, createCustomMob, createProject, createQuest } from '../types/factory';
+import type { Objective } from '../types/quest';
+import { hasBlockingErrors, validateProject } from './validate';
 
 const en = 'en' as const;
 
@@ -29,6 +29,22 @@ describe('validation', () => {
     project.quests = [quest];
     const issues = validateProject(project, en);
     expect(issues.some((i) => /not a quest/.test(i.message))).toBe(true);
+  });
+
+  it('flags circular quest chain dependencies', () => {
+    const project = createProject('Cycle', en);
+    const a = createQuest('A', 'kill', en);
+    const b = createQuest('B', 'kill', en);
+    const c = createQuest('C', 'kill', en);
+    a.chain.unlocks = 'B';
+    b.chain.requires = 'A';
+    b.chain.unlocks = 'C';
+    c.chain.requires = 'B';
+    c.chain.unlocks = 'A';
+    project.quests = [a, b, c];
+    const issues = validateProject(project, en);
+    expect(issues.some((i) => i.level === 'error' && /circular chain/i.test(i.message))).toBe(true);
+    expect(issues.filter((i) => /circular chain/i.test(i.message)).length).toBe(3);
   });
 
   it('flags duplicate quest names', () => {
@@ -166,7 +182,9 @@ describe('validation', () => {
     project.quests = [quest];
     const issues = validateProject(project, en);
     expect(
-      issues.some((i) => /spawn zone drop references a custom item that no longer exists/.test(i.message)),
+      issues.some((i) =>
+        /spawn zone drop references a custom item that no longer exists/.test(i.message),
+      ),
     ).toBe(true);
   });
 

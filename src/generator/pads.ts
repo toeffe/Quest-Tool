@@ -1,7 +1,13 @@
-import { type CompileContext } from './context';
-import { type TeleportPad } from '../types/dimension';
+import type { TeleportPad } from '../types/dimension';
 import { toIdentifier } from '../types/ids';
-import { type FileMap } from './dungeons';
+import type { CompileContext } from './context';
+import {
+  padDetectionDistance,
+  resolveDimensionId,
+  scopePadDetectionAt,
+  tpLine,
+} from './coordinates';
+import type { FileMap } from './dungeons';
 import {
   NOW_HOLDER,
   PAD_GRACE_OBJECTIVE,
@@ -9,12 +15,6 @@ import {
   PAD_REQ_OBJECTIVE,
   SYS_OBJECTIVE,
 } from './sys';
-import {
-  padDetectionDistance,
-  resolveDimensionId,
-  scopePadDetectionAt,
-  tpLine,
-} from './coordinates';
 
 const PAD_REQ_NONE = -1;
 
@@ -134,10 +134,7 @@ export function compilePads(ctx: CompileContext): FileMap {
     for (let j = 0; j < pads.length; j++) {
       if (j === i) continue;
       const otherCd = `pad${j}_cd`;
-      const otherCooldown = Math.max(
-        1,
-        Math.round((pads[j].cooldownSeconds ?? 1) * 20),
-      );
+      const otherCooldown = Math.max(1, Math.round((pads[j].cooldownSeconds ?? 1) * 20));
       const lockTicks = Math.max(graceTicks, otherCooldown);
       teleportLines.push(
         `scoreboard players operation @s ${otherCd} = ${NOW_HOLDER} ${SYS_OBJECTIVE}`,
@@ -162,13 +159,7 @@ export function compilePads(ctx: CompileContext): FileMap {
       );
     } else {
       tickLines.push(
-        scopePadDetectionAt(
-          dim,
-          pad.at.x,
-          pad.at.y,
-          pad.at.z,
-          `${detectPrefix} ${detectSuffix}`,
-        ),
+        scopePadDetectionAt(dim, pad.at.x, pad.at.y, pad.at.z, `${detectPrefix} ${detectSuffix}`),
       );
     }
 

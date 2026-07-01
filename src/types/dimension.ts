@@ -2,9 +2,9 @@
  * Project-level custom dimensions and teleport pads.
  */
 
-import { uid, toIdentifier } from './ids';
 import { type AppLocale, DEFAULT_LOCALE } from '../i18n/types';
 import { defaultsT } from '../i18n/useLabels';
+import { toIdentifier, uid } from './ids';
 
 export interface Dimension {
   id: string;
@@ -41,9 +41,7 @@ export interface TeleportPad {
   cooldownSeconds?: number;
 }
 
-export function createPortalEndpoint(
-  overrides: Partial<PortalEndpoint> = {},
-): PortalEndpoint {
+export function createPortalEndpoint(overrides: Partial<PortalEndpoint> = {}): PortalEndpoint {
   return {
     x: 0,
     y: 64,
@@ -53,10 +51,7 @@ export function createPortalEndpoint(
   };
 }
 
-export function createDimension(
-  name?: string,
-  locale: AppLocale = DEFAULT_LOCALE,
-): Dimension {
+export function createDimension(name?: string, locale: AppLocale = DEFAULT_LOCALE): Dimension {
   const t = defaultsT(locale);
   const dimensionName = name ?? t('dimension.name');
   const tag = toIdentifier(dimensionName, 'dimension');
@@ -67,10 +62,7 @@ export function createDimension(
   };
 }
 
-export function createTeleportPad(
-  name?: string,
-  locale: AppLocale = DEFAULT_LOCALE,
-): TeleportPad {
+export function createTeleportPad(name?: string, locale: AppLocale = DEFAULT_LOCALE): TeleportPad {
   const t = defaultsT(locale);
   const padName = name ?? t('pad.name');
   return {
