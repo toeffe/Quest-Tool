@@ -1,1 +1,0 @@
-import{c as e,j as t}from"./index-DJ7r-cpS.js";function a({text:i,label:s="More info"}){const o=e.useId();return t.jsxs("span",{className:"hint-tooltip",children:[t.jsx("button",{type:"button",className:"hint-tooltip-trigger","aria-label":s,"aria-describedby":o,children:"i"}),t.jsx("span",{id:o,role:"tooltip",className:"hint-tooltip-popover",children:i})]})}export{a as H};
