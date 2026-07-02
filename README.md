@@ -152,12 +152,12 @@ The live site at [https://quest.toeffe.uk](https://quest.toeffe.uk) is deployed 
 This is a fully static, client-side app (no server, no database), so it hosts on GitHub Pages as-is.
 
 1. Push this repository to GitHub.
-2. In the repo, open **Settings → Pages** and set **Source** to **GitHub Actions**
-   (not "Deploy from a branch"). If branch deploy is enabled, visitors get the raw
-   source `index.html` (`/src/main.tsx`) instead of the built app.
+2. In the repo, open **Settings → Pages** and set **Source** to **Deploy from a branch**,
+   branch **`gh-pages`**, folder **`/ (root)`**. Do not use the `main` branch as the Pages
+   source — that would serve the raw source `index.html` instead of the built app.
 3. Push to `main` (or run the workflow manually). The included
    [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) builds the app and
-   publishes the `dist/` folder.
+   pushes the `dist/` output to the `gh-pages` branch (no GitHub Pages Deployment API).
 
 The workflow builds with `VITE_BASE=/` so asset paths work at a custom domain root.
 The custom domain is set via [`public/CNAME`](public/CNAME), which Vite copies into every deploy. Locally,
@@ -165,12 +165,11 @@ The custom domain is set via [`public/CNAME`](public/CNAME), which Vite copies i
 
 ### Deploy troubleshooting
 
-If the deploy job fails with `deployment_queued` and **Timeout reached, aborting!**:
+If the site does not update after a green workflow run:
 
-1. Re-run the failed workflow from **Actions** (this often succeeds once the queue clears).
-2. Avoid pushing several commits in quick succession while a deploy is still running.
-3. Check **Settings → Environments → github-pages** for required reviewers or wait timers.
-4. Confirm **Settings → Pages → Source** is still **GitHub Actions**.
+1. Confirm **Settings → Pages → Source** is **Branch: `gh-pages` / `(root)`**, not GitHub Actions or `main`.
+2. After the first successful run, the `gh-pages` branch must exist — check **Code → branch: gh-pages**.
+3. Re-run the workflow from **Actions** if a push was cancelled by a newer commit (`cancel-in-progress`).
 
 ## Tech stack
 

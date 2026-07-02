@@ -4,8 +4,7 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  // Served from the site root in dev/preview; the GitHub Pages workflow sets
-  // VITE_BASE to "/<repo>/" so built asset URLs resolve under the project path.
+  // Served from the site root in dev/preview; CI sets VITE_BASE=/ for the custom domain deploy.
   base: process.env.VITE_BASE || '/',
   plugins: [react()],
   test: {

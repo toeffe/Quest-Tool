@@ -147,12 +147,12 @@ Live-sitet på [https://quest.toeffe.uk](https://quest.toeffe.uk) deployes fra d
 Det er en fuldt statisk, client-side app (ingen server, ingen database), så den kan hostes på GitHub Pages som den er.
 
 1. Push dette repository til GitHub.
-2. I repoet, åbn **Settings → Pages** og sæt **Source** til **GitHub Actions**
-   (ikke "Deploy from a branch"). Hvis branch deploy er aktiveret, får besøgende den rå
-   source `index.html` (`/src/main.tsx`) i stedet for den byggede app.
+2. I repoet, åbn **Settings → Pages** og sæt **Source** til **Deploy from a branch**,
+   branch **`gh-pages`**, mappe **`/ (root)`**. Brug ikke `main` som Pages-kilde — det ville
+   servere den rå source `index.html` i stedet for den byggede app.
 3. Push til `main` (eller kør workflow manuelt). Den inkluderede
    [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) bygger appen og
-   publicerer `dist/` mappen.
+   pusher `dist/` output til `gh-pages` branchen (uden GitHub Pages Deployment API).
 
 Workflow bygger med `VITE_BASE=/` så asset paths virker ved custom domain root.
 Custom domain sættes via [`public/CNAME`](public/CNAME), som Vite kopierer ind i hver deploy. Lokalt
@@ -160,12 +160,11 @@ bruger `npm run dev`/`build` også `/` som base.
 
 ### Fejlfinding ved deploy
 
-Hvis deploy-jobbet fejler med `deployment_queued` og **Timeout reached, aborting!**:
+Hvis sitet ikke opdateres efter en grøn workflow:
 
-1. Kør den fejlede workflow igen fra **Actions** (det lykkes ofte når køen er ryddet).
-2. Undgå flere commits tæt på hinanden mens en deploy stadig kører.
-3. Tjek **Settings → Environments → github-pages** for påkrævede godkendelser eller ventetid.
-4. Bekræft at **Settings → Pages → Source** stadig er **GitHub Actions**.
+1. Bekræft at **Settings → Pages → Source** er **Branch: `gh-pages` / `(root)`**, ikke GitHub Actions eller `main`.
+2. Efter første succesfulde kørsel skal `gh-pages` branchen findes — tjek **Code → branch: gh-pages**.
+3. Kør workflow igen fra **Actions** hvis et push blev annulleret af et nyere commit (`cancel-in-progress`).
 
 ## Tech stack
 
