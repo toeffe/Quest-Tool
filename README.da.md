@@ -164,7 +164,7 @@ bruger `npm run dev`/`build` også `/` som base.
 Hvis sitet ikke opdateres efter en grøn workflow:
 
 1. Bekræft at **Settings → Pages → Source** er **Branch: `main` / `/docs`**, ikke GitHub Actions eller `/ (root)`.
-2. Efter en succesfuld kørsel, tjek **`docs/index.html`** på `main` — den skal referere til bundled `/assets/…` filer.
+2. Efter en succesfuld kørsel, tjek at **`docs/index.html`** findes på `main` — uden den returnerer GitHub Pages 404, selv når workflowet er grønt. `pages build and deployment` publicerer kun det, der allerede ligger i `docs/`.
 3. Kør workflow igen fra **Actions** hvis et push blev annulleret af et nyere commit (`cancel-in-progress`).
 
 Workflowet committer build-filer til `docs/` på `main` med `[skip ci]`, så deploy-commits ikke genstarter workflowet. `peaceiris/actions-gh-pages` kan ikke publicere til samme branch som udløste kørslen (`main` → `main`), så deploy bruger `rsync` + `git push` i stedet.

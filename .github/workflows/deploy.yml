@@ -14,10 +14,12 @@ jobs:
     runs-on: ubuntu-latest
     concurrency:
       group: pages
-      cancel-in-progress: true
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -42,17 +44,27 @@ jobs:
 
       - name: Publish built site to docs/ on main
         run: |
-          # peaceiris/actions-gh-pages refuses main→main deploys; sync dist into docs/ instead.
+          set -euo pipefail
+
+          if [ ! -f ./dist/index.html ]; then
+            echo "::error::Build did not produce dist/index.html"
+            exit 1
+          fi
+
           # Keep QA markdown in docs/; replace previous build artifacts (index.html, assets/, …).
           rsync -a --delete --exclude='*.md' ./dist/ ./docs/
           touch docs/.nojekyll
+          test -f docs/index.html
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add docs/
+          git add -A docs/
+          git status --short docs/
+          git diff --staged --stat
+
           if git diff --staged --quiet; then
-            echo "No site changes to deploy."
+            echo "::warning::No site changes to commit."
             exit 0
           fi
 

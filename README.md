@@ -169,7 +169,7 @@ The custom domain is set via [`public/CNAME`](public/CNAME), which Vite copies i
 If the site does not update after a green workflow run:
 
 1. Confirm **Settings → Pages → Source** is **Branch: `main` / `/docs`**, not GitHub Actions or `/ (root)`.
-2. After a successful run, check **`docs/index.html`** on `main` — it should reference bundled `/assets/…` files.
+2. After a successful run, check **`docs/index.html`** exists on `main` — without it GitHub Pages returns 404 even when the workflow is green. The `pages build and deployment` action only publishes what is already in `docs/`.
 3. Re-run the workflow from **Actions** if a push was cancelled by a newer commit (`cancel-in-progress`).
 
 The workflow commits built files into `docs/` on `main` with `[skip ci]` so deploy commits do not re-trigger the workflow. The `peaceiris/actions-gh-pages` action cannot publish to the same branch that triggered the run (`main` → `main`), so deploy uses `rsync` + `git push` instead.
