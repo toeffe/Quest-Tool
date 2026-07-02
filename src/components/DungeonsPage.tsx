@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { useMobOptions } from '../data/mobs';
 import type { ValidationIssue } from '../generator/validate';
 import { useEntityClipboard } from '../hooks/useEntityClipboard';
-import { useProjectStore } from '../store/useProjectStore';
 import { useUIStore } from '../store/uiStore';
+import { useProjectStore } from '../store/useProjectStore';
 import {
   createRoomSpawn,
   createRoomTrigger,
@@ -151,16 +151,21 @@ export function DungeonsPage({
                   if (result?.kind === 'dungeon') {
                     setSelectedDungeonId(result.id);
                     setExpandedDungeons((p) => new Set(p).add(result.id));
-                    const dungeon = useProjectStore.getState().project.dungeons?.find(
-                      (d) => d.id === result.id,
-                    );
+                    const dungeon = useProjectStore
+                      .getState()
+                      .project.dungeons?.find((d) => d.id === result.id);
                     if (dungeon?.rooms[0]) setSelectedRoomId(dungeon.rooms[0].id);
                   }
                 }}
               >
                 {tc('clipboard.paste')}
               </button>
-              <button type="button" className="btn small" onClick={onAdd} title={t('list.addTitle')}>
+              <button
+                type="button"
+                className="btn small"
+                onClick={onAdd}
+                title={t('list.addTitle')}
+              >
                 {tc('actions.add')}
               </button>
             </div>

@@ -312,20 +312,22 @@ function resolveUniqueTag(existing: Set<string>, tag: string): string {
 function remapZoneDrop(drop: ZoneDrop, idMap: Map<string, string>): ZoneDrop {
   return {
     ...drop,
-    customItemId: drop.customItemId ? idMap.get(drop.customItemId) ?? drop.customItemId : undefined,
+    customItemId: drop.customItemId
+      ? (idMap.get(drop.customItemId) ?? drop.customItemId)
+      : undefined,
   };
 }
 
 function remapObjective(obj: Objective, idMap: Map<string, string>): Objective {
   return {
     ...obj,
-    customItemId: obj.customItemId ? idMap.get(obj.customItemId) ?? obj.customItemId : undefined,
-    eliteMobId: obj.eliteMobId ? idMap.get(obj.eliteMobId) ?? obj.eliteMobId : undefined,
+    customItemId: obj.customItemId ? (idMap.get(obj.customItemId) ?? obj.customItemId) : undefined,
+    eliteMobId: obj.eliteMobId ? (idMap.get(obj.eliteMobId) ?? obj.eliteMobId) : undefined,
     location: obj.location
       ? {
           ...obj.location,
           dimensionId: obj.location.dimensionId
-            ? idMap.get(obj.location.dimensionId) ?? obj.location.dimensionId
+            ? (idMap.get(obj.location.dimensionId) ?? obj.location.dimensionId)
             : undefined,
         }
       : undefined,
@@ -337,9 +339,9 @@ function remapReward(reward: Reward, idMap: Map<string, string>): Reward {
   return {
     ...reward,
     customItemId: reward.customItemId
-      ? idMap.get(reward.customItemId) ?? reward.customItemId
+      ? (idMap.get(reward.customItemId) ?? reward.customItemId)
       : undefined,
-    jobId: reward.jobId ? idMap.get(reward.jobId) ?? reward.jobId : undefined,
+    jobId: reward.jobId ? (idMap.get(reward.jobId) ?? reward.jobId) : undefined,
   };
 }
 
@@ -363,7 +365,7 @@ function remapQuest(quest: Quest, idMap: Map<string, string>): Quest {
         ? {
             ...quest.npc.coordinates,
             dimensionId: quest.npc.coordinates.dimensionId
-              ? idMap.get(quest.npc.coordinates.dimensionId) ?? quest.npc.coordinates.dimensionId
+              ? (idMap.get(quest.npc.coordinates.dimensionId) ?? quest.npc.coordinates.dimensionId)
               : undefined,
           }
         : undefined,
@@ -375,8 +377,8 @@ function remapQuest(quest: Quest, idMap: Map<string, string>): Quest {
             ? {
                 ...quest.targetNpc.coordinates,
                 dimensionId: quest.targetNpc.coordinates.dimensionId
-                  ? idMap.get(quest.targetNpc.coordinates.dimensionId) ??
-                    quest.targetNpc.coordinates.dimensionId
+                  ? (idMap.get(quest.targetNpc.coordinates.dimensionId) ??
+                    quest.targetNpc.coordinates.dimensionId)
                   : undefined,
               }
             : undefined,
@@ -392,7 +394,7 @@ function remapDungeonRoom(room: DungeonRoom, idMap: Map<string, string>): Dungeo
     spawns: room.spawns.map((s) => ({
       ...s,
       id: uid(),
-      customMobId: s.customMobId ? idMap.get(s.customMobId) ?? s.customMobId : undefined,
+      customMobId: s.customMobId ? (idMap.get(s.customMobId) ?? s.customMobId) : undefined,
     })),
     triggers: room.triggers.map((t) => ({ ...t, id: uid() })),
   };
@@ -402,7 +404,7 @@ function remapDungeon(dungeon: Dungeon, idMap: Map<string, string>): Dungeon {
   return {
     ...dungeon,
     dimensionId: dungeon.dimensionId
-      ? idMap.get(dungeon.dimensionId) ?? dungeon.dimensionId
+      ? (idMap.get(dungeon.dimensionId) ?? dungeon.dimensionId)
       : undefined,
     rooms: dungeon.rooms.map((r) => remapDungeonRoom(r, idMap)),
   };
@@ -415,7 +417,7 @@ function remapJob(job: Job, idMap: Map<string, string>): Job {
       ...m,
       rewards: m.rewards.map((r) => ({
         ...r,
-        customItemId: r.customItemId ? idMap.get(r.customItemId) ?? r.customItemId : undefined,
+        customItemId: r.customItemId ? (idMap.get(r.customItemId) ?? r.customItemId) : undefined,
       })),
     })),
   };
@@ -427,13 +429,13 @@ function remapPad(pad: TeleportPad, idMap: Map<string, string>): TeleportPad {
     at: {
       ...pad.at,
       dimensionId: pad.at.dimensionId
-        ? idMap.get(pad.at.dimensionId) ?? pad.at.dimensionId
+        ? (idMap.get(pad.at.dimensionId) ?? pad.at.dimensionId)
         : undefined,
     },
     to: {
       ...pad.to,
       dimensionId: pad.to.dimensionId
-        ? idMap.get(pad.to.dimensionId) ?? pad.to.dimensionId
+        ? (idMap.get(pad.to.dimensionId) ?? pad.to.dimensionId)
         : undefined,
     },
   };
