@@ -2,12 +2,7 @@ import { useStore } from '@xyflow/react';
 import { useMemo } from 'react';
 import type { Quest } from '../../types/quest';
 import { brokenRequiresId, brokenUnlockId } from './chainEdges';
-import {
-  NODE_HEIGHT_ESTIMATE,
-  NODE_WIDTH,
-  normalizeCategory,
-  type XY,
-} from './layout';
+import { NODE_HEIGHT_ESTIMATE, NODE_WIDTH, normalizeCategory, type XY } from './layout';
 
 const LANE_PADDING = 16;
 const BROKEN_STUB_WIDTH = 120;
@@ -98,10 +93,7 @@ export function computeCategoryLaneBounds(
 export function CategoryLanes({ quests, positions }: Props) {
   const transform = useStore((s) => s.transform);
 
-  const lanes = useMemo(
-    () => computeCategoryLaneBounds(quests, positions),
-    [quests, positions],
-  );
+  const lanes = useMemo(() => computeCategoryLaneBounds(quests, positions), [quests, positions]);
 
   if (lanes.length === 0) return null;
 
