@@ -1976,9 +1976,16 @@ textarea {
 
 .dungeon-tree-header {
   display: flex;
-  align-items: center;
-  gap: 4px;
+  flex-direction: column;
+  gap: 6px;
   padding: 6px 8px;
+}
+
+.dungeon-tree-header-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
 }
 
 .dungeon-expand {
@@ -2018,15 +2025,62 @@ textarea {
   line-height: 1.3;
 }
 
-.dungeon-tree-header .row-actions {
-  flex-shrink: 0;
+.dungeon-tree-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: 100%;
+  padding-left: 18px;
   opacity: 0;
   transition: opacity 0.15s;
 }
 
-.dungeon-tree-group:hover .row-actions,
-.dungeon-tree-group.active .row-actions {
+.dungeon-tree-group:hover .dungeon-tree-header-actions,
+.dungeon-tree-group.active .dungeon-tree-header-actions {
   opacity: 1;
+}
+
+.list-panel-head {
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.list-panel-head h3 {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.list-panel-head .row-actions,
+.list-panel-head > .btn {
+  margin-left: auto;
+}
+
+.list-panel-head .row-actions {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.entity-editor-head {
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.entity-editor-head h3 {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.entity-editor-head .row-actions {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
 }
 
 .dungeon-rooms {

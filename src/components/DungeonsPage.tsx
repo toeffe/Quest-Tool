@@ -139,7 +139,7 @@ export function DungeonsPage({
 
       <div className="items-layout">
         <aside className="items-list card">
-          <div className="row-between" style={{ marginBottom: 12 }}>
+          <div className="row-between list-panel-head" style={{ marginBottom: 12 }}>
             <h3 style={{ margin: 0 }}>{t('list.title', { count: dungeons.length })}</h3>
             <div className="row-actions">
               <button
@@ -183,24 +183,26 @@ export function DungeonsPage({
                   className={`dungeon-tree-group ${isDungeonActive ? 'active' : ''}`}
                 >
                   <div className="dungeon-tree-header">
-                    <button
-                      type="button"
-                      className="dungeon-expand"
-                      onClick={() => toggleExpanded(dungeon.id)}
-                      aria-expanded={expanded}
-                      aria-label={expanded ? 'Collapse' : 'Expand'}
-                    >
-                      {expanded ? '▾' : '▸'}
-                    </button>
-                    <button
-                      type="button"
-                      className="dungeon-tree-label"
-                      onClick={() => selectDungeon(dungeon.id)}
-                    >
-                      <span className="name">{dungeon.name || tc('actions.none')}</span>
-                      <span className="tag">{dungeon.tag}</span>
-                    </button>
-                    <div className="row-actions">
+                    <div className="dungeon-tree-header-row">
+                      <button
+                        type="button"
+                        className="dungeon-expand"
+                        onClick={() => toggleExpanded(dungeon.id)}
+                        aria-expanded={expanded}
+                        aria-label={expanded ? 'Collapse' : 'Expand'}
+                      >
+                        {expanded ? '▾' : '▸'}
+                      </button>
+                      <button
+                        type="button"
+                        className="dungeon-tree-label"
+                        onClick={() => selectDungeon(dungeon.id)}
+                      >
+                        <span className="name">{dungeon.name || tc('actions.none')}</span>
+                        <span className="tag">{dungeon.tag}</span>
+                      </button>
+                    </div>
+                    <div className="dungeon-tree-header-actions">
                       <button
                         type="button"
                         className="icon-btn"
@@ -280,7 +282,7 @@ export function DungeonsPage({
 
           {selectedDungeon && !selectedRoom && (
             <div className="card">
-              <div className="row-between" style={{ marginBottom: 14 }}>
+              <div className="row-between entity-editor-head" style={{ marginBottom: 14 }}>
                 <h3 style={{ margin: 0 }}>{selectedDungeon.name || t('editor.dungeonName')}</h3>
                 <div className="row-actions">
                   <button

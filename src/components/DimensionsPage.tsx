@@ -139,7 +139,7 @@ export function DimensionsPage({
 
       <div className="items-layout">
         <aside className="items-list card">
-          <div className="row-between" style={{ marginBottom: 12 }}>
+          <div className="row-between list-panel-head" style={{ marginBottom: 12 }}>
             <h3 style={{ margin: 0 }}>{t('list.dimensionsTitle', { count: dimensions.length })}</h3>
             <div className="row-actions">
               <button
@@ -192,7 +192,7 @@ export function DimensionsPage({
 
           <div className="dimensions-sidebar-divider" />
 
-          <div className="row-between" style={{ marginBottom: 12 }}>
+          <div className="row-between list-panel-head" style={{ marginBottom: 12 }}>
             <h3 style={{ margin: 0 }}>{t('list.padsTitle', { count: teleportPads.length })}</h3>
             <button
               type="button"
@@ -233,7 +233,7 @@ export function DimensionsPage({
         <div className="items-editor">
           {selectedDimension && (
             <div className="card">
-              <div className="row-between" style={{ marginBottom: 14 }}>
+              <div className="row-between entity-editor-head" style={{ marginBottom: 14 }}>
                 <h3 style={{ margin: 0 }}>{selectedDimension.name || t('editor.dimensionName')}</h3>
                 <div className="row-actions">
                   <button
@@ -271,7 +271,7 @@ export function DimensionsPage({
 
           {selectedPad && (
             <div className="card">
-              <div className="row-between" style={{ marginBottom: 14 }}>
+              <div className="row-between entity-editor-head" style={{ marginBottom: 14 }}>
                 <h3 style={{ margin: 0 }}>{selectedPad.name || t('editor.padName')}</h3>
                 <div className="row-actions">
                   <button
