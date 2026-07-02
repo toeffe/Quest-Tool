@@ -153,11 +153,12 @@ This is a fully static, client-side app (no server, no database), so it hosts on
 
 1. Push this repository to GitHub.
 2. In the repo, open **Settings → Pages** and set **Source** to **Deploy from a branch**,
-   branch **`gh-pages`**, folder **`/ (root)`**. Do not use the `main` branch as the Pages
-   source — that would serve the raw source `index.html` instead of the built app.
+   branch **`main`**, folder **`/docs`**. Do not use **GitHub Actions** as the source (that
+   uses the broken `deploy-pages` API). Do not use **`/ (root)`** on `main` — that folder
+   holds the Vite source `index.html`, not the built app.
 3. Push to `main` (or run the workflow manually). The included
    [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) builds the app and
-   pushes the `dist/` output to the `gh-pages` branch (no GitHub Pages Deployment API).
+   commits the output to the **`docs/`** folder on **`main`** (same branch as your source code).
 
 The workflow builds with `VITE_BASE=/` so asset paths work at a custom domain root.
 The custom domain is set via [`public/CNAME`](public/CNAME), which Vite copies into every deploy. Locally,
@@ -167,8 +168,8 @@ The custom domain is set via [`public/CNAME`](public/CNAME), which Vite copies i
 
 If the site does not update after a green workflow run:
 
-1. Confirm **Settings → Pages → Source** is **Branch: `gh-pages` / `(root)`**, not GitHub Actions or `main`.
-2. After the first successful run, the `gh-pages` branch must exist — check **Code → branch: gh-pages**.
+1. Confirm **Settings → Pages → Source** is **Branch: `main` / `/docs`**, not GitHub Actions or `/ (root)`.
+2. After a successful run, check **`docs/index.html`** on `main` — it should reference bundled `/assets/…` files.
 3. Re-run the workflow from **Actions** if a push was cancelled by a newer commit (`cancel-in-progress`).
 
 ## Tech stack

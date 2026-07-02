@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[skip ci]') }}
     runs-on: ubuntu-latest
     concurrency:
       group: pages
@@ -39,9 +40,12 @@ jobs:
         env:
           VITE_BASE: /
 
-      - name: Deploy to gh-pages branch
+      - name: Publish built site to docs/ on main
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
-          publish_branch: gh-pages
+          publish_branch: main
+          destination_dir: docs
+          keep_files: true
+          commit_message: 'deploy: ${{ github.sha }} [skip ci]'

@@ -148,11 +148,12 @@ Det er en fuldt statisk, client-side app (ingen server, ingen database), så den
 
 1. Push dette repository til GitHub.
 2. I repoet, åbn **Settings → Pages** og sæt **Source** til **Deploy from a branch**,
-   branch **`gh-pages`**, mappe **`/ (root)`**. Brug ikke `main` som Pages-kilde — det ville
-   servere den rå source `index.html` i stedet for den byggede app.
+   branch **`main`**, mappe **`/docs`**. Brug ikke **GitHub Actions** som kilde (det bruger
+   det defekte `deploy-pages` API). Brug ikke **`/ (root)`** på `main` — den mappe har Vites
+   source `index.html`, ikke den byggede app.
 3. Push til `main` (eller kør workflow manuelt). Den inkluderede
    [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) bygger appen og
-   pusher `dist/` output til `gh-pages` branchen (uden GitHub Pages Deployment API).
+   committer output til mappen **`docs/`** på **`main`** (samme branch som kildekoden).
 
 Workflow bygger med `VITE_BASE=/` så asset paths virker ved custom domain root.
 Custom domain sættes via [`public/CNAME`](public/CNAME), som Vite kopierer ind i hver deploy. Lokalt
@@ -162,8 +163,8 @@ bruger `npm run dev`/`build` også `/` som base.
 
 Hvis sitet ikke opdateres efter en grøn workflow:
 
-1. Bekræft at **Settings → Pages → Source** er **Branch: `gh-pages` / `(root)`**, ikke GitHub Actions eller `main`.
-2. Efter første succesfulde kørsel skal `gh-pages` branchen findes — tjek **Code → branch: gh-pages**.
+1. Bekræft at **Settings → Pages → Source** er **Branch: `main` / `/docs`**, ikke GitHub Actions eller `/ (root)`.
+2. Efter en succesfuld kørsel, tjek **`docs/index.html`** på `main` — den skal referere til bundled `/assets/…` filer.
 3. Kør workflow igen fra **Actions** hvis et push blev annulleret af et nyere commit (`cancel-in-progress`).
 
 ## Tech stack
