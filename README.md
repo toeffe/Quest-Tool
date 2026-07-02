@@ -163,6 +163,15 @@ The workflow builds with `VITE_BASE=/` so asset paths work at a custom domain ro
 The custom domain is set via [`public/CNAME`](public/CNAME), which Vite copies into every deploy. Locally,
 `npm run dev`/`build` also use `/` as the base.
 
+### Deploy troubleshooting
+
+If the deploy job fails with `deployment_queued` and **Timeout reached, aborting!**:
+
+1. Re-run the failed workflow from **Actions** (this often succeeds once the queue clears).
+2. Avoid pushing several commits in quick succession while a deploy is still running.
+3. Check **Settings → Environments → github-pages** for required reviewers or wait timers.
+4. Confirm **Settings → Pages → Source** is still **GitHub Actions**.
+
 ## Tech stack
 
 React 18, TypeScript, Vite 6, Zustand, `@xyflow/react`, JSZip, Vitest 3, Biome.

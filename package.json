@@ -4,6 +4,9 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Web-based quest creation tool for Minecraft Java Edition 1.21.11",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
