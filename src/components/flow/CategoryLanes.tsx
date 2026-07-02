@@ -2,7 +2,12 @@ import { useStore } from '@xyflow/react';
 import { useMemo } from 'react';
 import type { Quest } from '../../types/quest';
 import { brokenRequiresId, brokenUnlockId } from './chainEdges';
-import { NODE_HEIGHT_ESTIMATE, NODE_WIDTH, type XY } from './layout';
+import {
+  NODE_HEIGHT_ESTIMATE,
+  NODE_WIDTH,
+  normalizeCategory,
+  type XY,
+} from './layout';
 
 const LANE_PADDING = 16;
 const BROKEN_STUB_WIDTH = 120;
@@ -12,7 +17,7 @@ interface Props {
   positions: Map<string, XY>;
 }
 
-interface LaneBounds {
+export interface LaneBounds {
   category: string;
   minX: number;
   minY: number;
@@ -42,54 +47,61 @@ function extendBoundsForRelatedNodes(
   }
 }
 
+export function computeCategoryLaneBounds(
+  quests: Quest[],
+  positions: Map<string, XY>,
+): LaneBounds[] {
+  const categories = [...new Set(quests.map((q) => normalizeCategory(q.category)))];
+
+  const bounds: LaneBounds[] = [];
+  for (const category of categories) {
+    const categoryQuests = quests.filter((q) => normalizeCategory(q.category) === category);
+    if (categoryQuests.length === 0) continue;
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    let hasNode = false;
+
+    for (const quest of categoryQuests) {
+      const pos = positions.get(quest.id);
+      if (!pos) continue;
+      hasNode = true;
+      minX = Math.min(minX, pos.x);
+      minY = Math.min(minY, pos.y);
+      maxX = Math.max(maxX, pos.x + NODE_WIDTH);
+      maxY = Math.max(maxY, pos.y + NODE_HEIGHT_ESTIMATE);
+
+      const related = { minX, minY, maxX, maxY };
+      extendBoundsForRelatedNodes(related, positions, quest.id);
+      minX = related.minX;
+      minY = related.minY;
+      maxX = related.maxX;
+      maxY = related.maxY;
+    }
+
+    if (!hasNode) continue;
+
+    bounds.push({
+      category,
+      minX: minX - LANE_PADDING,
+      minY: minY - LANE_PADDING,
+      maxX: maxX + LANE_PADDING,
+      maxY: maxY + LANE_PADDING,
+    });
+  }
+
+  return bounds.sort((a, b) => a.minY - b.minY);
+}
+
 export function CategoryLanes({ quests, positions }: Props) {
   const transform = useStore((s) => s.transform);
 
-  const lanes = useMemo(() => {
-    const categories = [...new Set(quests.map((q) => q.category || 'General'))];
-    if (categories.length <= 1) return [];
-
-    const bounds: LaneBounds[] = [];
-    for (const category of categories) {
-      const categoryQuests = quests.filter((q) => (q.category || 'General') === category);
-      if (categoryQuests.length === 0) continue;
-
-      let minX = Infinity;
-      let minY = Infinity;
-      let maxX = -Infinity;
-      let maxY = -Infinity;
-      let hasNode = false;
-
-      for (const quest of categoryQuests) {
-        const pos = positions.get(quest.id);
-        if (!pos) continue;
-        hasNode = true;
-        minX = Math.min(minX, pos.x);
-        minY = Math.min(minY, pos.y);
-        maxX = Math.max(maxX, pos.x + NODE_WIDTH);
-        maxY = Math.max(maxY, pos.y + NODE_HEIGHT_ESTIMATE);
-
-        const related = { minX, minY, maxX, maxY };
-        extendBoundsForRelatedNodes(related, positions, quest.id);
-        minX = related.minX;
-        minY = related.minY;
-        maxX = related.maxX;
-        maxY = related.maxY;
-      }
-
-      if (!hasNode) continue;
-
-      bounds.push({
-        category,
-        minX: minX - LANE_PADDING,
-        minY: minY - LANE_PADDING,
-        maxX: maxX + LANE_PADDING,
-        maxY: maxY + LANE_PADDING,
-      });
-    }
-
-    return bounds.sort((a, b) => a.minY - b.minY);
-  }, [quests, positions]);
+  const lanes = useMemo(
+    () => computeCategoryLaneBounds(quests, positions),
+    [quests, positions],
+  );
 
   if (lanes.length === 0) return null;
 

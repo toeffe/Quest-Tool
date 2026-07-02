@@ -22,6 +22,11 @@ export const STUB_OFFSET_X = 300;
 const ORIGIN_X = 40;
 const ORIGIN_Y = 40;
 
+export function normalizeCategory(category: string | undefined): string {
+  const trimmed = category?.trim();
+  return trimmed || 'General';
+}
+
 export function placeBrokenStubs(positions: Map<string, XY>, stubs: BrokenStub[]): void {
   for (const stub of stubs) {
     const anchor = positions.get(stub.anchorQuestId);
@@ -88,8 +93,8 @@ export function layeredLayout(quests: Quest[], edges: Edge[]): Map<string, XY> {
   const positions = new Map<string, XY>();
   for (const [col, ids] of columns) {
     const sorted = [...ids].sort((a, b) => {
-      const ca = questById.get(a)?.category ?? 'General';
-      const cb = questById.get(b)?.category ?? 'General';
+      const ca = normalizeCategory(questById.get(a)?.category);
+      const cb = normalizeCategory(questById.get(b)?.category);
       if (ca !== cb) return ca.localeCompare(cb);
       return (orderIndex.get(a) ?? 0) - (orderIndex.get(b) ?? 0);
     });
