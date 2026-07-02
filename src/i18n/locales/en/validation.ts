@@ -91,11 +91,9 @@ export const validationEn = {
   jobMilestoneMissingItem:
     'Job "{{name}}" milestone Lv.{{level}} references a deleted custom item (id: {{itemId}}).',
   duplicateJobName: 'Duplicate job name: "{{name}}" (used {{count}} times).',
-  chainRequiresMissingJob:
-    'Quest "{{quest}}" chain requires a deleted job (id: {{jobId}}).',
+  chainRequiresMissingJob: 'Quest "{{quest}}" chain requires a deleted job (id: {{jobId}}).',
   jobLevelMin: 'Quest "{{quest}}" job level requirement must be at least 1.',
-  jobXpRewardMissingJob:
-    'Quest "{{quest}}" {{where}} references a deleted job (id: {{jobId}}).',
+  jobXpRewardMissingJob: 'Quest "{{quest}}" {{where}} references a deleted job (id: {{jobId}}).',
   jobXpRewardMin: 'Quest "{{quest}}" {{where}} must grant at least 1 XP.',
   projectNoQuests: 'The project has no quests.',
   questEmptyName: 'A quest has an empty name.',

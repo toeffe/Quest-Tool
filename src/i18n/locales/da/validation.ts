@@ -93,8 +93,7 @@ export const validationDa = {
   jobMilestoneMissingItem:
     'Job "{{name}}" milestone Lv.{{level}} refererer til en slettet genstand (id: {{itemId}}).',
   duplicateJobName: 'Dubleret jobnavn: "{{name}}" (brugt {{count}} gange).',
-  chainRequiresMissingJob:
-    'Quest "{{quest}}" kæde kræver et slettet job (id: {{jobId}}).',
+  chainRequiresMissingJob: 'Quest "{{quest}}" kæde kræver et slettet job (id: {{jobId}}).',
   jobLevelMin: 'Quest "{{quest}}" job-niveaukrav skal være mindst 1.',
   jobXpRewardMissingJob:
     'Quest "{{quest}}" {{where}} refererer til et slettet job (id: {{jobId}}).',

@@ -81,9 +81,9 @@ describe('validation', () => {
     quest.objectives = [{ customItemId: 'missing-id', amount: 1 }];
     project.quests = [quest];
     const issues = validateProject(project, en);
-    expect(issues.some((i) => /Quest "Gather"/.test(i.message) && /missing-id/.test(i.message))).toBe(
-      true,
-    );
+    expect(
+      issues.some((i) => /Quest "Gather"/.test(i.message) && /missing-id/.test(i.message)),
+    ).toBe(true);
   });
 
   it('flags duplicate custom item tags', () => {
@@ -265,7 +265,9 @@ describe('validation', () => {
     ];
     const issues = validateProject(project, en);
     expect(
-      issues.some((i) => /Job "Fishing"/.test(i.message) && /Lv\.5/.test(i.message) && /gone/.test(i.message)),
+      issues.some(
+        (i) => /Job "Fishing"/.test(i.message) && /Lv\.5/.test(i.message) && /gone/.test(i.message),
+      ),
     ).toBe(true);
   });
 

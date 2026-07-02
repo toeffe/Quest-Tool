@@ -912,7 +912,11 @@ function jobIssues(project: Project, locale: AppLocale): ValidationIssue[] {
         if (!reward.amount || reward.amount < 1) {
           issues.push({
             level: 'error',
-            message: tValidation('jobXpRewardMin', { quest: quest.name, where: rewardLabel }, locale),
+            message: tValidation(
+              'jobXpRewardMin',
+              { quest: quest.name, where: rewardLabel },
+              locale,
+            ),
             questId: quest.id,
             questName: quest.name,
             field: 'rewards',
@@ -1129,7 +1133,11 @@ export function validateProject(project: Project, locale?: AppLocale): Validatio
       if (reward.type === 'item' && !reward.value && !reward.customItemId) {
         add(
           'error',
-          tValidation('rewardMissingItem', { quest: quest.name, where: rewardLabel }, effectiveLocale),
+          tValidation(
+            'rewardMissingItem',
+            { quest: quest.name, where: rewardLabel },
+            effectiveLocale,
+          ),
           quest,
           'rewards',
         );
