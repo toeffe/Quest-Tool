@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ValidationIssue } from '../generator/validate';
+import { useEntityClipboard } from '../hooks/useEntityClipboard';
 import { useUIStore } from '../store/uiStore';
 import type { Dimension, TeleportPad } from '../types/dimension';
 import type { Project } from '../types/quest';
@@ -43,6 +44,7 @@ export function DimensionsPage({
 }: Props) {
   const { t } = useTranslation('dimensions');
   const { t: tc } = useTranslation('common');
+  const { copyEntity, pasteEntity } = useEntityClipboard();
 
   const dimensions = project.dimensions ?? [];
   const teleportPads = project.teleportPads ?? [];
@@ -139,14 +141,31 @@ export function DimensionsPage({
         <aside className="items-list card">
           <div className="row-between" style={{ marginBottom: 12 }}>
             <h3 style={{ margin: 0 }}>{t('list.dimensionsTitle', { count: dimensions.length })}</h3>
-            <button
-              type="button"
-              className="btn small"
-              onClick={handleAddDimension}
-              title={t('list.addDimension')}
-            >
-              {tc('actions.add')}
-            </button>
+            <div className="row-actions">
+              <button
+                type="button"
+                className="btn small ghost"
+                title={tc('clipboard.paste')}
+                onClick={async () => {
+                  const result = await pasteEntity();
+                  if (result?.kind === 'dimension') {
+                    setSelection({ kind: 'dimension', id: result.id });
+                  } else if (result?.kind === 'teleportPad') {
+                    setSelection({ kind: 'pad', id: result.id });
+                  }
+                }}
+              >
+                {tc('clipboard.paste')}
+              </button>
+              <button
+                type="button"
+                className="btn small"
+                onClick={handleAddDimension}
+                title={t('list.addDimension')}
+              >
+                {tc('actions.add')}
+              </button>
+            </div>
           </div>
 
           {dimensions.length === 0 && <p className="muted">{t('list.emptyDimensions')}</p>}
@@ -220,6 +239,14 @@ export function DimensionsPage({
                   <button
                     type="button"
                     className="btn small"
+                    title={tc('clipboard.copy')}
+                    onClick={() => void copyEntity('dimension', selectedDimension.id)}
+                  >
+                    {tc('actions.copy')}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn small"
                     onClick={() => onDuplicateDimension(selectedDimension.id)}
                   >
                     {tc('actions.duplicate')}
@@ -247,6 +274,14 @@ export function DimensionsPage({
               <div className="row-between" style={{ marginBottom: 14 }}>
                 <h3 style={{ margin: 0 }}>{selectedPad.name || t('editor.padName')}</h3>
                 <div className="row-actions">
+                  <button
+                    type="button"
+                    className="btn small"
+                    title={tc('clipboard.copy')}
+                    onClick={() => void copyEntity('teleportPad', selectedPad.id)}
+                  >
+                    {tc('actions.copy')}
+                  </button>
                   <button
                     type="button"
                     className="btn small"

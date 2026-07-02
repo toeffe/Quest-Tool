@@ -23,7 +23,7 @@ export const itemsEn = {
     addTitle: 'Add general item',
     empty: 'No custom items yet. Create one to use in quests.',
     untitled: 'Untitled item',
-    copy: 'Copy',
+    duplicate: 'Duplicate',
     delete: 'Del',
     addCollectible: '+ Collectible',
     addFood: '+ Food',

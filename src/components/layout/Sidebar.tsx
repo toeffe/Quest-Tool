@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useEntityClipboard } from '../../hooks/useEntityClipboard';
 import { useValidation } from '../../hooks/useValidation';
 import { useQuestTypeLabels } from '../../i18n/useLabels';
 import { useUIStore } from '../../store/uiStore';
@@ -8,6 +9,7 @@ import { useProjectStore } from '../../store/useProjectStore';
 export function Sidebar() {
   const { t } = useTranslation('common');
   const questTypeLabels = useQuestTypeLabels();
+  const { copyEntity, pasteEntity } = useEntityClipboard();
   const project = useProjectStore((s) => s.project);
   const reorderQuests = useProjectStore((s) => s.reorderQuests);
   const selectedQuestId = useUIStore((s) => s.selectedQuestId);
@@ -55,14 +57,30 @@ export function Sidebar() {
     <aside className="quest-sidebar">
       <div className="quest-sidebar-head">
         <span className="quest-sidebar-title">{t('sidebar.title')}</span>
-        <button
-          type="button"
-          className="btn small primary"
-          onClick={handleAdd}
-          title={t('sidebar.newQuestTitle')}
-        >
-          {t('actions.new')}
-        </button>
+        <div className="row-actions">
+          <button
+            type="button"
+            className="btn small ghost"
+            onClick={async () => {
+              const result = await pasteEntity();
+              if (result?.kind === 'quest') {
+                setSelectedQuestId(result.id);
+                setActiveView('flow');
+              }
+            }}
+            title={t('clipboard.paste')}
+          >
+            {t('clipboard.paste')}
+          </button>
+          <button
+            type="button"
+            className="btn small primary"
+            onClick={handleAdd}
+            title={t('sidebar.newQuestTitle')}
+          >
+            {t('actions.new')}
+          </button>
+        </div>
       </div>
 
       <div className="quest-sidebar-list">
@@ -136,6 +154,17 @@ export function Sidebar() {
               </div>
               {selected && (
                 <div className="quest-sidebar-item-actions">
+                  <button
+                    type="button"
+                    className="btn small ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void copyEntity('quest', q.id);
+                    }}
+                    title={t('clipboard.copy')}
+                  >
+                    {t('actions.copy')}
+                  </button>
                   <button
                     type="button"
                     className="btn small ghost"

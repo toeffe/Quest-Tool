@@ -9,7 +9,7 @@ export const customMobsEn = {
     addTitle: 'Add custom mob',
     empty: 'No custom mobs yet. Create one to use in kill quests.',
     untitled: 'Untitled mob',
-    copy: 'Copy',
+    duplicate: 'Duplicate',
     delete: 'Del',
     selectEmpty: 'Select a mob from the list or create a new one.',
   },

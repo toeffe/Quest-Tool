@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMobOptions } from '../data/mobs';
 import type { ValidationIssue } from '../generator/validate';
+import { useEntityClipboard } from '../hooks/useEntityClipboard';
+import { useProjectStore } from '../store/useProjectStore';
 import { useUIStore } from '../store/uiStore';
 import {
   createRoomSpawn,
@@ -49,6 +51,7 @@ export function DungeonsPage({
 }: Props) {
   const { t } = useTranslation('dungeons');
   const { t: tc } = useTranslation('common');
+  const { copyEntity, pasteEntity } = useEntityClipboard();
   const mobOptions = useMobOptions();
   const dungeons = project.dungeons ?? [];
   const customMobs = project.customMobs ?? [];
@@ -138,9 +141,29 @@ export function DungeonsPage({
         <aside className="items-list card">
           <div className="row-between" style={{ marginBottom: 12 }}>
             <h3 style={{ margin: 0 }}>{t('list.title', { count: dungeons.length })}</h3>
-            <button type="button" className="btn small" onClick={onAdd} title={t('list.addTitle')}>
-              {tc('actions.add')}
-            </button>
+            <div className="row-actions">
+              <button
+                type="button"
+                className="btn small ghost"
+                title={tc('clipboard.paste')}
+                onClick={async () => {
+                  const result = await pasteEntity();
+                  if (result?.kind === 'dungeon') {
+                    setSelectedDungeonId(result.id);
+                    setExpandedDungeons((p) => new Set(p).add(result.id));
+                    const dungeon = useProjectStore.getState().project.dungeons?.find(
+                      (d) => d.id === result.id,
+                    );
+                    if (dungeon?.rooms[0]) setSelectedRoomId(dungeon.rooms[0].id);
+                  }
+                }}
+              >
+                {tc('clipboard.paste')}
+              </button>
+              <button type="button" className="btn small" onClick={onAdd} title={t('list.addTitle')}>
+                {tc('actions.add')}
+              </button>
+            </div>
           </div>
 
           {dungeons.length === 0 && <p className="muted">{t('list.empty')}</p>}
@@ -173,6 +196,14 @@ export function DungeonsPage({
                       <span className="tag">{dungeon.tag}</span>
                     </button>
                     <div className="row-actions">
+                      <button
+                        type="button"
+                        className="icon-btn"
+                        title={tc('clipboard.copy')}
+                        onClick={() => void copyEntity('dungeon', dungeon.id)}
+                      >
+                        {tc('actions.copy')}
+                      </button>
                       <button
                         type="button"
                         className="icon-btn"
@@ -247,6 +278,14 @@ export function DungeonsPage({
               <div className="row-between" style={{ marginBottom: 14 }}>
                 <h3 style={{ margin: 0 }}>{selectedDungeon.name || t('editor.dungeonName')}</h3>
                 <div className="row-actions">
+                  <button
+                    type="button"
+                    className="btn small"
+                    title={tc('clipboard.copy')}
+                    onClick={() => void copyEntity('dungeon', selectedDungeon.id)}
+                  >
+                    {tc('actions.copy')}
+                  </button>
                   <button
                     type="button"
                     className="btn small"

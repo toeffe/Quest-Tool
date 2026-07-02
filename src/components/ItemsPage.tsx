@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { BASE_ITEM_OPTIONS } from '../data/baseItems';
 import { ENCHANTMENT_OPTIONS, getEnchantmentMaxLevel } from '../data/enchantments';
 import { buildGiveCommand } from '../generator/items';
+import { useEntityClipboard } from '../hooks/useEntityClipboard';
 import { useCustomItemKindLabels } from '../i18n/useLabels';
 import { createCustomItem } from '../types/factory';
 import { toIdentifier } from '../types/ids';
@@ -50,6 +51,7 @@ function loreToText(lore: string[]): string {
 export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: Props) {
   const { t } = useTranslation('items');
   const { t: tc } = useTranslation('common');
+  const { copyEntity, pasteEntity } = useEntityClipboard();
   const kindLabels = useCustomItemKindLabels();
   const items = project.customItems ?? [];
   const [selectedId, setSelectedId] = useState<string>(() => items[0]?.id ?? '');
@@ -114,6 +116,16 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
             <h3 style={{ margin: 0 }}>{t('list.title', { count: items.length })}</h3>
             <div className="row-actions">
               <button
+                className="btn small ghost"
+                title={tc('clipboard.paste')}
+                onClick={async () => {
+                  const result = await pasteEntity();
+                  if (result?.kind === 'customItem') setSelectedId(result.id);
+                }}
+              >
+                {tc('clipboard.paste')}
+              </button>
+              <button
                 className="btn small"
                 onClick={() => onAdd('general')}
                 title={t('list.addTitle')}
@@ -138,13 +150,23 @@ export function ItemsPage({ project, onChange, onAdd, onDuplicate, onDelete }: P
               <div className="row-actions">
                 <button
                   className="icon-btn"
-                  title={t('list.copy')}
+                  title={tc('clipboard.copy')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void copyEntity('customItem', item.id);
+                  }}
+                >
+                  {tc('actions.copy')}
+                </button>
+                <button
+                  className="icon-btn"
+                  title={t('list.duplicate')}
                   onClick={(e) => {
                     e.stopPropagation();
                     onDuplicate(item.id);
                   }}
                 >
-                  {t('list.copy')}
+                  {t('list.duplicate')}
                 </button>
                 <button
                   className="icon-btn"

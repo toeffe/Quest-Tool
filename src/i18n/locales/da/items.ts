@@ -23,7 +23,7 @@ export const itemsDa = {
     addTitle: 'Tilføj generel genstand',
     empty: 'Ingen brugerdefinerede genstande endnu. Opret en for at bruge i quests.',
     untitled: 'Genstand uden titel',
-    copy: 'Kopiér',
+    duplicate: 'Kopiér',
     delete: 'Slet',
     addCollectible: '+ Samlere',
     addFood: '+ Mad',

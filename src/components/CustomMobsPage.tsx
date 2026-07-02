@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMobOptions } from '../data/mobs';
 import { EQUIPMENT_SLOT_OPTIONS, summonCustomMob } from '../generator/customMobs';
+import { useEntityClipboard } from '../hooks/useEntityClipboard';
 import type { CustomMob, CustomMobEquipmentSlot } from '../types/customMob';
 import { createCustomMobPhase } from '../types/factory';
 import { toIdentifier } from '../types/ids';
@@ -27,6 +28,7 @@ interface Props {
 export function CustomMobsPage({ project, onChange, onAdd, onDuplicate, onDelete }: Props) {
   const { t } = useTranslation('customMobs');
   const { t: tc } = useTranslation('common');
+  const { copyEntity, pasteEntity } = useEntityClipboard();
   const mobOptions = useMobOptions();
   const mobs = project.customMobs ?? [];
   const customItems = project.customItems ?? [];
@@ -64,6 +66,16 @@ export function CustomMobsPage({ project, onChange, onAdd, onDuplicate, onDelete
           <div className="row-between" style={{ marginBottom: 12 }}>
             <h3 style={{ margin: 0 }}>{t('list.title', { count: mobs.length })}</h3>
             <div className="row-actions">
+              <button
+                className="btn small ghost"
+                title={tc('clipboard.paste')}
+                onClick={async () => {
+                  const result = await pasteEntity();
+                  if (result?.kind === 'customMob') setSelectedId(result.id);
+                }}
+              >
+                {tc('clipboard.paste')}
+              </button>
               <button className="btn small" onClick={onAdd} title={t('list.addTitle')}>
                 {tc('actions.add')}
               </button>
@@ -85,13 +97,23 @@ export function CustomMobsPage({ project, onChange, onAdd, onDuplicate, onDelete
               <div className="row-actions">
                 <button
                   className="icon-btn"
-                  title={t('list.copy')}
+                  title={tc('clipboard.copy')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void copyEntity('customMob', mob.id);
+                  }}
+                >
+                  {tc('actions.copy')}
+                </button>
+                <button
+                  className="icon-btn"
+                  title={t('list.duplicate')}
                   onClick={(e) => {
                     e.stopPropagation();
                     onDuplicate(mob.id);
                   }}
                 >
-                  {t('list.copy')}
+                  {t('list.duplicate')}
                 </button>
                 <button
                   className="icon-btn"

@@ -9,7 +9,7 @@ export const customMobsDa = {
     addTitle: 'Tilføj brugerdefineret mob',
     empty: 'Ingen brugerdefinerede mobs endnu. Opret en til dræb-quests.',
     untitled: 'Mob uden navn',
-    copy: 'Kopi',
+    duplicate: 'Kopi',
     delete: 'Slet',
     selectEmpty: 'Vælg en mob fra listen eller opret en ny.',
   },

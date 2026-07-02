@@ -52,6 +52,17 @@ export const commonEn = {
     noneDash: '— none —',
   },
 
+  clipboard: {
+    copy: 'Copy to share',
+    paste: 'Paste',
+    copied: 'Copied to clipboard — share the text with another user.',
+    pasted: 'Pasted successfully.',
+    invalid: 'Could not paste: invalid clipboard data.',
+    unsupported: 'Could not paste: unsupported clipboard version.',
+    empty: 'Clipboard is empty.',
+    denied: 'Could not read clipboard. Check browser permissions.',
+  },
+
   theme: {
     toggleTitle: 'Toggle light / dark theme',
   },

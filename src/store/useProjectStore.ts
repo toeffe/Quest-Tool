@@ -2,6 +2,12 @@ import { create } from 'zustand';
 import type { AppLocale } from '../i18n/types';
 import { defaultsT } from '../i18n/useLabels';
 import {
+  ClipboardError,
+  type EntityKind,
+  pasteClipboard,
+  serializeClipboard,
+} from '../state/clipboard';
+import {
   addQuest,
   addRoom,
   createAndAddCustomItem,
@@ -78,6 +84,8 @@ interface ProjectStore {
   addTeleportPad: () => TeleportPad;
   deleteTeleportPad: (id: string) => void;
   duplicateTeleportPad: (id: string) => void;
+  copyEntityToClipboard: (kind: EntityKind, id: string) => Promise<void>;
+  pasteFromClipboard: () => Promise<{ kind: EntityKind; id: string } | null>;
 }
 
 export const useProjectStore = create<ProjectStore>((set, get) => ({
@@ -281,6 +289,28 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   duplicateTeleportPad: (id) => {
     const { project } = get();
     set({ project: duplicateTeleportPad(project, id) });
+  },
+
+  copyEntityToClipboard: async (kind, id) => {
+    const { project } = get();
+    const json = serializeClipboard(project, kind, id);
+    await navigator.clipboard.writeText(json);
+  },
+
+  pasteFromClipboard: async () => {
+    const { project } = get();
+    let text: string;
+    try {
+      text = await navigator.clipboard.readText();
+    } catch {
+      throw new ClipboardError('Clipboard access denied.');
+    }
+    if (!text.trim()) {
+      throw new ClipboardError('Clipboard is empty.');
+    }
+    const result = pasteClipboard(project, text);
+    set({ project: result.project });
+    return { kind: result.rootKind, id: result.rootId };
   },
 }));
 

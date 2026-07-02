@@ -8,6 +8,7 @@ import {
 import { actionsToReachLevel, applyBalancedDefaults } from '../generator/jobBalance';
 import { ACTION_PRESETS, defaultPresetForAction } from '../generator/jobStats';
 import type { ValidationIssue } from '../generator/validate';
+import { useEntityClipboard } from '../hooks/useEntityClipboard';
 import { useJobActionLabels, useJobStatPresetLabels } from '../i18n/useLabels';
 import {
   type Job,
@@ -43,6 +44,7 @@ const BG_LABEL_KEY: Record<string, string> = {
 export function JobsPage({ project, issues = [], onChange, onAdd, onDuplicate, onDelete }: Props) {
   const { t } = useTranslation('jobs');
   const { t: tc } = useTranslation('common');
+  const { copyEntity, pasteEntity } = useEntityClipboard();
   const jobActionLabels = useJobActionLabels();
   const statPresetLabels = useJobStatPresetLabels();
   const jobs = project.jobs ?? [];
@@ -134,9 +136,22 @@ export function JobsPage({ project, issues = [], onChange, onAdd, onDuplicate, o
         <aside className="items-list card">
           <div className="row-between" style={{ marginBottom: 12 }}>
             <h3 style={{ margin: 0 }}>{t('list.title', { count: jobs.length })}</h3>
-            <button className="btn small" onClick={onAdd} title={t('list.addTitle')}>
-              {tc('actions.add')}
-            </button>
+            <div className="row-actions">
+              <button
+                type="button"
+                className="btn small ghost"
+                title={tc('clipboard.paste')}
+                onClick={async () => {
+                  const result = await pasteEntity();
+                  if (result?.kind === 'job') setSelectedId(result.id);
+                }}
+              >
+                {tc('clipboard.paste')}
+              </button>
+              <button className="btn small" onClick={onAdd} title={t('list.addTitle')}>
+                {tc('actions.add')}
+              </button>
+            </div>
           </div>
 
           {jobs.length === 0 && <p className="muted">{t('list.empty')}</p>}
@@ -172,6 +187,14 @@ export function JobsPage({ project, issues = [], onChange, onAdd, onDuplicate, o
                       title={t('settings.balancedDefaultsTitle')}
                     >
                       {t('settings.balancedDefaults')}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn small"
+                      title={tc('clipboard.copy')}
+                      onClick={() => void copyEntity('job', selected.id)}
+                    >
+                      {tc('actions.copy')}
                     </button>
                     <button
                       type="button"

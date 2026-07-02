@@ -52,6 +52,17 @@ export const commonDa = {
     noneDash: '— ingen —',
   },
 
+  clipboard: {
+    copy: 'Kopiér til deling',
+    paste: 'Indsæt',
+    copied: 'Kopieret til udklipsholder — del teksten med en anden bruger.',
+    pasted: 'Indsat.',
+    invalid: 'Kunne ikke indsætte: ugyldige udklipsholderdata.',
+    unsupported: 'Kunne ikke indsætte: uunderstøttet udklipsholderversion.',
+    empty: 'Udklipsholderen er tom.',
+    denied: 'Kunne ikke læse udklipsholder. Tjek browsertilladelser.',
+  },
+
   theme: {
     toggleTitle: 'Skift mellem lyst / mørkt tema',
   },
