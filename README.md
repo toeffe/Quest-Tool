@@ -166,13 +166,30 @@ The custom domain is set via [`public/CNAME`](public/CNAME), which Vite copies i
 
 ### Deploy troubleshooting
 
+Two workflows are involved — do not confuse them:
+
+| Workflow | What it does |
+|----------|----------------|
+| **Deploy to GitHub Pages** (`.github/workflows/deploy.yml`) | Builds the app, runs lint/tests, commits output into `docs/` on `main` |
+| **pages build and deployment** (GitHub automatic) | Publishes whatever is in `docs/` to the live site (uses `deploy-pages` internally) |
+
 If the site does not update after a green workflow run:
 
 1. Confirm **Settings → Pages → Source** is **Branch: `main` / `/docs`**, not GitHub Actions or `/ (root)`.
 2. After a successful run, check **`docs/index.html`** exists on `main` — without it GitHub Pages returns 404 even when the workflow is green. The `pages build and deployment` action only publishes what is already in `docs/`.
 3. Re-run the workflow from **Actions** if a push was cancelled by a newer commit (`cancel-in-progress`).
 
-The workflow commits built files into `docs/` on `main` with `[skip ci]` so deploy commits do not re-trigger the workflow. The `peaceiris/actions-gh-pages` action cannot publish to the same branch that triggered the run (`main` → `main`), so deploy uses `rsync` + `git push` instead.
+**`deploy-pages` error: “in progress deployment”**
+
+If **pages build and deployment** fails with `Deployment request failed … due to in progress deployment`, a previous Pages deploy is stuck in GitHub’s queue (not a bug in this repo’s build workflow). Fix:
+
+1. Open **[Deployments](https://github.com/toeffe/Quest-Tool/deployments)** (or **Settings → Pages**).
+2. Cancel or wait out the in-progress deployment (often tied to an older commit such as `0911a9d`).
+3. Re-run **pages build and deployment** from **Actions**, or push any commit that updates `docs/`.
+
+Our **Deploy to GitHub Pages** workflow does not call `deploy-pages`; only GitHub’s automatic Pages publisher does. A green build workflow + red pages workflow usually means step 1–3 above.
+
+The workflow commits built files into `docs/` on `main` with `[skip ci]` so deploy commits do not re-trigger the build workflow. `peaceiris/actions-gh-pages` cannot publish to the same branch that triggered the run (`main` → `main`), so deploy uses `rsync` + `git push` instead.
 
 ## Tech stack
 

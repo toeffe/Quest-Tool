@@ -161,13 +161,30 @@ bruger `npm run dev`/`build` også `/` som base.
 
 ### Fejlfinding ved deploy
 
+To workflows er involveret — forveksl dem ikke:
+
+| Workflow | Hvad den gør |
+|----------|----------------|
+| **Deploy to GitHub Pages** (`.github/workflows/deploy.yml`) | Bygger appen, kører lint/tests, committer output til `docs/` på `main` |
+| **pages build and deployment** (GitHub automatisk) | Publicerer indholdet af `docs/` til det live site (bruger `deploy-pages` internt) |
+
 Hvis sitet ikke opdateres efter en grøn workflow:
 
 1. Bekræft at **Settings → Pages → Source** er **Branch: `main` / `/docs`**, ikke GitHub Actions eller `/ (root)`.
 2. Efter en succesfuld kørsel, tjek at **`docs/index.html`** findes på `main` — uden den returnerer GitHub Pages 404, selv når workflowet er grønt. `pages build and deployment` publicerer kun det, der allerede ligger i `docs/`.
 3. Kør workflow igen fra **Actions** hvis et push blev annulleret af et nyere commit (`cancel-in-progress`).
 
-Workflowet committer build-filer til `docs/` på `main` med `[skip ci]`, så deploy-commits ikke genstarter workflowet. `peaceiris/actions-gh-pages` kan ikke publicere til samme branch som udløste kørslen (`main` → `main`), så deploy bruger `rsync` + `git push` i stedet.
+**`deploy-pages`-fejl: “in progress deployment”**
+
+Hvis **pages build and deployment** fejler med `Deployment request failed … due to in progress deployment`, sidder en tidligere Pages-deploy fast i GitHubs kø (ikke en fejl i repoets build-workflow). Løsning:
+
+1. Åbn **[Deployments](https://github.com/toeffe/Quest-Tool/deployments)** (eller **Settings → Pages**).
+2. Annuller eller vent på den igangværende deployment (ofte knyttet til et ældre commit som `0911a9d`).
+3. Kør **pages build and deployment** igen fra **Actions**, eller push et commit der opdaterer `docs/`.
+
+Vores **Deploy to GitHub Pages**-workflow kalder ikke `deploy-pages`; kun GitHubs automatiske Pages-udgiver gør det. Grøn build-workflow + rød pages-workflow betyder normalt trin 1–3 ovenfor.
+
+Workflowet committer build-filer til `docs/` på `main` med `[skip ci]`, så deploy-commits ikke genstarter build-workflowet. `peaceiris/actions-gh-pages` kan ikke publicere til samme branch som udløste kørslen (`main` → `main`), så deploy bruger `rsync` + `git push` i stedet.
 
 ## Tech stack
 
