@@ -172,6 +172,8 @@ If the site does not update after a green workflow run:
 2. After a successful run, check **`docs/index.html`** on `main` — it should reference bundled `/assets/…` files.
 3. Re-run the workflow from **Actions** if a push was cancelled by a newer commit (`cancel-in-progress`).
 
+The workflow commits built files into `docs/` on `main` with `[skip ci]` so deploy commits do not re-trigger the workflow. The `peaceiris/actions-gh-pages` action cannot publish to the same branch that triggered the run (`main` → `main`), so deploy uses `rsync` + `git push` instead.
+
 ## Tech stack
 
 React 18, TypeScript, Vite 6, Zustand, `@xyflow/react`, JSZip, Vitest 3, Biome.

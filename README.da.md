@@ -167,6 +167,8 @@ Hvis sitet ikke opdateres efter en grøn workflow:
 2. Efter en succesfuld kørsel, tjek **`docs/index.html`** på `main` — den skal referere til bundled `/assets/…` filer.
 3. Kør workflow igen fra **Actions** hvis et push blev annulleret af et nyere commit (`cancel-in-progress`).
 
+Workflowet committer build-filer til `docs/` på `main` med `[skip ci]`, så deploy-commits ikke genstarter workflowet. `peaceiris/actions-gh-pages` kan ikke publicere til samme branch som udløste kørslen (`main` → `main`), så deploy bruger `rsync` + `git push` i stedet.
+
 ## Tech stack
 
 React 18, TypeScript, Vite 5, Zustand, `@xyflow/react`, JSZip, Vitest.

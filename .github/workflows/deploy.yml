@@ -41,11 +41,21 @@ jobs:
           VITE_BASE: /
 
       - name: Publish built site to docs/ on main
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          publish_branch: main
-          destination_dir: docs
-          keep_files: true
-          commit_message: 'deploy: ${{ github.sha }} [skip ci]'
+        run: |
+          # peaceiris/actions-gh-pages refuses main→main deploys; sync dist into docs/ instead.
+          # Keep QA markdown in docs/; replace previous build artifacts (index.html, assets/, …).
+          rsync -a --delete --exclude='*.md' ./dist/ ./docs/
+          touch docs/.nojekyll
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add docs/
+          if git diff --staged --quiet; then
+            echo "No site changes to deploy."
+            exit 0
+          fi
+
+          git commit -m "deploy: ${{ github.sha }} [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main
