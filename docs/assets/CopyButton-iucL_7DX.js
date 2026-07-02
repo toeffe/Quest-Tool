@@ -1,1 +1,0 @@
-import{c,j as i}from"./index-DJ7r-cpS.js";function r({value:o,label:e="Copy"}){const[a,t]=c.useState(!1);async function s(){try{await navigator.clipboard.writeText(o),t(!0),setTimeout(()=>t(!1),1400)}catch{}}return i.jsx("button",{className:"btn small",onClick:s,children:a?"Copied!":e})}export{r as C};
