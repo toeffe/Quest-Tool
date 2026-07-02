@@ -114,43 +114,45 @@ export function Sidebar() {
               }}
             >
               {showDropLine && <div className="quest-sidebar-drop-line" aria-hidden />}
-              <span
-                className="quest-sidebar-grip"
-                draggable
-                title={t('sidebar.dragToReorder')}
-                onDragStart={(e) => {
-                  e.stopPropagation();
-                  setDragId(q.id);
-                  e.dataTransfer.effectAllowed = 'move';
-                }}
-                onDragEnd={() => {
-                  setDragId(null);
-                  setDropBeforeId(null);
-                }}
-                onClick={(e) => e.stopPropagation()}
-                aria-hidden
-              >
-                ⋮⋮
-              </span>
-              <div className="quest-sidebar-item-main">
-                <span className="quest-sidebar-item-name">
-                  {q.name || t('sidebar.untitledQuest')}
+              <div className="quest-sidebar-item-row">
+                <span
+                  className="quest-sidebar-grip"
+                  draggable
+                  title={t('sidebar.dragToReorder')}
+                  onDragStart={(e) => {
+                    e.stopPropagation();
+                    setDragId(q.id);
+                    e.dataTransfer.effectAllowed = 'move';
+                  }}
+                  onDragEnd={() => {
+                    setDragId(null);
+                    setDropBeforeId(null);
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  aria-hidden
+                >
+                  ⋮⋮
                 </span>
-                <span className="quest-sidebar-item-type">{questTypeLabels[q.type]}</span>
-              </div>
-              <div className="quest-sidebar-item-badges">
-                {errs > 0 && (
-                  <span
-                    className="validation-dot error"
-                    title={t('sidebar.errorCountTitle', { count: errs })}
-                  />
-                )}
-                {errs === 0 && warns > 0 && (
-                  <span
-                    className="validation-dot warning"
-                    title={t('sidebar.warningCountTitle', { count: warns })}
-                  />
-                )}
+                <div className="quest-sidebar-item-main">
+                  <span className="quest-sidebar-item-name">
+                    {q.name || t('sidebar.untitledQuest')}
+                  </span>
+                  <span className="quest-sidebar-item-type">{questTypeLabels[q.type]}</span>
+                </div>
+                <div className="quest-sidebar-item-badges">
+                  {errs > 0 && (
+                    <span
+                      className="validation-dot error"
+                      title={t('sidebar.errorCountTitle', { count: errs })}
+                    />
+                  )}
+                  {errs === 0 && warns > 0 && (
+                    <span
+                      className="validation-dot warning"
+                      title={t('sidebar.warningCountTitle', { count: warns })}
+                    />
+                  )}
+                </div>
               </div>
               {selected && (
                 <div className="quest-sidebar-item-actions">
