@@ -4,6 +4,8 @@ export const validationEn = {
   objectiveN: 'Objective {{n}}',
   drop: '{{where}} drop',
   dropN: '{{where}} drop {{n}}',
+  reward: 'reward',
+  rewardN: 'reward {{n}}',
   missingTargetMob: '{{where}} is missing a target mob.',
   missingTargetItem: '{{where}} is missing a target item.',
   amountMin: '{{where}} amount must be at least 1.',
@@ -64,7 +66,8 @@ export const validationEn = {
   padCooldownTooShort: 'Pad "{{name}}" cooldown should be at least 1 second.',
   padDestinationOverlapsAt:
     'Pad "{{from}}" teleports into the detection zone of "{{to}}". The pack adds anti-bounce grace, but consider offsetting destinations.',
-  objectiveMissingCustomMob: 'Kill objective references a custom mob that was deleted.',
+  objectiveMissingCustomMob:
+    'Quest "{{quest}}" {{where}} references a deleted custom mob (id: {{mobId}}).',
   customItemEnchantmentLevel:
     'Custom item "{{name}}" enchantment "{{enchant}}" level must be at least 1.',
   customItemEnchantmentMaxLevel:
@@ -86,17 +89,23 @@ export const validationEn = {
   jobDuplicateMilestone: 'Job "{{name}}" has duplicate milestone at level {{level}}.',
   jobMilestoneEmptyItem: 'Job "{{name}}" milestone Lv.{{level}} has an empty item reward.',
   jobMilestoneMissingItem:
-    'Job "{{name}}" milestone references a custom item that no longer exists.',
+    'Job "{{name}}" milestone Lv.{{level}} references a deleted custom item (id: {{itemId}}).',
   duplicateJobName: 'Duplicate job name: "{{name}}" (used {{count}} times).',
-  chainRequiresMissingJob: 'Chain requires a job that no longer exists.',
-  jobLevelMin: 'Job level requirement must be at least 1.',
-  jobXpRewardMissingJob: 'A job XP reward references a job that no longer exists.',
-  jobXpRewardMin: 'A job XP reward must grant at least 1 XP.',
+  chainRequiresMissingJob:
+    'Quest "{{quest}}" chain requires a deleted job (id: {{jobId}}).',
+  jobLevelMin: 'Quest "{{quest}}" job level requirement must be at least 1.',
+  jobXpRewardMissingJob:
+    'Quest "{{quest}}" {{where}} references a deleted job (id: {{jobId}}).',
+  jobXpRewardMin: 'Quest "{{quest}}" {{where}} must grant at least 1 XP.',
   projectNoQuests: 'The project has no quests.',
   questEmptyName: 'A quest has an empty name.',
   npcNoName: 'The quest giver has no name.',
-  objectiveMissingCustomItem: 'An objective references a custom item that no longer exists.',
-  spawnDropMissingCustomItem: 'A spawn zone drop references a custom item that no longer exists.',
+  objectiveMissingCustomItem:
+    'Quest "{{quest}}" {{where}} references a deleted custom item (id: {{itemId}}).',
+  spawnDropMissingCustomItem:
+    'Quest "{{quest}}" {{where}} references a deleted custom item (id: {{itemId}}).',
+  customMobDropMissingCustomItem:
+    'Custom mob "{{mob}}" {{where}} references a deleted custom item (id: {{itemId}}).',
   npcFixedNoCoords: 'NPC spawn is set to fixed coordinates but none are provided.',
   targetNpcNoName: 'The target NPC has no name.',
   targetNpcFixedNoCoords: 'Target NPC uses fixed coordinates but none are provided.',
@@ -105,9 +114,10 @@ export const validationEn = {
   chainUnlocksNotFound: 'Chain unlocks "{{name}}", which is not a quest in this project.',
   chainCycleDetected:
     'This quest is part of a circular chain dependency — some quests may never unlock.',
-  rewardMissingItem: 'An item reward is missing its item.',
-  rewardMissingCustomItem: 'A reward references a custom item that no longer exists.',
-  rewardMissingCommand: 'A command reward is missing its value.',
+  rewardMissingItem: 'Quest "{{quest}}" {{where}} is missing its item.',
+  rewardMissingCustomItem:
+    'Quest "{{quest}}" {{where}} references a deleted custom item (id: {{itemId}}).',
+  rewardMissingCommand: 'Quest "{{quest}}" {{where}} is missing its command.',
   questNoRewards: 'Quest has no rewards.',
   duplicateQuestName: 'Duplicate quest name: "{{name}}" (used {{count}} times).',
   duplicateNpcTag: 'NPC tag "{{tag}}" is used by {{count}} quests; they will share/duplicate NPCs.',

@@ -38,6 +38,11 @@ function objectiveWhere(multi: boolean, i: number, locale: AppLocale): string {
   return tValidation('objectiveN', { n: i + 1 }, locale);
 }
 
+function rewardWhere(multi: boolean, i: number, locale: AppLocale): string {
+  if (!multi) return tValidation('reward', undefined, locale);
+  return tValidation('rewardN', { n: i + 1 }, locale);
+}
+
 function objectiveIssues(quest: Quest, locale: AppLocale): string[] {
   const out: string[] = [];
   if (quest.objectives.length === 0) {
@@ -316,7 +321,11 @@ function customMobIssues(project: Project, locale: AppLocale): ValidationIssue[]
         if (d.customItemId && !(project.customItems ?? []).some((i) => i.id === d.customItemId)) {
           issues.push({
             level: 'error',
-            message: tValidation('spawnDropMissingCustomItem', undefined, locale),
+            message: tValidation(
+              'customMobDropMissingCustomItem',
+              { mob: mob.name, where: dropLabel, itemId: d.customItemId },
+              locale,
+            ),
           });
         }
         if (d.amount != null && d.amount < 1) {
@@ -833,7 +842,11 @@ function jobIssues(project: Project, locale: AppLocale): ValidationIssue[] {
         if (reward.customItemId && !customItemIds.has(reward.customItemId)) {
           issues.push({
             level: 'error',
-            message: tValidation('jobMilestoneMissingItem', { name: job.name }, locale),
+            message: tValidation(
+              'jobMilestoneMissingItem',
+              { name: job.name, level: milestone.level, itemId: reward.customItemId },
+              locale,
+            ),
             jobId: job.id,
             jobName: job.name,
             field: 'jobs.milestones',
@@ -858,7 +871,11 @@ function jobIssues(project: Project, locale: AppLocale): ValidationIssue[] {
       if (!jobIds.has(jobReq.jobId)) {
         issues.push({
           level: 'error',
-          message: tValidation('chainRequiresMissingJob', undefined, locale),
+          message: tValidation(
+            'chainRequiresMissingJob',
+            { quest: quest.name, jobId: jobReq.jobId },
+            locale,
+          ),
           questId: quest.id,
           questName: quest.name,
           field: 'chain.requiresJob',
@@ -867,7 +884,7 @@ function jobIssues(project: Project, locale: AppLocale): ValidationIssue[] {
       if (jobReq.level < 1) {
         issues.push({
           level: 'error',
-          message: tValidation('jobLevelMin', undefined, locale),
+          message: tValidation('jobLevelMin', { quest: quest.name }, locale),
           questId: quest.id,
           questName: quest.name,
           field: 'chain.requiresJob',
@@ -875,12 +892,18 @@ function jobIssues(project: Project, locale: AppLocale): ValidationIssue[] {
       }
     }
 
-    for (const reward of quest.rewards) {
+    const multiRewards = quest.rewards.length > 1;
+    for (const [ri, reward] of quest.rewards.entries()) {
+      const rewardLabel = rewardWhere(multiRewards, ri, locale);
       if (reward.type === 'jobXp') {
         if (!reward.jobId || !jobIds.has(reward.jobId)) {
           issues.push({
             level: 'error',
-            message: tValidation('jobXpRewardMissingJob', undefined, locale),
+            message: tValidation(
+              'jobXpRewardMissingJob',
+              { quest: quest.name, where: rewardLabel, jobId: reward.jobId ?? '?' },
+              locale,
+            ),
             questId: quest.id,
             questName: quest.name,
             field: 'rewards',
@@ -889,7 +912,7 @@ function jobIssues(project: Project, locale: AppLocale): ValidationIssue[] {
         if (!reward.amount || reward.amount < 1) {
           issues.push({
             level: 'error',
-            message: tValidation('jobXpRewardMin', undefined, locale),
+            message: tValidation('jobXpRewardMin', { quest: quest.name, where: rewardLabel }, locale),
             questId: quest.id,
             questName: quest.name,
             field: 'rewards',
@@ -944,19 +967,49 @@ export function validateProject(project: Project, locale?: AppLocale): Validatio
       add('error', msg, quest, 'objectives');
     }
 
-    for (const o of quest.objectives) {
+    const multiObjectives = quest.objectives.length > 1;
+    for (const [oi, o] of quest.objectives.entries()) {
+      const objWhere = objectiveWhere(multiObjectives, oi, effectiveLocale);
       if (o.customItemId && !customItemIds.has(o.customItemId)) {
-        add('error', tValidation('objectiveMissingCustomItem', undefined, effectiveLocale), quest);
+        add(
+          'error',
+          tValidation(
+            'objectiveMissingCustomItem',
+            { quest: quest.name, where: objWhere, itemId: o.customItemId },
+            effectiveLocale,
+          ),
+          quest,
+          'objectives',
+        );
       }
       if (o.eliteMobId && !customMobIds.has(o.eliteMobId)) {
-        add('error', tValidation('objectiveMissingCustomMob', undefined, effectiveLocale), quest);
+        add(
+          'error',
+          tValidation(
+            'objectiveMissingCustomMob',
+            { quest: quest.name, where: objWhere, mobId: o.eliteMobId },
+            effectiveLocale,
+          ),
+          quest,
+          'objectives',
+        );
       }
-      for (const d of o.zoneDrops ?? []) {
+      const drops = o.zoneDrops ?? [];
+      for (const [di, d] of drops.entries()) {
         if (d.customItemId && !customItemIds.has(d.customItemId)) {
+          const dropWhere =
+            drops.length > 1
+              ? tValidation('dropN', { where: objWhere, n: di + 1 }, effectiveLocale)
+              : tValidation('drop', { where: objWhere }, effectiveLocale);
           add(
             'error',
-            tValidation('spawnDropMissingCustomItem', undefined, effectiveLocale),
+            tValidation(
+              'spawnDropMissingCustomItem',
+              { quest: quest.name, where: dropWhere, itemId: d.customItemId },
+              effectiveLocale,
+            ),
             quest,
+            'objectives',
           );
         }
       }
@@ -1066,7 +1119,9 @@ export function validateProject(project: Project, locale?: AppLocale): Validatio
       }
     }
 
-    for (const reward of quest.rewards) {
+    const multiRewards = quest.rewards.length > 1;
+    for (const [ri, reward] of quest.rewards.entries()) {
+      const rewardLabel = rewardWhere(multiRewards, ri, effectiveLocale);
       const support = isRewardSupported(project.platform, reward, effectiveLocale);
       if (support.note) {
         add(support.ok ? 'warning' : 'warning', support.note, quest);
@@ -1074,7 +1129,7 @@ export function validateProject(project: Project, locale?: AppLocale): Validatio
       if (reward.type === 'item' && !reward.value && !reward.customItemId) {
         add(
           'error',
-          tValidation('rewardMissingItem', undefined, effectiveLocale),
+          tValidation('rewardMissingItem', { quest: quest.name, where: rewardLabel }, effectiveLocale),
           quest,
           'rewards',
         );
@@ -1082,7 +1137,11 @@ export function validateProject(project: Project, locale?: AppLocale): Validatio
       if (reward.customItemId && !customItemIds.has(reward.customItemId)) {
         add(
           'error',
-          tValidation('rewardMissingCustomItem', undefined, effectiveLocale),
+          tValidation(
+            'rewardMissingCustomItem',
+            { quest: quest.name, where: rewardLabel, itemId: reward.customItemId },
+            effectiveLocale,
+          ),
           quest,
           'rewards',
         );
@@ -1090,7 +1149,11 @@ export function validateProject(project: Project, locale?: AppLocale): Validatio
       if (reward.type === 'command' && !reward.value) {
         add(
           'error',
-          tValidation('rewardMissingCommand', undefined, effectiveLocale),
+          tValidation(
+            'rewardMissingCommand',
+            { quest: quest.name, where: rewardLabel },
+            effectiveLocale,
+          ),
           quest,
           'rewards',
         );

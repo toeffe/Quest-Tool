@@ -4,6 +4,8 @@ export const validationDa = {
   objectiveN: 'Mål {{n}}',
   drop: '{{where}} drop',
   dropN: '{{where}} drop {{n}}',
+  reward: 'belønning',
+  rewardN: 'belønning {{n}}',
   missingTargetMob: '{{where}} mangler en mål-mob.',
   missingTargetItem: '{{where}} mangler en mål-genstand.',
   amountMin: '{{where}} antal skal være mindst 1.',
@@ -64,7 +66,8 @@ export const validationDa = {
   padCooldownTooShort: 'Pad "{{name}}" cooldown bør være mindst 1 sekund.',
   padDestinationOverlapsAt:
     'Pad "{{from}}" teleporterer ind i detektionszonen for "{{to}}". Pakken tilføjer anti-bounce grace, men overvej at forskyd destinationer.',
-  objectiveMissingCustomMob: 'Dræb-mål refererer til en brugerdefineret mob der er slettet.',
+  objectiveMissingCustomMob:
+    'Quest "{{quest}}" {{where}} refererer til en slettet brugerdefineret mob (id: {{mobId}}).',
   customItemEnchantmentLevel:
     'Brugerdefineret genstand "{{name}}" fortryllelse "{{enchant}}" skal have niveau mindst 1.',
   customItemEnchantmentMaxLevel:
@@ -88,18 +91,23 @@ export const validationDa = {
   jobDuplicateMilestone: 'Job "{{name}}" har dubleret milestone på niveau {{level}}.',
   jobMilestoneEmptyItem: 'Job "{{name}}" milestone Lv.{{level}} har en tom genstandsbelønning.',
   jobMilestoneMissingItem:
-    'Job "{{name}}" milestone refererer til en genstand, der ikke findes længere.',
+    'Job "{{name}}" milestone Lv.{{level}} refererer til en slettet genstand (id: {{itemId}}).',
   duplicateJobName: 'Dubleret jobnavn: "{{name}}" (brugt {{count}} gange).',
-  chainRequiresMissingJob: 'Kæden kræver et job, der ikke findes længere.',
-  jobLevelMin: 'Job-niveaukrav skal være mindst 1.',
-  jobXpRewardMissingJob: 'En job-XP-belønning refererer til et job, der ikke findes længere.',
-  jobXpRewardMin: 'En job-XP-belønning skal give mindst 1 XP.',
+  chainRequiresMissingJob:
+    'Quest "{{quest}}" kæde kræver et slettet job (id: {{jobId}}).',
+  jobLevelMin: 'Quest "{{quest}}" job-niveaukrav skal være mindst 1.',
+  jobXpRewardMissingJob:
+    'Quest "{{quest}}" {{where}} refererer til et slettet job (id: {{jobId}}).',
+  jobXpRewardMin: 'Quest "{{quest}}" {{where}} skal give mindst 1 XP.',
   projectNoQuests: 'Projektet har ingen quests.',
   questEmptyName: 'En quest har et tomt navn.',
   npcNoName: 'Questgiveren har intet navn.',
-  objectiveMissingCustomItem: 'Et mål refererer til en genstand, der ikke findes længere.',
+  objectiveMissingCustomItem:
+    'Quest "{{quest}}" {{where}} refererer til en slettet genstand (id: {{itemId}}).',
   spawnDropMissingCustomItem:
-    'Et spawn-zone-drop refererer til en genstand, der ikke findes længere.',
+    'Quest "{{quest}}" {{where}} refererer til en slettet genstand (id: {{itemId}}).',
+  customMobDropMissingCustomItem:
+    'Brugerdefineret mob "{{mob}}" {{where}} refererer til en slettet genstand (id: {{itemId}}).',
   npcFixedNoCoords: 'NPC-spawn er sat til faste koordinater, men ingen er angivet.',
   targetNpcNoName: "Mål-NPC'en har intet navn.",
   targetNpcFixedNoCoords: 'Mål-NPC bruger faste koordinater, men ingen er angivet.',
@@ -108,9 +116,10 @@ export const validationDa = {
   chainUnlocksNotFound: 'Kæden låser op for "{{name}}", som ikke er en quest i dette projekt.',
   chainCycleDetected:
     'Denne quest er en del af en cirkulær kæde — nogle quests låses måske aldrig op.',
-  rewardMissingItem: 'En genstandsbelønning mangler sin genstand.',
-  rewardMissingCustomItem: 'En belønning refererer til en genstand, der ikke findes længere.',
-  rewardMissingCommand: 'En kommando-belønning mangler sin værdi.',
+  rewardMissingItem: 'Quest "{{quest}}" {{where}} mangler sin genstand.',
+  rewardMissingCustomItem:
+    'Quest "{{quest}}" {{where}} refererer til en slettet genstand (id: {{itemId}}).',
+  rewardMissingCommand: 'Quest "{{quest}}" {{where}} mangler sin kommando.',
   questNoRewards: 'Questen har ingen belønninger.',
   duplicateQuestName: 'Dubleret questnavn: "{{name}}" (brugt {{count}} gange).',
   duplicateNpcTag: 'NPC-tag "{{tag}}" bruges af {{count}} quests; de deler/duplikerer NPC\'er.',

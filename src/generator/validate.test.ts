@@ -81,7 +81,9 @@ describe('validation', () => {
     quest.objectives = [{ customItemId: 'missing-id', amount: 1 }];
     project.quests = [quest];
     const issues = validateProject(project, en);
-    expect(issues.some((i) => /custom item that no longer exists/.test(i.message))).toBe(true);
+    expect(issues.some((i) => /Quest "Gather"/.test(i.message) && /missing-id/.test(i.message))).toBe(
+      true,
+    );
   });
 
   it('flags duplicate custom item tags', () => {
@@ -182,8 +184,11 @@ describe('validation', () => {
     project.quests = [quest];
     const issues = validateProject(project, en);
     expect(
-      issues.some((i) =>
-        /spawn zone drop references a custom item that no longer exists/.test(i.message),
+      issues.some(
+        (i) =>
+          /Quest "Arena"/.test(i.message) &&
+          /Objective drop/.test(i.message) &&
+          /missing-id/.test(i.message),
       ),
     ).toBe(true);
   });
@@ -213,7 +218,7 @@ describe('validation', () => {
     quest.rewards = [{ type: 'jobXp', jobId: 'missing', amount: 10 }];
     project.quests = [quest];
     const issues = validateProject(project, en);
-    expect(issues.some((i) => /job XP reward references a job/.test(i.message))).toBe(true);
+    expect(issues.some((i) => /Quest "Q"/.test(i.message) && /missing/.test(i.message))).toBe(true);
   });
 
   it('flags chain requiresJob with missing job', () => {
@@ -223,7 +228,7 @@ describe('validation', () => {
     quest.chain.requiresJob = { jobId: 'missing', level: 3 };
     project.quests = [quest];
     const issues = validateProject(project, en);
-    expect(issues.some((i) => /requires a job that no longer exists/.test(i.message))).toBe(true);
+    expect(issues.some((i) => /Quest "Q"/.test(i.message) && /missing/.test(i.message))).toBe(true);
   });
 
   it('flags mining job without single target', () => {
@@ -259,7 +264,9 @@ describe('validation', () => {
       },
     ];
     const issues = validateProject(project, en);
-    expect(issues.some((i) => /milestone references a custom item/.test(i.message))).toBe(true);
+    expect(
+      issues.some((i) => /Job "Fishing"/.test(i.message) && /Lv\.5/.test(i.message) && /gone/.test(i.message)),
+    ).toBe(true);
   });
 
   it('flags missing custom mob references on kill objectives', () => {
@@ -268,7 +275,9 @@ describe('validation', () => {
     quest.objectives = [{ eliteMobId: 'missing-id', amount: 1 }];
     project.quests = [quest];
     const issues = validateProject(project, en);
-    expect(issues.some((i) => /custom mob that was deleted/.test(i.message))).toBe(true);
+    expect(issues.some((i) => /Quest "Kill"/.test(i.message) && /missing-id/.test(i.message))).toBe(
+      true,
+    );
   });
 
   it('flags duplicate custom mob tags', () => {
