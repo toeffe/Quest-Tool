@@ -180,12 +180,7 @@ function progressAmount(quest: Quest, j: number): number {
   return Math.max(1, o?.amount ?? 1);
 }
 
-function buildStatusPage(
-  ctx: CompileContext,
-  qc: QuestContext,
-  status: string,
-  detail: string,
-): string {
+function buildStatusPage(qc: QuestContext, status: string, detail: string): string {
   const name = clampText(qc.quest.name, QUESTLOG_PAGE_TEXT_MAX);
   return pageSnbt([
     { text: `${name}\n`, bold: true, color: 'gold' },
@@ -320,19 +315,13 @@ function buildQuestBranchFunction(ctx: CompileContext, qc: QuestContext): string
   const STR = ctx.str;
   const giverName = qc.quest.npc.name;
   const available = buildStatusPage(
-    ctx,
     qc,
     STR.questLogStatusAvailable,
     STR.questLogSeeNpc(giverName),
   );
-  const ready = buildStatusPage(
-    ctx,
-    qc,
-    STR.questLogStatusReady,
-    STR.questLogReturnToNpc(giverName),
-  );
-  const completed = buildStatusPage(ctx, qc, STR.questLogStatusCompleted, '');
-  const locked = buildStatusPage(ctx, qc, STR.questLogStatusLocked, '');
+  const ready = buildStatusPage(qc, STR.questLogStatusReady, STR.questLogReturnToNpc(giverName));
+  const completed = buildStatusPage(qc, STR.questLogStatusCompleted, '');
+  const locked = buildStatusPage(qc, STR.questLogStatusLocked, '');
 
   return (
     [
