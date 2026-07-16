@@ -75,7 +75,7 @@ describe('pads generator', () => {
     expect(tick).toContain('# --- detect phase ---');
     expect(tick).toContain('# --- execute phase ---');
     expect(tick).toContain(
-      `execute in minecraft:overworld positioned 5 64 5 run execute as @a[scores={${PAD_REQ_OBJECTIVE}=-1},distance=..2] if score @s ${PAD_GRACE_OBJECTIVE} <= #now qt_sys if score @s pad0_cd <= #now qt_sys run scoreboard players set @s ${PAD_REQ_OBJECTIVE} 0`,
+      `execute in minecraft:overworld positioned 5 64 5 as @a[scores={${PAD_REQ_OBJECTIVE}=-1},distance=..2] if score @s ${PAD_GRACE_OBJECTIVE} <= #now qt_sys if score @s pad0_cd <= #now qt_sys run scoreboard players set @s ${PAD_REQ_OBJECTIVE} 0`,
     );
     expect(tick).toContain(
       `execute as @a[scores={${PAD_REQ_OBJECTIVE}=0}] run function questpack:pads/jump_pad/teleport`,
@@ -84,7 +84,9 @@ describe('pads generator', () => {
       `scoreboard players operation @s ${PAD_GRACE_OBJECTIVE} = #now qt_sys`,
     );
     expect(teleport).toContain(`scoreboard players add @s ${PAD_GRACE_OBJECTIVE} 80`);
-    expect(teleport).toContain('execute in questpack:arena run tp @s 100.5 64 100.5');
+    expect(teleport).toContain(
+      'execute in questpack:arena positioned 100.5 64 100.5 run tp @s ~ ~ ~',
+    );
     expect(teleport).toContain('scoreboard players add @s pad0_cd 60');
 
     const load = buildLoadFunction(ctx);
@@ -115,7 +117,7 @@ describe('pads generator', () => {
     const ctx = buildContext(project);
     const tick = compilePads(ctx)['data/questpack/function/pads/tick.mcfunction'];
     expect(tick).toContain(
-      `execute in questpack:void positioned 10 64 10 run execute as @a[scores={${PAD_REQ_OBJECTIVE}=-1},distance=..3] if score @s ${PAD_GRACE_OBJECTIVE} <= #now qt_sys if score @s pad0_cd <= #now qt_sys run scoreboard players set @s ${PAD_REQ_OBJECTIVE} 0`,
+      `execute in questpack:void positioned 10 64 10 as @a[scores={${PAD_REQ_OBJECTIVE}=-1},distance=..3] if score @s ${PAD_GRACE_OBJECTIVE} <= #now qt_sys if score @s pad0_cd <= #now qt_sys run scoreboard players set @s ${PAD_REQ_OBJECTIVE} 0`,
     );
   });
 
@@ -149,9 +151,11 @@ describe('pads generator', () => {
 
     expect(teleport).not.toContain('tp @s 12 -60 12');
     expect(teleport).not.toContain('tp @s 12.5 -60 12.5');
-    expect(teleport).toContain('execute in questpack:dimension_1 run tp @s 15.5 -60 15.5');
+    expect(teleport).toContain(
+      'execute in questpack:dimension_1 positioned 15.5 -60 15.5 run tp @s ~ ~ ~',
+    );
     expect(teleport).toContain('scoreboard players add @s pad1_cd 40');
-    expect(tick).toContain('positioned 10 -60 10 run execute as @a');
+    expect(tick).toContain('positioned 10 -60 10 as @a');
     expect(tick.indexOf('pad_1_enter/teleport')).toBeGreaterThan(
       tick.indexOf('run scoreboard players set @s qt_pad_req 1'),
     );

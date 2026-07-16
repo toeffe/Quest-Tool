@@ -196,6 +196,7 @@ export interface Quest {
   cooldownSeconds: number;
 }
 
+import type { WorldContainer } from './container';
 import type { CustomMob } from './customMob';
 import type { Dimension, TeleportPad } from './dimension';
 import type { Dungeon } from './dungeon';
@@ -223,6 +224,17 @@ export interface Project {
   dimensions?: Dimension[];
   /** Teleport pads between dimensions (one-way; pair two for round trips). */
   teleportPads?: TeleportPad[];
+  /** World containers that are placed and periodically refilled. */
+  containers?: WorldContainer[];
+  /**
+   * Optional in-game quest log book. When enabled, the datapack can rebuild a
+   * per-player written book from live quest scores on request.
+   */
+  questLog?: {
+    enabled: boolean;
+    /** Optional book title (clamped to 32 chars in the generator). */
+    title?: string;
+  };
   /** Manual Story Flow node positions, keyed by quest/dungeon id (plus the Generate node). */
   flowPositions?: Record<string, { x: number; y: number }>;
   /** Schema version for migrations. */

@@ -2,6 +2,7 @@ import { mobsEn } from '../mobs.generated';
 import { advancementsEn } from './advancements';
 import { commandsEn } from './commands';
 import { commonEn } from './common';
+import { containersEn } from './containers';
 import { customMobsEn } from './customMobs';
 import { datapackEn } from './datapack';
 import { defaultsEn } from './defaults';
@@ -28,6 +29,7 @@ export const enResources = {
   customMobs: customMobsEn,
   dungeons: dungeonsEn,
   dimensions: dimensionsEn,
+  containers: containersEn,
   quest: questEn,
   datapack: datapackEn,
   platform: platformEn,

@@ -7,6 +7,7 @@ export type ActiveView =
   | 'mobs'
   | 'dungeons'
   | 'dimensions'
+  | 'containers'
   | 'jobs'
   | 'advancements'
   | 'commands'

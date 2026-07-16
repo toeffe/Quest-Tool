@@ -47,6 +47,24 @@ export interface DatapackStrings {
   jobMilestonePrefix: string;
   jobMilestoneSuffix: (level: number) => string;
   resetJobsNote: string;
+  questLogTitle: string;
+  questLogAuthor: string;
+  questLogCover: (projectName: string) => string;
+  questLogCoverHint: string;
+  questLogStatusAvailable: string;
+  questLogStatusActive: string;
+  questLogStatusReady: string;
+  questLogStatusCompleted: string;
+  questLogStatusLocked: string;
+  questLogGiver: (name: string) => string;
+  questLogObjectiveLine: (desc: string, current: string, amount: number) => string;
+  questLogObjectivePlain: (desc: string) => string;
+  questLogSeeNpc: (name: string) => string;
+  questLogReturnToNpc: (name: string) => string;
+  questLogOverflow: (count: number) => string;
+  questLogOpenButton: string;
+  questLogOpenHover: string;
+  questLogUpdated: string;
 }
 
 /** Player-facing strings emitted into generated datapacks. */
@@ -98,6 +116,25 @@ export function getDatapackStrings(locale: AppLocale = DEFAULT_LOCALE): Datapack
     jobMilestonePrefix: t('jobMilestonePrefix'),
     jobMilestoneSuffix: (level) => t('jobMilestoneSuffix', { level }),
     resetJobsNote: t('resetJobsNote'),
+    questLogTitle: t('questLog.title'),
+    questLogAuthor: t('questLog.author'),
+    questLogCover: (projectName) => t('questLog.cover', { projectName }),
+    questLogCoverHint: t('questLog.coverHint'),
+    questLogStatusAvailable: t('questLog.statusAvailable'),
+    questLogStatusActive: t('questLog.statusActive'),
+    questLogStatusReady: t('questLog.statusReady'),
+    questLogStatusCompleted: t('questLog.statusCompleted'),
+    questLogStatusLocked: t('questLog.statusLocked'),
+    questLogGiver: (name) => t('questLog.giver', { name }),
+    questLogObjectiveLine: (desc, current, amount) =>
+      t('questLog.objectiveLine', { desc, current, amount }),
+    questLogObjectivePlain: (desc) => t('questLog.objectivePlain', { desc }),
+    questLogSeeNpc: (name) => t('questLog.seeNpc', { name }),
+    questLogReturnToNpc: (name) => t('questLog.returnToNpc', { name }),
+    questLogOverflow: (count) => t('questLog.overflow', { count }),
+    questLogOpenButton: t('questLog.openButton'),
+    questLogOpenHover: t('questLog.openHover'),
+    questLogUpdated: t('questLog.updated'),
   };
 }
 

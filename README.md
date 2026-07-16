@@ -27,6 +27,7 @@ storage; nothing is sent to a server.
 
 - **Story Flow:** visual quest graph — drag to connect chains, auto-layout, minimap, inline inspector
 - **Custom Items:** define reusable items (general, collectible, food, tool) using Minecraft 1.21 item components; use them in rewards, gather/delivery objectives, and spawn-zone drops
+- **World containers:** place chests/barrels at fixed coords that periodically refill (including custom quest items)
 - **Advancements:** preview the job skill trees exported with your datapack
 
 ### Jobs (passive skills)
@@ -104,6 +105,11 @@ On the **Custom mobs** page you can attach a drop list to any mob. Export emits 
 - `pack.mcmeta` uses `min_format`/`max_format` `[94, 1]` (datapack format 94.1 for 1.21.11).
 - Functions use the singular `function/` and `tags/function/` folders.
 - Text components use the 1.21.5+ field names (`click_event`, `hover_event`).
+
+### Datapack capabilities inventory
+
+A living used / unused matrix of vanilla datapack surfaces (and what Quest Tool emits) is in
+[docs/datapack-capabilities.md](docs/datapack-capabilities.md).
 
 ## Development
 

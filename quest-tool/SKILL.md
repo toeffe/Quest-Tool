@@ -13,6 +13,8 @@ Use this skill when you need to **programmatically construct quests** (not just 
 
 **Pipeline:** `createProject` → edit `quests[]` → `validateProject` → `buildContext` → `compileQuest` (per quest) or `buildDatapackFiles` (full pack) → `buildDatapackZip`.
 
+**Vanilla capability map (used vs unused):** [`docs/datapack-capabilities.md`](../docs/datapack-capabilities.md) — keep this skill focused on the implemented API; use the inventory when deciding what is possible vs not yet generated.
+
 ---
 
 ## Interface reference
@@ -21,11 +23,12 @@ Use this skill when you need to **programmatically construct quests** (not just 
 
 ```typescript
 // src/types/factory.ts
-export const PROJECT_SCHEMA_VERSION = 10;
+export const PROJECT_SCHEMA_VERSION = 11;
 
 createProject(name?: string, locale: AppLocale = 'da'): Project
 createQuest(name?: string, type: QuestType = 'kill', locale: AppLocale = 'da'): Quest
 createNpc(locale: AppLocale = 'da'): Npc
+createWorldContainer(name?: string, locale: AppLocale = 'da'): WorldContainer  // src/types/container.ts
 newObjectiveFor(type: QuestType, locale?: AppLocale): Objective
 defaultObjectiveFor(type: QuestType, locale?: AppLocale): Objective[]  // [newObjectiveFor(...)]
 

@@ -55,6 +55,27 @@ export const datapackEn = {
   jobMilestoneSuffix: ' {{level}} — reward granted!',
   resetJobsNote: 'Job progress (XP and levels) is also reset.',
 
+  questLog: {
+    title: 'Quest Log',
+    author: 'Quest Tool',
+    cover: '{{projectName}}',
+    coverHint: 'Your quest journal.\\nIt updates automatically\\nas you progress.',
+    statusAvailable: 'Available',
+    statusActive: 'In progress',
+    statusReady: 'Ready to turn in',
+    statusCompleted: 'Completed',
+    statusLocked: 'Locked',
+    giver: 'Giver: {{name}}',
+    objectiveLine: '- {{desc}}: {{current}}/{{amount}}',
+    objectivePlain: '- {{desc}}',
+    seeNpc: 'See {{name}} to start.',
+    returnToNpc: 'Return to {{name}}.',
+    overflow: '... and {{count}} more quests.\\nTalk to an NPC for details.',
+    openButton: '[ Get quest log ]',
+    openHover: 'Click if you lost your quest log book',
+    updated: '[Quest Tool] Quest log received.',
+  },
+
   readme: {
     header: 'Quest Tool MC - {{projectName}}',
     generatedFor: 'Generated for Minecraft Java Edition {{version}}',
@@ -84,6 +105,8 @@ export const datapackEn = {
       '- /function {{namespace}}:give_custom_items - give one of each custom item (testing)',
     adminGiveMobs:
       '- /function {{namespace}}:give_custom_mobs - spawn one of each custom mob (testing)',
+    adminGiveQuestlog:
+      '- /function {{namespace}}:give_questlog - give/refresh the quest log book',
     adminJobsSync:
       '- /function {{namespace}}:jobs/sync_all - refresh job advancement tabs for everyone online',
     adminReset: '- /function {{namespace}}:reset         - reset YOUR quest progress',

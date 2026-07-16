@@ -29,6 +29,7 @@ export interface ValidationIssue {
   dungeonRoomId?: string;
   dimensionId?: string;
   teleportPadId?: string;
+  containerId?: string;
   /** Field path for editor tab routing and focus (e.g. npc.name, objectives, chain.requires). */
   field?: string;
 }
@@ -710,6 +711,106 @@ function dimensionIssues(project: Project, locale: AppLocale): ValidationIssue[]
   return issues;
 }
 
+function containerIssues(project: Project, locale: AppLocale): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const containers = project.containers ?? [];
+  const customItemIds = new Set((project.customItems ?? []).map((i) => i.id));
+  const dimensionIds = new Set((project.dimensions ?? []).map((d) => d.id));
+  const nameCounts = new Map<string, number>();
+
+  for (const container of containers) {
+    const name = container.name.trim();
+    nameCounts.set(name, (nameCounts.get(name) ?? 0) + 1);
+
+    if (!name) {
+      issues.push({
+        level: 'error',
+        message: tValidation('containerNoName', undefined, locale),
+        containerId: container.id,
+        field: `containers.${container.id}.name`,
+      });
+    }
+
+    if (container.location.dimensionId && !dimensionIds.has(container.location.dimensionId)) {
+      issues.push({
+        level: 'error',
+        message: tValidation('dimensionRefMissing', { entity: container.name }, locale),
+        containerId: container.id,
+        field: `containers.${container.id}.location.dimensionId`,
+      });
+    }
+
+    if (container.refillIntervalSeconds < 1) {
+      issues.push({
+        level: 'error',
+        message: tValidation('containerIntervalMin', { name: container.name }, locale),
+        containerId: container.id,
+        field: `containers.${container.id}.refillIntervalSeconds`,
+      });
+    }
+
+    if (!(container.stock ?? []).length) {
+      issues.push({
+        level: 'warning',
+        message: tValidation('containerStockEmpty', { name: container.name }, locale),
+        containerId: container.id,
+        field: `containers.${container.id}.stock`,
+      });
+    }
+
+    (container.stock ?? []).forEach((drop, di) => {
+      const where = tValidation('containerStockDrop', { name: container.name, n: di + 1 }, locale);
+      if (!drop.target && !drop.customItemId) {
+        issues.push({
+          level: 'error',
+          message: tValidation('dropMissingItem', { where }, locale),
+          containerId: container.id,
+          field: `containers.${container.id}.stock.${di}`,
+        });
+      }
+      if (drop.customItemId && !customItemIds.has(drop.customItemId)) {
+        issues.push({
+          level: 'error',
+          message: tValidation(
+            'containerStockMissingCustomItem',
+            { name: container.name, itemId: drop.customItemId },
+            locale,
+          ),
+          containerId: container.id,
+          field: `containers.${container.id}.stock.${di}`,
+        });
+      }
+      if (drop.amount != null && drop.amount < 1) {
+        issues.push({
+          level: 'error',
+          message: tValidation('dropAmountMin', { where }, locale),
+          containerId: container.id,
+          field: `containers.${container.id}.stock.${di}.amount`,
+        });
+      }
+      if (drop.chance != null && (drop.chance < 1 || drop.chance > 100)) {
+        issues.push({
+          level: 'error',
+          message: tValidation('dropChanceRange', { where }, locale),
+          containerId: container.id,
+          field: `containers.${container.id}.stock.${di}.chance`,
+        });
+      }
+    });
+  }
+
+  for (const [name, count] of nameCounts) {
+    if (name && count > 1) {
+      issues.push({
+        level: 'error',
+        message: tValidation('duplicateContainerName', { name, count }, locale),
+      });
+    }
+  }
+
+  return issues;
+}
+
 function jobIssues(project: Project, locale: AppLocale): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const jobs = project.jobs ?? [];
@@ -945,6 +1046,7 @@ export function validateProject(project: Project, locale?: AppLocale): Validatio
   issues.push(...customMobIssues(project, effectiveLocale));
   issues.push(...dungeonIssues(project, effectiveLocale));
   issues.push(...dimensionIssues(project, effectiveLocale));
+  issues.push(...containerIssues(project, effectiveLocale));
   issues.push(...jobIssues(project, effectiveLocale));
 
   const customItemIds = new Set((project.customItems ?? []).map((i) => i.id));

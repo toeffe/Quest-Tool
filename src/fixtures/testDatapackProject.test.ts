@@ -13,7 +13,7 @@ describe('buildTestDatapackProject', () => {
   it('exports a complete flat-world test suite', async () => {
     const project = buildTestDatapackProject();
     expect(project.namespace).toBe(TEST_DATAPACK_NAMESPACE);
-    expect(project.quests).toHaveLength(18);
+    expect(project.quests).toHaveLength(24);
     expect(project.jobs).toHaveLength(11);
 
     const types = new Set(project.quests.map((q) => q.type));
@@ -25,8 +25,9 @@ describe('buildTestDatapackProject', () => {
     expect(types.has('daily')).toBe(true);
 
     for (const quest of project.quests) {
-      expect(quest.npc.spawnMode).toBe('fixed');
-      expect(quest.npc.coordinates?.y).toBe(TEST_DATAPACK_SURFACE_Y);
+      if (quest.npc.spawnMode === 'fixed') {
+        expect(quest.npc.coordinates?.y).toBeDefined();
+      }
     }
 
     const q12 = project.quests.find((q) => q.name.startsWith('12.'));
@@ -61,20 +62,86 @@ describe('buildTestDatapackProject', () => {
     expect(milestoneTypes.has('money')).toBe(true);
     expect(milestoneTypes.has('command')).toBe(true);
 
+    // Custom item kinds
+    const kinds = new Set((project.customItems ?? []).map((i) => i.kind));
+    expect(kinds.has('general')).toBe(true);
+    expect(kinds.has('collectible')).toBe(true);
+    expect(kinds.has('food')).toBe(true);
+    expect(kinds.has('tool')).toBe(true);
+
+    // World systems
+    expect(project.containers?.length).toBeGreaterThanOrEqual(2);
+    expect(project.dimensions?.length).toBeGreaterThanOrEqual(1);
+    expect(project.teleportPads?.length).toBeGreaterThanOrEqual(2);
+    expect(project.dungeons?.length).toBeGreaterThanOrEqual(1);
+
+    // Quest coverage extras
+    const talkTarget = project.quests.find((q) => q.name.startsWith('19.'));
+    expect(talkTarget?.targetNpc).toBeDefined();
+
+    const gatherZone = project.quests.find((q) => q.name.startsWith('20.'));
+    expect(gatherZone?.type).toBe('gather');
+    expect(gatherZone?.objectives[0]?.spawnZone).toBe(true);
+    expect(gatherZone?.objectives[0]?.zoneMob).toBeTruthy();
+
+    const eliteZone = project.quests.find((q) => q.name.startsWith('21.'));
+    expect(eliteZone?.objectives[0]?.eliteMobId).toBeTruthy();
+    expect(eliteZone?.objectives[0]?.spawnZone).toBe(true);
+
+    const voidExplore = project.quests.find((q) => q.name.startsWith('22.'));
+    expect(voidExplore?.objectives[0]?.location?.dimensionId).toBeTruthy();
+    expect(voidExplore?.npc.coordinates?.dimensionId).toBeTruthy();
+
+    const playerSpawn = project.quests.find((q) => q.name.startsWith('23.'));
+    expect(playerSpawn?.npc.spawnMode).toBe('player');
+    expect(playerSpawn?.npc.entityType).not.toBe('minecraft:villager');
+
+    const manualSpawn = project.quests.find((q) => q.name.startsWith('24.'));
+    expect(manualSpawn?.npc.spawnMode).toBe('manual');
+
+    // Custom mob drops / scale / glowing / variants
+    const elite = project.customMobs?.find((m) => m.tag === 'test_elite');
+    expect(elite?.drops?.length).toBeGreaterThan(0);
+    const glowPig = project.customMobs?.find((m) => m.tag === 'qa_glow_pig');
+    expect(glowPig?.scale).toBe(1.5);
+    expect(glowPig?.glowing).toBe(true);
+    expect(glowPig?.variants?.variant).toBe('warm');
+
+    expect(project.questLog?.enabled).toBe(true);
+
     const { files } = buildTestDatapackFiles();
     expect(files[`${fnRoot}/place_test_stations.mcfunction`]).toContain('minecraft:coal_ore');
     expect(files[`${fnRoot}/place_test_stations.mcfunction`]).toContain(
       'minecraft:enchanting_table',
     );
     expect(files[`${fnRoot}/place_test_stations.mcfunction`]).toContain('minecraft:villager');
+    expect(files[`${fnRoot}/place_test_world.mcfunction`]).toContain('cyan_concrete');
     expect(files[`${fnRoot}/spawn_all.mcfunction`]).toContain('place_test_stations');
+    expect(files[`${fnRoot}/spawn_all.mcfunction`]).toContain('place_test_world');
+    expect(files[`${fnRoot}/spawn_all.mcfunction`]).toContain('containers/place_all');
     expect(files[`${fnRoot}/give_test_kit.mcfunction`]).toBeDefined();
-    expect(files[`${fnRoot}/test_guide.mcfunction`]).toBeDefined();
+    expect(files[`${fnRoot}/give_questlog.mcfunction`]).toContain('questlog/give_missing');
+    expect(files[`${fnRoot}/questlog/sync.mcfunction`]).toContain('compute_fp');
+    expect(files[`${fnRoot}/questlog/give.mcfunction`]).toContain('written_book_content');
+    expect(files[`${fnRoot}/test_guide.mcfunction`]).toContain('containers/place_all');
+    expect(files[`${fnRoot}/test_guide.mcfunction`]).toContain('give_questlog');
+    expect(files[`${fnRoot}/test_guide.mcfunction`]).toContain('dungeons/qa_crypt/init');
+
+    expect(files[`${fnRoot}/containers/place_all.mcfunction`]).toBeDefined();
+    expect(files[`${fnRoot}/pads/tick.mcfunction`]).toBeDefined();
+    expect(files[`${fnRoot}/dungeons/qa_crypt/init.mcfunction`]).toBeDefined();
+    expect(files[`data/${TEST_DATAPACK_NAMESPACE}/dimension/qa_void.json`]).toBeDefined();
+    expect(files[`data/${TEST_DATAPACK_NAMESPACE}/loot_table/mobs/test_elite.json`]).toBeDefined();
+
+    const pigSpawn = files[`${fnRoot}/spawn_mob/qa_glow_pig.mcfunction`];
+    expect(pigSpawn).toBeDefined();
+    expect(pigSpawn).toContain('variant');
+    expect(pigSpawn).toMatch(/scale|Glowing|glowing/i);
 
     const exploreSpawn = Object.entries(files).find(
       ([p]) => p.includes('/spawn/') && p.toLowerCase().includes('explore'),
     )?.[1];
-    expect(exploreSpawn).toContain('setblock 4 -60 8 minecraft:gold_block');
+    expect(exploreSpawn).toContain(`setblock 4 ${TEST_DATAPACK_SURFACE_Y} 8 minecraft:gold_block`);
 
     const blob = await buildTestDatapackZip();
     expect(blob.size).toBeGreaterThan(0);

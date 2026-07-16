@@ -128,6 +128,26 @@ describe('projectStore migration', () => {
     expect(project.version).toBe(PROJECT_SCHEMA_VERSION);
     expect(project.dimensions).toEqual([]);
     expect(project.teleportPads).toEqual([]);
+    expect(project.containers).toEqual([]);
+  });
+
+  it('backfills containers when upgrading from v10', () => {
+    const legacy = {
+      id: 'legacy-id',
+      name: 'Legacy',
+      namespace: 'legacy',
+      platform: 'vanilla',
+      quests: [createQuest('Q', 'kill')],
+      customItems: [],
+      customMobs: [],
+      dungeons: [],
+      dimensions: [],
+      teleportPads: [],
+      version: 10,
+    };
+    const project = importProjectJson(JSON.stringify(legacy));
+    expect(project.version).toBe(PROJECT_SCHEMA_VERSION);
+    expect(project.containers).toEqual([]);
   });
 
   it('migrates portal links to teleport pads when upgrading from v9', () => {

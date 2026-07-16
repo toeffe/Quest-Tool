@@ -32,6 +32,10 @@ export const commandsDa = {
       title: 'Dungeons',
       description: 'Initialisér, nulstil og styr dungeon-rum manuelt.',
     },
+    containers: {
+      title: 'Verdenscontainere',
+      description: 'Placér og genopfyld kister/tønder konfigureret under Containere.',
+    },
   },
 
   entries: {
@@ -55,5 +59,8 @@ export const commandsDa = {
     debugCustomMobPhases: 'Debug fasetilstand for "{{mobName}}" (HP%, faseindeks, tærskler).',
     dungeonInit: 'Initialisér dungeon "{{name}}" — scoreboards og init-spawns.',
     dungeonReset: 'Nulstil dungeon "{{name}}" — dræb mobs og ryd rumtilstand.',
+    containersPlaceAll: 'Placér alle verdenscontainere og fyld dem fra deres loot-tabel.',
+    containersRefillAll: 'Tøm og genopfyld alle verdenscontainere uden at erstatte blokken.',
+    giveQuestlog: 'Giv dig selv questlog-bogen (fremgang opdateres automatisk mens den holdes).',
   },
 } as const;

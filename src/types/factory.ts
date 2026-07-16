@@ -8,7 +8,7 @@ import type { CustomItem, CustomItemKind } from './item';
 import type { Job, JobAction } from './job';
 import type { Npc, Project, Quest, QuestType, Reward } from './quest';
 
-export const PROJECT_SCHEMA_VERSION = 10;
+export const PROJECT_SCHEMA_VERSION = 11;
 
 export const STARTER_JOB_KEYS = [
   'starter_fishing',
@@ -312,6 +312,7 @@ export function createProject(name?: string, locale: AppLocale = DEFAULT_LOCALE)
     dungeons: [],
     dimensions: [],
     teleportPads: [],
+    containers: [],
     version: PROJECT_SCHEMA_VERSION,
   };
 }

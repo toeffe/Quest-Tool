@@ -18,6 +18,11 @@ import {
 } from './lootTables';
 import { containMobsInZone, killQuestMobsCommand, spawnOneInZone, zonePopulationCap } from './npc';
 import { rewardCommands } from './platform';
+import {
+  buildQuestLogEnsure,
+  buildQuestLogOpenButtonIfMissing,
+  buildQuestLogRefreshIfHeld,
+} from './questBook';
 import { NOW_HOLDER, SYS_OBJECTIVE } from './sys';
 import { escapeSnbtString, sanitizeMcComment, type TextPart, tellraw } from './text';
 
@@ -407,6 +412,7 @@ function buildKillCreditFunction(
       `execute if score @s ${info.killed} matches ${info.amount}.. run return 0`,
       `scoreboard players add @s ${info.killed} 1`,
       `advancement revoke @s only ${advId}`,
+      ...buildQuestLogRefreshIfHeld(ctx),
     ].join('\n') + '\n'
   );
 }
@@ -469,6 +475,7 @@ function buildTryUnlockLines(ctx: CompileContext, qc: QuestContext): string[] {
       { text: STR.seeNpc(quest.npc.name), color: 'gray' },
     ]),
   );
+  lines.push(...buildQuestLogRefreshIfHeld(ctx));
   return lines;
 }
 
@@ -790,6 +797,8 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
       ]),
     );
   }
+  accept.push(...buildQuestLogEnsure(ctx));
+  accept.push(...buildQuestLogOpenButtonIfMissing(ctx));
   files[`${qc.fnBase}/accept.mcfunction`] = accept.join('\n') + '\n';
 
   if (isInstantTalk) return files;
@@ -804,6 +813,7 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
         { text: STR.objectiveComplete, color: 'green', bold: true },
         { text: STR.returnToNpc(quest.npc.name), color: 'yellow' },
       ]),
+      ...buildQuestLogRefreshIfHeld(ctx),
     ].join('\n') + '\n';
 
   // ---- active.mcfunction (in-progress dialogue near giver) ----
@@ -850,6 +860,8 @@ export function compileQuest(ctx: CompileContext, qc: QuestContext): Record<stri
     }
   }
   turnin.push(...completionBody(ctx, qc));
+  turnin.push(...buildQuestLogEnsure(ctx));
+  turnin.push(...buildQuestLogOpenButtonIfMissing(ctx));
   files[`${qc.fnBase}/turnin.mcfunction`] = turnin.join('\n') + '\n';
 
   const objectives = questObjectives(quest);

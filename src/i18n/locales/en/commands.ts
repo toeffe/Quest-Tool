@@ -32,6 +32,10 @@ export const commandsEn = {
       title: 'Dungeons',
       description: 'Initialize, reset, and manually control dungeon rooms.',
     },
+    containers: {
+      title: 'World containers',
+      description: 'Place and refill chests/barrels configured in the Containers view.',
+    },
   },
 
   entries: {
@@ -55,5 +59,8 @@ export const commandsEn = {
     debugCustomMobPhases: 'Debug phase state for "{{mobName}}" (HP%, phase index, thresholds).',
     dungeonInit: 'Initialize dungeon "{{name}}" — scoreboards and init spawns.',
     dungeonReset: 'Reset dungeon "{{name}}" — kill mobs and clear room state.',
+    containersPlaceAll: 'Place every world container block and fill it from its loot table.',
+    containersRefillAll: 'Clear and refill every world container without replacing the block.',
+    giveQuestlog: 'Give yourself the quest log book (progress updates automatically while held).',
   },
 } as const;

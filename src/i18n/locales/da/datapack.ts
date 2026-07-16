@@ -55,6 +55,27 @@ export const datapackDa = {
   jobMilestoneSuffix: ' {{level}} — belønning givet!',
   resetJobsNote: 'Job-fremgang (XP og niveau) nulstilles også.',
 
+  questLog: {
+    title: 'Questlog',
+    author: 'Quest Tool',
+    cover: '{{projectName}}',
+    coverHint: 'Din quest-journal.\\nDen opdateres automatisk\\nnår du gør fremskridt.',
+    statusAvailable: 'Tilgængelig',
+    statusActive: 'I gang',
+    statusReady: 'Klar til aflevering',
+    statusCompleted: 'Fuldført',
+    statusLocked: 'Låst',
+    giver: 'Giver: {{name}}',
+    objectiveLine: '- {{desc}}: {{current}}/{{amount}}',
+    objectivePlain: '- {{desc}}',
+    seeNpc: 'Se {{name}} for at starte.',
+    returnToNpc: 'Vend tilbage til {{name}}.',
+    overflow: '... og {{count}} quests mere.\\nTal med en NPC for detaljer.',
+    openButton: '[ Hent questlog ]',
+    openHover: 'Klik hvis du har mistet din questlog-bog',
+    updated: '[Quest Tool] Questlog modtaget.',
+  },
+
   readme: {
     header: 'Quest Tool MC - {{projectName}}',
     generatedFor: 'Genereret til Minecraft Java Edition {{version}}',
@@ -83,6 +104,8 @@ export const datapackDa = {
       '- /function {{namespace}}:give_custom_items - giv én af hver brugerdefineret genstand (test)',
     adminGiveMobs:
       '- /function {{namespace}}:give_custom_mobs - spawn én af hver brugerdefineret mob (test)',
+    adminGiveQuestlog:
+      '- /function {{namespace}}:give_questlog - giv/opdater questlog-bogen',
     adminJobsSync:
       '- /function {{namespace}}:jobs/sync_all - opdater job-advancement-faner for alle online',
     adminReset: '- /function {{namespace}}:reset         - nulstil DIN quest-fremgang',

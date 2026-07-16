@@ -126,6 +126,23 @@ export function SettingsDialog() {
             </select>
           </div>
 
+          <div className="field">
+            <label htmlFor="settings-questlog">
+              <input
+                id="settings-questlog"
+                type="checkbox"
+                checked={!!project.questLog?.enabled}
+                onChange={(e) =>
+                  setProjectMeta({
+                    questLog: { ...project.questLog, enabled: e.target.checked },
+                  })
+                }
+              />{' '}
+              {t('settings.questLog')}
+            </label>
+            <div className="hint">{t('settings.questLogHint')}</div>
+          </div>
+
           <div className="settings-section">
             <label>{t('settings.importSection')}</label>
             <p className="hint">{t('settings.importHint')}</p>

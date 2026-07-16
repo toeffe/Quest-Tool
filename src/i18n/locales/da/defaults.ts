@@ -97,6 +97,11 @@ export const defaultsDa = {
     numberedName: 'Pad {{n}}',
   },
 
+  container: {
+    name: 'Ny container',
+    numberedName: 'Container {{n}}',
+  },
+
   job: {
     defaultName: 'Fiskeri',
     numberedName: 'Job {{n}}',

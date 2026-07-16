@@ -64,6 +64,13 @@ export const validationEn = {
   dimensionRefMissing: '"{{entity}}" references a deleted dimension.',
   padNoName: 'A teleport pad has an empty name.',
   padCooldownTooShort: 'Pad "{{name}}" cooldown should be at least 1 second.',
+  containerNoName: 'A world container has an empty name.',
+  containerIntervalMin: 'Container "{{name}}" refill interval must be at least 1 second.',
+  containerStockEmpty: 'Container "{{name}}" has no stock items — refills will be empty.',
+  containerStockDrop: 'Container "{{name}}" stock {{n}}',
+  containerStockMissingCustomItem:
+    'Container "{{name}}" stock references a deleted custom item (id: {{itemId}}).',
+  duplicateContainerName: 'Duplicate container name: "{{name}}" (used {{count}} times).',
   padDestinationOverlapsAt:
     'Pad "{{from}}" teleports into the detection zone of "{{to}}". The pack adds anti-bounce grace, but consider offsetting destinations.',
   objectiveMissingCustomMob:

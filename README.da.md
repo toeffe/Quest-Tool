@@ -27,6 +27,7 @@ storage; intet sendes til en server.
 
 - **Story Flow:** visuel quest-graf — træk for at forbinde kæder, auto-layout, minimap, inline inspector
 - **Custom Items:** definer genbrugelige items (general, collectible, food, tool) med Minecraft 1.21 item components; brug dem i rewards, gather/delivery objectives og spawn-zone drops
+- **Verdenscontainere:** placér kister/tønder ved faste koordinater der periodisk genopfyldes (inkl. brugerdefinerede quest-genstande)
 - **Advancements:** forhåndsvis de job skill trees der eksporteres med datapacken
 
 ### Jobs (passive skills)
@@ -104,6 +105,11 @@ På siden **Custom mobs** kan du tilføje en drop list til enhver mob. Export em
 - `pack.mcmeta` bruger `min_format`/`max_format` `[94, 1]` (datapack format 94.1 for 1.21.11).
 - Funktioner bruger mapperne `function/` og `tags/function/` (ental, ikke `functions/`).
 - Tekstkomponenter bruger feltnavne fra 1.21.5+ (`click_event`, `hover_event`).
+
+### Inventar over datapack-evner
+
+En levende used/unused-matrix over vanilla datapack-flader (og hvad Quest Tool udsender) findes i
+[docs/datapack-capabilities.md](docs/datapack-capabilities.md).
 
 ## Udvikling
 

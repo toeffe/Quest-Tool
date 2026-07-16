@@ -39,6 +39,9 @@ const DungeonsPage = lazy(() =>
 const DimensionsPage = lazy(() =>
   import('./components/DimensionsPage').then((m) => ({ default: m.DimensionsPage })),
 );
+const ContainersPage = lazy(() =>
+  import('./components/ContainersPage').then((m) => ({ default: m.ContainersPage })),
+);
 const JobsPage = lazy(() => import('./components/JobsPage').then((m) => ({ default: m.JobsPage })));
 const AdvancementsPage = lazy(() =>
   import('./components/AdvancementsPage').then((m) => ({ default: m.AdvancementsPage })),
@@ -75,6 +78,9 @@ export default function App() {
   const addTeleportPad = useProjectStore((s) => s.addTeleportPad);
   const deleteTeleportPad = useProjectStore((s) => s.deleteTeleportPad);
   const duplicateTeleportPad = useProjectStore((s) => s.duplicateTeleportPad);
+  const addContainer = useProjectStore((s) => s.addContainer);
+  const deleteContainer = useProjectStore((s) => s.deleteContainer);
+  const duplicateContainer = useProjectStore((s) => s.duplicateContainer);
   const addJob = useProjectStore((s) => s.addJob);
   const deleteJob = useProjectStore((s) => s.deleteJob);
   const duplicateJob = useProjectStore((s) => s.duplicateJob);
@@ -256,6 +262,23 @@ export default function App() {
                     onAddPad={addTeleportPad}
                     onDuplicatePad={duplicateTeleportPad}
                     onDeletePad={deleteTeleportPad}
+                  />
+                </div>
+              </div>
+            </Suspense>
+          )}
+
+          {activeView === 'containers' && (
+            <Suspense fallback={<ViewFallback />}>
+              <div className="content">
+                <div className="content-inner">
+                  <ContainersPage
+                    project={project}
+                    issues={issues}
+                    onChange={setProject}
+                    onAdd={addContainer}
+                    onDuplicate={duplicateContainer}
+                    onDelete={deleteContainer}
                   />
                 </div>
               </div>

@@ -2,6 +2,7 @@ import JSZip from 'jszip';
 import i18n from '../i18n';
 import type { AppLocale } from '../i18n/types';
 import { defaultsT } from '../i18n/useLabels';
+import { createWorldContainer, type WorldContainer } from '../types/container';
 import type { CustomMob } from '../types/customMob';
 import {
   createDimension,
@@ -122,6 +123,12 @@ function migrate(project: Project): Project {
     next.teleportPads = migratePortalLinksToPads(next);
   }
   next.teleportPads = (next.teleportPads ?? []).map(normalizeTeleportPad);
+  if (fromVersion < 11) {
+    next.containers = next.containers ?? [];
+  }
+  if (!Array.isArray(next.containers)) {
+    next.containers = [];
+  }
   if (!next.locale) {
     next.locale = 'da';
   }
@@ -671,4 +678,49 @@ export function createAndAddTeleportPad(project: Project): { project: Project; p
   const n = (project.teleportPads ?? []).length + 1;
   const pad = createTeleportPad(t('pad.numberedName', { n }), locale);
   return { project: addTeleportPad(project, pad), pad };
+}
+
+// ---- World container operations ----
+
+export function addContainer(project: Project, container: WorldContainer): Project {
+  const containers = project.containers ?? [];
+  return { ...project, containers: [...containers, container] };
+}
+
+export function updateContainer(project: Project, container: WorldContainer): Project {
+  const containers = project.containers ?? [];
+  return {
+    ...project,
+    containers: containers.map((c) => (c.id === container.id ? container : c)),
+  };
+}
+
+export function deleteContainer(project: Project, containerId: string): Project {
+  const containers = (project.containers ?? []).filter((c) => c.id !== containerId);
+  return { ...project, containers };
+}
+
+export function duplicateContainer(project: Project, containerId: string): Project {
+  const original = (project.containers ?? []).find((c) => c.id === containerId);
+  if (!original) return project;
+  const copy: WorldContainer = {
+    ...structuredClone(original),
+    id: uid(),
+    name: duplicateName(original.name, projectLocale(project)),
+  };
+  const containers = [...(project.containers ?? [])];
+  const index = containers.findIndex((c) => c.id === containerId);
+  containers.splice(index + 1, 0, copy);
+  return { ...project, containers };
+}
+
+export function createAndAddContainer(project: Project): {
+  project: Project;
+  container: WorldContainer;
+} {
+  const locale = projectLocale(project);
+  const t = defaultsT(locale);
+  const n = (project.containers ?? []).length + 1;
+  const container = createWorldContainer(t('container.numberedName', { n }), locale);
+  return { project: addContainer(project, container), container };
 }

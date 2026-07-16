@@ -57,6 +57,14 @@ export function buildCommandReference(project: Project, locale?: AppLocale): Com
         { command: `/function ${ns}:setup_guide`, description: t('entries.setupGuide') },
         { command: `/function ${ns}:spawn_all`, description: t('entries.spawnAll') },
         ...spawnCommands,
+        ...((project.questLog?.enabled
+          ? [
+              {
+                command: `/function ${ns}:give_questlog`,
+                description: t('entries.giveQuestlog'),
+              },
+            ]
+          : []) as CommandEntry[]),
       ],
     },
     {
@@ -161,6 +169,24 @@ export function buildCommandReference(project: Project, locale?: AppLocale): Com
                     })),
                 ];
               }),
+            ],
+          },
+        ]
+      : []),
+    ...((project.containers ?? []).length > 0
+      ? [
+          {
+            title: t('groups.containers.title'),
+            description: t('groups.containers.description'),
+            commands: [
+              {
+                command: `/function ${ns}:containers/place_all`,
+                description: t('entries.containersPlaceAll'),
+              },
+              {
+                command: `/function ${ns}:containers/refill_all`,
+                description: t('entries.containersRefillAll'),
+              },
             ],
           },
         ]

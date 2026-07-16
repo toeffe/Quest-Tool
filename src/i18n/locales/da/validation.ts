@@ -64,6 +64,13 @@ export const validationDa = {
   dimensionRefMissing: '"{{entity}}" refererer til en slettet dimension.',
   padNoName: 'En teleportpad har et tomt navn.',
   padCooldownTooShort: 'Pad "{{name}}" cooldown bør være mindst 1 sekund.',
+  containerNoName: 'En verdenscontainer har et tomt navn.',
+  containerIntervalMin: 'Container "{{name}}" genopfyldningsinterval skal være mindst 1 sekund.',
+  containerStockEmpty: 'Container "{{name}}" har ingen lagergenstande — genopfyldninger bliver tomme.',
+  containerStockDrop: 'Container "{{name}}" lager {{n}}',
+  containerStockMissingCustomItem:
+    'Container "{{name}}" lager refererer til en slettet brugerdefineret genstand (id: {{itemId}}).',
+  duplicateContainerName: 'Dublet containernavn: "{{name}}" (brugt {{count}} gange).',
   padDestinationOverlapsAt:
     'Pad "{{from}}" teleporterer ind i detektionszonen for "{{to}}". Pakken tilføjer anti-bounce grace, men overvej at forskyd destinationer.',
   objectiveMissingCustomMob:

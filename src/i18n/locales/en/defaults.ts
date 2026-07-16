@@ -97,6 +97,11 @@ export const defaultsEn = {
     numberedName: 'Pad {{n}}',
   },
 
+  container: {
+    name: 'New Container',
+    numberedName: 'Container {{n}}',
+  },
+
   job: {
     defaultName: 'Fishing',
     numberedName: 'Job {{n}}',

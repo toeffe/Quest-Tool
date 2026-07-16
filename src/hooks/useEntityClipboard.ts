@@ -14,6 +14,7 @@ const VIEW_FOR_KIND: Record<EntityKind, ActiveView> = {
   dungeon: 'dungeons',
   dimension: 'dimensions',
   teleportPad: 'dimensions',
+  container: 'containers',
 };
 
 export function useEntityClipboard() {

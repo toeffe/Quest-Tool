@@ -2,6 +2,7 @@ import JSZip from 'jszip';
 import i18n from '../i18n';
 import { exportProjectJson, PROJECT_BACKUP_FILENAME } from '../state/projectStore';
 import type { Project } from '../types/quest';
+import { compileContainers } from './containers';
 import { buildContext, type CompileContext, questObjectives } from './context';
 import { buildCustomMobBossBarSupportFiles } from './customMobBossBar';
 import { buildCustomMobPhaseSupportFiles } from './customMobPhases';
@@ -38,6 +39,10 @@ import {
   buildZoneLootTableFiles,
   compileQuest,
 } from './questFunctions';
+import {
+  buildQuestLogFiles,
+  isQuestLogEnabled,
+} from './questBook';
 import { buildResourcePackFiles } from './resourcePack';
 import { escapeSnbtString, tellraw } from './text';
 
@@ -135,6 +140,60 @@ function setupGuideFunction(ctx: CompileContext): string {
       ]),
     );
   }
+  const containers = ctx.project.containers ?? [];
+  if (containers.length > 0) {
+    lines.push(
+      tellraw('@s', [{ text: 'World containers', color: 'gold', bold: true }]),
+      tellraw('@s', [
+        {
+          text: 'Place and fill every configured chest/barrel at its coordinates:',
+          color: 'white',
+        },
+      ]),
+      tellraw('@s', [
+        {
+          text: `  > /function ${ctx.namespace}:containers/place_all`,
+          color: 'aqua',
+          suggestCommand: `/function ${ctx.namespace}:containers/place_all`,
+          hover: STR.setupCommandHover,
+        },
+      ]),
+      tellraw('@s', [
+        {
+          text: `Force refill without replacing blocks: /function ${ctx.namespace}:containers/refill_all`,
+          color: 'gray',
+        },
+      ]),
+    );
+    for (const c of containers) {
+      const { x, y, z } = c.location;
+      lines.push(
+        tellraw('@s', [
+          { text: `${c.name}: `, color: 'yellow' },
+          { text: `${c.blockType} @ ${x} ${y} ${z}`, color: 'white' },
+        ]),
+      );
+    }
+  }
+  if (isQuestLogEnabled(ctx.project)) {
+    lines.push(
+      tellraw('@s', [{ text: 'Quest log', color: 'gold', bold: true }]),
+      tellraw('@s', [
+        {
+          text: 'Give or refresh the quest log book:',
+          color: 'white',
+        },
+      ]),
+      tellraw('@s', [
+        {
+          text: `  > /function ${ctx.namespace}:give_questlog`,
+          color: 'aqua',
+          suggestCommand: `/function ${ctx.namespace}:give_questlog`,
+          hover: STR.setupCommandHover,
+        },
+      ]),
+    );
+  }
   lines.push(
     tellraw('@s', [
       { text: STR.setupTipLabel, color: 'green' },
@@ -148,6 +207,9 @@ function spawnAllFunction(ctx: CompileContext): string {
   const lines = [`# Spawn every NPC (player-located NPCs spawn at your feet)`];
   for (const qc of ctx.quests) {
     lines.push(`function ${ctx.namespace}:${qc.spawnFn}`);
+  }
+  if ((ctx.project.containers ?? []).length > 0) {
+    lines.push(`function ${ctx.namespace}:containers/place_all`);
   }
   return lines.join('\n') + '\n';
 }
@@ -210,6 +272,7 @@ function readmeText(project: Project, ctx: CompileContext): string {
     t('readme.adminDebug', { namespace: ns }),
     t('readme.adminGiveItems', { namespace: ns }),
     ...(project.customMobs?.length ? [t('readme.adminGiveMobs', { namespace: ns })] : []),
+    ...(isQuestLogEnabled(project) ? [t('readme.adminGiveQuestlog', { namespace: ns })] : []),
     ...(ctx.jobs.length > 0 ? [t('readme.adminJobsSync', { namespace: ns })] : []),
     t('readme.adminReset', { namespace: ns }),
     t('readme.adminResetPlayer', { namespace: ns }),
@@ -366,7 +429,13 @@ export function buildDatapackFiles(project: Project): FileMap {
 
   Object.assign(files, compileDimensions(ctx));
   Object.assign(files, compilePads(ctx));
+  Object.assign(files, compileContainers(ctx));
   Object.assign(files, compileDungeons(ctx));
+
+  const questLogFiles = buildQuestLogFiles(ctx);
+  for (const [rel, content] of Object.entries(questLogFiles)) {
+    files[`${fnRoot}/${rel}`] = content;
+  }
 
   Object.assign(files, buildMobVariantFiles(project, ns));
 

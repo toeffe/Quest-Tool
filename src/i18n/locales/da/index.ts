@@ -2,6 +2,7 @@ import { mobsDa } from '../mobs.generated';
 import { advancementsDa } from './advancements';
 import { commandsDa } from './commands';
 import { commonDa } from './common';
+import { containersDa } from './containers';
 import { customMobsDa } from './customMobs';
 import { datapackDa } from './datapack';
 import { defaultsDa } from './defaults';
@@ -28,6 +29,7 @@ export const daResources = {
   customMobs: customMobsDa,
   dungeons: dungeonsDa,
   dimensions: dimensionsDa,
+  containers: containersDa,
   quest: questDa,
   datapack: datapackDa,
   platform: platformDa,

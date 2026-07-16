@@ -145,8 +145,8 @@ export function compilePads(ctx: CompileContext): FileMap {
 
     const dim = resolveDimensionId(ctx, pad.at.dimensionId);
     const detectDist = padDetectionDistance(pad.at.radius);
-    const detectPrefix = `execute as @a[scores={${PAD_REQ_OBJECTIVE}=${PAD_REQ_NONE}},distance=..${detectDist}] if score @s ${PAD_GRACE_OBJECTIVE} <= ${NOW_HOLDER} ${SYS_OBJECTIVE}`;
-    const detectSuffix = `run scoreboard players set @s ${PAD_REQ_OBJECTIVE} ${i}`;
+    const detectAs = `as @a[scores={${PAD_REQ_OBJECTIVE}=${PAD_REQ_NONE}},distance=..${detectDist}] if score @s ${PAD_GRACE_OBJECTIVE} <= ${NOW_HOLDER} ${SYS_OBJECTIVE}`;
+    const detectRun = `run scoreboard players set @s ${PAD_REQ_OBJECTIVE} ${i}`;
     if (pad.cooldownSeconds && pad.cooldownSeconds > 0) {
       tickLines.push(
         scopePadDetectionAt(
@@ -154,12 +154,12 @@ export function compilePads(ctx: CompileContext): FileMap {
           pad.at.x,
           pad.at.y,
           pad.at.z,
-          `${detectPrefix} if score @s ${cdObjective} <= ${NOW_HOLDER} ${SYS_OBJECTIVE} ${detectSuffix}`,
+          `${detectAs} if score @s ${cdObjective} <= ${NOW_HOLDER} ${SYS_OBJECTIVE} ${detectRun}`,
         ),
       );
     } else {
       tickLines.push(
-        scopePadDetectionAt(dim, pad.at.x, pad.at.y, pad.at.z, `${detectPrefix} ${detectSuffix}`),
+        scopePadDetectionAt(dim, pad.at.x, pad.at.y, pad.at.z, `${detectAs} ${detectRun}`),
       );
     }
 

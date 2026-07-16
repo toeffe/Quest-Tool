@@ -10,6 +10,7 @@ const VIEW_IDS: ActiveView[] = [
   'mobs',
   'dungeons',
   'dimensions',
+  'containers',
   'jobs',
   'advancements',
   'commands',
@@ -122,6 +123,27 @@ export function CommandPalette() {
       }
     }
 
+    for (const container of project.containers ?? []) {
+      const name = container.name || t('commandPalette.untitledContainer');
+      if (
+        !q ||
+        name.toLowerCase().includes(q) ||
+        'container'.includes(q) ||
+        'chest'.includes(q) ||
+        'barrel'.includes(q)
+      ) {
+        items.push({
+          id: `container-${container.id}`,
+          label: t('commandPalette.editContainer', { name }),
+          group: t('commandPalette.groups.containers'),
+          run: () => {
+            setActiveView('containers');
+            setOpen(false);
+          },
+        });
+      }
+    }
+
     if (!q || 'settings'.includes(q) || 'import'.includes(q)) {
       items.push({
         id: 'settings',
@@ -153,6 +175,7 @@ export function CommandPalette() {
     project.jobs,
     project.dimensions,
     project.teleportPads,
+    project.containers,
     setActiveView,
     setOpen,
     setSelectedQuestId,

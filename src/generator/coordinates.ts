@@ -62,16 +62,17 @@ export function padDetectionDistance(radius?: number): number {
 
 /**
  * Run pad detection in a dimension, anchored at the pad center.
- * `distance=..N` is measured from the positioned point in that dimension only.
+ * `rest` must be execute subcommands (e.g. `as @a[distance=..] … run …`) — not a nested
+ * `execute` command — so position/dimension stick for the selector.
  */
 export function scopePadDetectionAt(
   dimensionId: string,
   x: number,
   y: number,
   z: number,
-  command: string,
+  rest: string,
 ): string {
-  return `execute in ${dimensionId} positioned ${x} ${y} ${z} run ${command}`;
+  return `execute in ${dimensionId} positioned ${x} ${y} ${z} ${rest}`;
 }
 
 /** @deprecated Use {@link scopePadDetectionAt} for pad detection. */
@@ -84,10 +85,14 @@ export function blockCenterCoord(value: number): number {
   return Math.floor(value) + 0.5;
 }
 
+/**
+ * Cross-dimension teleport. Position first, then `tp ~ ~ ~` so absolute coords apply in the
+ * target dimension even when called from another dimension's tick context.
+ */
 export function tpLine(dimensionId: string, x: number, y: number, z: number): string {
   const tx = Number.isInteger(x) ? blockCenterCoord(x) : x;
   const tz = Number.isInteger(z) ? blockCenterCoord(z) : z;
-  return executeInDimension(dimensionId, `tp @s ${tx} ${y} ${tz}`);
+  return `execute in ${dimensionId} positioned ${tx} ${y} ${tz} run tp @s ~ ~ ~`;
 }
 
 /** Wrap a command that uses world coordinates so it runs in the given dimension. */

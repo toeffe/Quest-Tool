@@ -10,12 +10,14 @@ import {
 import {
   addQuest,
   addRoom,
+  createAndAddContainer,
   createAndAddCustomItem,
   createAndAddCustomMob,
   createAndAddDimension,
   createAndAddDungeon,
   createAndAddJob,
   createAndAddTeleportPad,
+  deleteContainer,
   deleteCustomItem,
   deleteCustomMob,
   deleteDimension,
@@ -24,6 +26,7 @@ import {
   deleteQuest,
   deleteRoom,
   deleteTeleportPad,
+  duplicateContainer,
   duplicateCustomItem,
   duplicateCustomMob,
   duplicateDimension,
@@ -39,6 +42,7 @@ import {
   updateQuest,
   updateRoom,
 } from '../state/projectStore';
+import type { WorldContainer } from '../types/container';
 import type { CustomMob } from '../types/customMob';
 import type { Dimension, TeleportPad } from '../types/dimension';
 import { createDungeonRoom, type Dungeon, type DungeonRoom } from '../types/dungeon';
@@ -51,7 +55,7 @@ interface ProjectStore {
   project: Project;
   setProject: (project: Project) => void;
   setProjectMeta: (
-    patch: Partial<Pick<Project, 'name' | 'namespace' | 'platform' | 'locale'>>,
+    patch: Partial<Pick<Project, 'name' | 'namespace' | 'platform' | 'locale' | 'questLog'>>,
   ) => void;
   addQuest: () => Quest;
   updateQuest: (quest: Quest) => void;
@@ -84,6 +88,9 @@ interface ProjectStore {
   addTeleportPad: () => TeleportPad;
   deleteTeleportPad: (id: string) => void;
   duplicateTeleportPad: (id: string) => void;
+  addContainer: () => WorldContainer;
+  deleteContainer: (id: string) => void;
+  duplicateContainer: (id: string) => void;
   copyEntityToClipboard: (kind: EntityKind, id: string) => Promise<void>;
   pasteFromClipboard: () => Promise<{ kind: EntityKind; id: string } | null>;
 }
@@ -289,6 +296,23 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   duplicateTeleportPad: (id) => {
     const { project } = get();
     set({ project: duplicateTeleportPad(project, id) });
+  },
+
+  addContainer: () => {
+    const { project } = get();
+    const { project: next, container } = createAndAddContainer(project);
+    set({ project: next });
+    return container;
+  },
+
+  deleteContainer: (id) => {
+    const { project } = get();
+    set({ project: deleteContainer(project, id) });
+  },
+
+  duplicateContainer: (id) => {
+    const { project } = get();
+    set({ project: duplicateContainer(project, id) });
   },
 
   copyEntityToClipboard: async (kind, id) => {

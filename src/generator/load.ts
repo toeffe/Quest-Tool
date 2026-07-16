@@ -1,3 +1,4 @@
+import { buildContainerLoadLines, buildContainersTickHook } from './containers';
 import { type CompileContext, questObjectives, statId } from './context';
 import { buildCustomMobBossBarSetupLines, buildCustomMobBossBarTickHook } from './customMobBossBar';
 import { buildCustomMobPhaseSetupLines, buildCustomMobPhaseTickHook } from './customMobPhases';
@@ -10,6 +11,10 @@ import {
 } from './jobBossBar';
 import { buildJobLoadLines, buildJobResetLines } from './jobFunctions';
 import { buildPadLoadLines, buildPadsTickHook } from './pads';
+import {
+  buildQuestLogLoadLines,
+  buildQuestLogTickHook,
+} from './questBook';
 import { NOW_HOLDER, SYS_OBJECTIVE } from './sys';
 import { escapeSnbtString, sanitizeMcComment } from './text';
 
@@ -91,6 +96,8 @@ export function buildLoadFunction(ctx: CompileContext): string {
   lines.push(...buildCustomMobPhaseSetupLines(ctx));
   lines.push(...buildDungeonLoadLines(ctx));
   lines.push(...buildPadLoadLines(ctx));
+  lines.push(...buildContainerLoadLines(ctx));
+  lines.push(...buildQuestLogLoadLines(ctx));
 
   if (jobsUseProgressBar(ctx)) {
     lines.push(`execute as @a run function ${ctx.namespace}:jobs/ensure_pid`);
@@ -130,6 +137,9 @@ export function buildTickFunction(ctx: CompileContext): string {
   }
   const padsTick = buildPadsTickHook(ctx);
   if (padsTick) lines.push(padsTick);
+  const containersTick = buildContainersTickHook(ctx);
+  if (containersTick) lines.push(containersTick);
+  lines.push(...buildQuestLogTickHook(ctx));
   lines.push(...buildCustomMobPhaseTickHook(ctx));
   lines.push(...buildCustomMobBossBarTickHook(ctx));
   return lines.join('\n') + '\n';

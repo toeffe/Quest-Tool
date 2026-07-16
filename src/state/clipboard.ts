@@ -1,5 +1,6 @@
 import i18n from '../i18n';
 import type { AppLocale } from '../i18n/types';
+import type { WorldContainer } from '../types/container';
 import type { CustomMob } from '../types/customMob';
 import type { Dimension, TeleportPad } from '../types/dimension';
 import type { Dungeon, DungeonRoom } from '../types/dungeon';
@@ -18,7 +19,8 @@ export type EntityKind =
   | 'job'
   | 'dungeon'
   | 'dimension'
-  | 'teleportPad';
+  | 'teleportPad'
+  | 'container';
 
 export interface QtmcClipboard {
   qtmc: typeof CLIPBOARD_MARKER;
@@ -35,6 +37,7 @@ export interface ClipboardEntities {
   dungeons?: Dungeon[];
   dimensions?: Dimension[];
   teleportPads?: TeleportPad[];
+  containers?: WorldContainer[];
 }
 
 export interface PasteResult {
@@ -67,6 +70,7 @@ function emptyBundle(): Required<ClipboardEntities> {
     dungeons: [],
     dimensions: [],
     teleportPads: [],
+    containers: [],
   };
 }
 
@@ -218,6 +222,16 @@ export function collectDependencies(
       addDimensionRef(bundle, project, pad.to.dimensionId);
       break;
     }
+    case 'container': {
+      const container = (project.containers ?? []).find((c) => c.id === id);
+      if (!container) throw new ClipboardError('Container not found.');
+      addUniqueById(bundle.containers, container);
+      addDimensionRef(bundle, project, container.location.dimensionId);
+      for (const drop of container.stock ?? []) {
+        addItemRef(bundle, project, drop.customItemId);
+      }
+      break;
+    }
     default:
       throw new ClipboardError('Unsupported entity type.');
   }
@@ -230,6 +244,7 @@ export function collectDependencies(
   if (bundle.dungeons.length) result.dungeons = bundle.dungeons;
   if (bundle.dimensions.length) result.dimensions = bundle.dimensions;
   if (bundle.teleportPads.length) result.teleportPads = bundle.teleportPads;
+  if (bundle.containers.length) result.containers = bundle.containers;
   return result;
 }
 
@@ -252,6 +267,7 @@ const ENTITY_KINDS: EntityKind[] = [
   'dungeon',
   'dimension',
   'teleportPad',
+  'container',
 ];
 
 function parseClipboard(json: string): QtmcClipboard {
@@ -441,6 +457,24 @@ function remapPad(pad: TeleportPad, idMap: Map<string, string>): TeleportPad {
   };
 }
 
+function remapContainer(container: WorldContainer, idMap: Map<string, string>): WorldContainer {
+  return {
+    ...container,
+    location: {
+      ...container.location,
+      dimensionId: container.location.dimensionId
+        ? (idMap.get(container.location.dimensionId) ?? container.location.dimensionId)
+        : undefined,
+    },
+    stock: (container.stock ?? []).map((drop) => ({
+      ...drop,
+      customItemId: drop.customItemId
+        ? (idMap.get(drop.customItemId) ?? drop.customItemId)
+        : undefined,
+    })),
+  };
+}
+
 function findRootEntity(clip: QtmcClipboard): unknown {
   const { kind, id } = clip.root;
   const entities = clip.entities;
@@ -459,6 +493,8 @@ function findRootEntity(clip: QtmcClipboard): unknown {
       return entities.dimensions?.find((d) => d.id === id);
     case 'teleportPad':
       return entities.teleportPads?.find((p) => p.id === id);
+    case 'container':
+      return entities.containers?.find((c) => c.id === id);
     default:
       return undefined;
   }
@@ -479,6 +515,7 @@ export function pasteClipboard(project: Project, json: string): PasteResult {
   const dungeons = [...(project.dungeons ?? [])];
   const dimensions = [...(project.dimensions ?? [])];
   const teleportPads = [...(project.teleportPads ?? [])];
+  const containers = [...(project.containers ?? [])];
 
   const tags = {
     items: itemTags(project),
@@ -590,6 +627,17 @@ export function pasteClipboard(project: Project, json: string): PasteResult {
     teleportPads.push({ ...remapPad(structuredClone(pad), idMap), id: newId, name: pad.name });
   }
 
+  for (const container of clip.entities.containers ?? []) {
+    if (isRoot(container.id)) continue;
+    const newId = uid();
+    idMap.set(container.id, newId);
+    containers.push({
+      ...remapContainer(structuredClone(container), idMap),
+      id: newId,
+      name: container.name,
+    });
+  }
+
   // Phase 2: always paste root as a new entity.
   switch (rootKind) {
     case 'customItem': {
@@ -689,6 +737,18 @@ export function pasteClipboard(project: Project, json: string): PasteResult {
       });
       break;
     }
+    case 'container': {
+      const container = clip.entities.containers?.find((c) => c.id === rootOldId);
+      if (!container) break;
+      rootNewId = uid();
+      idMap.set(container.id, rootNewId);
+      containers.push({
+        ...remapContainer(structuredClone(container), idMap),
+        id: rootNewId,
+        name: duplicateName(container.name, locale),
+      });
+      break;
+    }
   }
 
   if (!rootNewId) {
@@ -705,6 +765,7 @@ export function pasteClipboard(project: Project, json: string): PasteResult {
       dungeons,
       dimensions,
       teleportPads,
+      containers,
     },
     rootKind,
     rootId: rootNewId,

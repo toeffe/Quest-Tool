@@ -105,6 +105,10 @@ export function sanitizeProjectStrings(project: Project): Project {
       ...pad,
       name: sanitizeUserString(pad.name),
     })),
+    containers: (project.containers ?? []).map((container) => ({
+      ...container,
+      name: sanitizeUserString(container.name),
+    })),
   };
   return next;
 }
