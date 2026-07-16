@@ -1,0 +1,106 @@
+{
+  "id": "exproj01a2b3",
+  "name": "Example Quest Pack",
+  "namespace": "example_pack",
+  "platform": "paper",
+  "locale": "en",
+  "version": 10,
+  "quests": [
+    {
+      "id": "qkill01a2b3",
+      "name": "Zombie Hunt",
+      "type": "kill",
+      "category": "Combat",
+      "description": "Clear the undead near the village.",
+      "npc": {
+        "name": "Captain Rhea",
+        "tag": "captain_rhea",
+        "entityType": "minecraft:villager",
+        "profession": "weaponsmith",
+        "variant": "plains",
+        "dialogue": {
+          "greeting": "Traveler, the graves are restless.",
+          "offer": "Slay 5 zombies and I will reward you.",
+          "inProgress": "The undead still walk. Keep fighting.",
+          "completion": "Well fought. Take this reward."
+        },
+        "spawnMode": "player"
+      },
+      "objectives": [
+        {
+          "target": "minecraft:zombie",
+          "amount": 5,
+          "description": "Slay 5 zombies"
+        }
+      ],
+      "rewards": [
+        { "type": "xp", "amount": 50 },
+        { "type": "item", "value": "minecraft:iron_sword", "amount": 1 }
+      ],
+      "chain": {
+        "unlocks": "Coin Collectors",
+        "autoStart": false,
+        "announce": false
+      },
+      "cooldownSeconds": 0
+    },
+    {
+      "id": "qgather01a2",
+      "name": "Coin Collectors",
+      "type": "gather",
+      "category": "Gathering",
+      "description": "Find ancient coins for the captain.",
+      "npc": {
+        "name": "Captain Rhea",
+        "tag": "captain_rhea_gather",
+        "entityType": "minecraft:villager",
+        "profession": "weaponsmith",
+        "variant": "plains",
+        "dialogue": {
+          "greeting": "Back already?",
+          "offer": "Bring me 3 Ancient Coins.",
+          "inProgress": "Still need those coins.",
+          "completion": "Perfect. These will fund the watch."
+        },
+        "spawnMode": "player"
+      },
+      "objectives": [
+        {
+          "customItemId": "itemcoin01a2",
+          "amount": 3,
+          "description": "Collect 3 Ancient Coins",
+          "consumeOnTurnIn": true
+        }
+      ],
+      "rewards": [
+        { "type": "xp", "amount": 75 },
+        { "type": "money", "amount": 25 }
+      ],
+      "chain": {
+        "requires": "Zombie Hunt",
+        "autoStart": false,
+        "announce": false
+      },
+      "cooldownSeconds": 0
+    }
+  ],
+  "jobs": [],
+  "customItems": [
+    {
+      "id": "itemcoin01a2",
+      "name": "Ancient Coin",
+      "tag": "ancient_coin",
+      "kind": "collectible",
+      "baseItem": "minecraft:gold_nugget",
+      "displayName": "Ancient Coin",
+      "lore": ["A weathered token from the old watch."],
+      "glint": true,
+      "maxStackSize": 64,
+      "rarity": "uncommon"
+    }
+  ],
+  "customMobs": [],
+  "dungeons": [],
+  "dimensions": [],
+  "teleportPads": []
+}
