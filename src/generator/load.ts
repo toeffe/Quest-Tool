@@ -11,10 +11,7 @@ import {
 } from './jobBossBar';
 import { buildJobLoadLines, buildJobResetLines } from './jobFunctions';
 import { buildPadLoadLines, buildPadsTickHook } from './pads';
-import {
-  buildQuestLogLoadLines,
-  buildQuestLogTickHook,
-} from './questBook';
+import { buildQuestLogLoadLines, buildQuestLogTickHook } from './questBook';
 import { NOW_HOLDER, SYS_OBJECTIVE } from './sys';
 import { escapeSnbtString, sanitizeMcComment } from './text';
 

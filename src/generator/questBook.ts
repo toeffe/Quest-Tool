@@ -127,9 +127,7 @@ export function buildQuestLogOpenButton(ctx: CompileContext): string | null {
 export function buildQuestLogOpenButtonIfMissing(ctx: CompileContext): string[] {
   const btn = buildQuestLogOpenButton(ctx);
   if (!btn) return [];
-  return [
-    `execute unless items entity @s container.* ${questLogItemPredicate()} run ${btn}`,
-  ];
+  return [`execute unless items entity @s container.* ${questLogItemPredicate()} run ${btn}`];
 }
 
 export function buildQuestLogLoadLines(ctx: CompileContext): string[] {

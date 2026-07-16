@@ -4,7 +4,6 @@ import { buildCommandReference } from './commands';
 import { buildContext } from './context';
 import { buildDatapackFiles } from './datapack';
 import { buildLoadFunction, buildTickFunction } from './load';
-import { compileQuest } from './questFunctions';
 import {
   buildQuestLogFiles,
   buildQuestLogLoadLines,
@@ -16,6 +15,7 @@ import {
   QUESTLOG_TRIGGER,
   questLogClearCommand,
 } from './questBook';
+import { compileQuest } from './questFunctions';
 
 function enabledProject(name = 'Quest Log Pack') {
   const project = createProject(name, 'en');
@@ -68,7 +68,9 @@ describe('quest log book', () => {
 
     const rebuild = files['questlog/rebuild.mcfunction'];
     expect(rebuild).toContain(`function ${ctx.namespace}:questlog/assemble`);
-    expect(rebuild).toContain(`function ${ctx.namespace}:questlog/give with storage ${ctx.namespace}:questlog`);
+    expect(rebuild).toContain(
+      `function ${ctx.namespace}:questlog/give with storage ${ctx.namespace}:questlog`,
+    );
     expect(rebuild).not.toContain('Quest log received');
 
     const sync = files['questlog/sync.mcfunction'];
@@ -119,7 +121,9 @@ describe('quest log book', () => {
     const project = enabledProject();
     const ctx = buildContext(project);
     const branch = buildQuestLogFiles(ctx)['questlog/quest_0.mcfunction'];
-    expect(branch).toContain(`execute if score @s q0 matches 1 run function ${ctx.namespace}:questlog/quest_0_active`);
+    expect(branch).toContain(
+      `execute if score @s q0 matches 1 run function ${ctx.namespace}:questlog/quest_0_active`,
+    );
     expect(branch).toContain(`execute if score @s q0 matches 0 run data modify storage`);
     expect(branch).toContain(`execute if score @s q0 matches 2 run data modify storage`);
     expect(branch).toContain(`execute if score @s q0 matches 3..4 run data modify storage`);

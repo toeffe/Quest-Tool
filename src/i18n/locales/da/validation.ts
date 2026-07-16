@@ -66,7 +66,8 @@ export const validationDa = {
   padCooldownTooShort: 'Pad "{{name}}" cooldown bør være mindst 1 sekund.',
   containerNoName: 'En verdenscontainer har et tomt navn.',
   containerIntervalMin: 'Container "{{name}}" genopfyldningsinterval skal være mindst 1 sekund.',
-  containerStockEmpty: 'Container "{{name}}" har ingen lagergenstande — genopfyldninger bliver tomme.',
+  containerStockEmpty:
+    'Container "{{name}}" har ingen lagergenstande — genopfyldninger bliver tomme.',
   containerStockDrop: 'Container "{{name}}" lager {{n}}',
   containerStockMissingCustomItem:
     'Container "{{name}}" lager refererer til en slettet brugerdefineret genstand (id: {{itemId}}).',

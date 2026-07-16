@@ -105,8 +105,7 @@ export const datapackEn = {
       '- /function {{namespace}}:give_custom_items - give one of each custom item (testing)',
     adminGiveMobs:
       '- /function {{namespace}}:give_custom_mobs - spawn one of each custom mob (testing)',
-    adminGiveQuestlog:
-      '- /function {{namespace}}:give_questlog - give/refresh the quest log book',
+    adminGiveQuestlog: '- /function {{namespace}}:give_questlog - give/refresh the quest log book',
     adminJobsSync:
       '- /function {{namespace}}:jobs/sync_all - refresh job advancement tabs for everyone online',
     adminReset: '- /function {{namespace}}:reset         - reset YOUR quest progress',

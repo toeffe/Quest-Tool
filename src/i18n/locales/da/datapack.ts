@@ -104,8 +104,7 @@ export const datapackDa = {
       '- /function {{namespace}}:give_custom_items - giv én af hver brugerdefineret genstand (test)',
     adminGiveMobs:
       '- /function {{namespace}}:give_custom_mobs - spawn én af hver brugerdefineret mob (test)',
-    adminGiveQuestlog:
-      '- /function {{namespace}}:give_questlog - giv/opdater questlog-bogen',
+    adminGiveQuestlog: '- /function {{namespace}}:give_questlog - giv/opdater questlog-bogen',
     adminJobsSync:
       '- /function {{namespace}}:jobs/sync_all - opdater job-advancement-faner for alle online',
     adminReset: '- /function {{namespace}}:reset         - nulstil DIN quest-fremgang',

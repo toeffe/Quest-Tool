@@ -79,7 +79,10 @@ export function generateTestGuideLines(project: Project): string[] {
       `Void return pad @ ${TEST_PAD_VOID_RETURN.x} ${TEST_PAD_VOID_RETURN.y} ${TEST_PAD_VOID_RETURN.z}`,
       'white',
     ),
-    line(`/execute in ${dimId} run tp @s ${TEST_PAD_VOID_LANDING.x} 65 ${TEST_PAD_VOID_LANDING.z}`, 'aqua'),
+    line(
+      `/execute in ${dimId} run tp @s ${TEST_PAD_VOID_LANDING.x} 65 ${TEST_PAD_VOID_LANDING.z}`,
+      'aqua',
+    ),
   );
 
   const dungeon = (project.dungeons ?? [])[0];

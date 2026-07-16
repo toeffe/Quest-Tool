@@ -34,15 +34,12 @@ import { spawnFunctionLines } from './npc';
 import { buildPackMeta, MINECRAFT_VERSION } from './packFormat';
 import { compilePads } from './pads';
 import { installGuide } from './platform';
+import { buildQuestLogFiles, isQuestLogEnabled } from './questBook';
 import {
   buildKillZoneAdvancementFiles,
   buildZoneLootTableFiles,
   compileQuest,
 } from './questFunctions';
-import {
-  buildQuestLogFiles,
-  isQuestLogEnabled,
-} from './questBook';
 import { buildResourcePackFiles } from './resourcePack';
 import { escapeSnbtString, tellraw } from './text';
 

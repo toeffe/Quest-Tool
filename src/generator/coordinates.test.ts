@@ -30,8 +30,8 @@ describe('coordinates', () => {
     expect(scopePadDetection('questpack:void', 'say hi')).toBe(
       'execute in questpack:void run say hi',
     );
-    expect(scopePadDetectionAt('minecraft:overworld', 0, 64, 0, 'as @a[distance=..2] run say hi')).toBe(
-      'execute in minecraft:overworld positioned 0 64 0 as @a[distance=..2] run say hi',
-    );
+    expect(
+      scopePadDetectionAt('minecraft:overworld', 0, 64, 0, 'as @a[distance=..2] run say hi'),
+    ).toBe('execute in minecraft:overworld positioned 0 64 0 as @a[distance=..2] run say hi');
   });
 });
