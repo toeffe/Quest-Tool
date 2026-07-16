@@ -314,11 +314,7 @@ function buildQuestBranchFunction(ctx: CompileContext, qc: QuestContext): string
   const ns = ctx.namespace;
   const STR = ctx.str;
   const giverName = qc.quest.npc.name;
-  const available = buildStatusPage(
-    qc,
-    STR.questLogStatusAvailable,
-    STR.questLogSeeNpc(giverName),
-  );
+  const available = buildStatusPage(qc, STR.questLogStatusAvailable, STR.questLogSeeNpc(giverName));
   const ready = buildStatusPage(qc, STR.questLogStatusReady, STR.questLogReturnToNpc(giverName));
   const completed = buildStatusPage(qc, STR.questLogStatusCompleted, '');
   const locked = buildStatusPage(qc, STR.questLogStatusLocked, '');
