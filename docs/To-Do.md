@@ -4,4 +4,4 @@ We need additional features and things.
 
 2. A full list of official datapack abilities(used and unused)
 
-3. ~~For AI's to use the Quest Tool to its fullest.~~ Done — see `quest-tool/SKILL.md` + `quest-tool/reference.md`.
+3. For AI's to use the Quest Tool to its fullest. (Prompting another AI like Claude with an idea, would enable it to use Quest Tool to make it.)

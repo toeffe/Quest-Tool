@@ -1,247 +1,369 @@
 ---
 name: quest-tool
-description: >-
-  Author Minecraft 1.21.11 Quest Tool MC projects as importable Project JSON (schema v10)
-  for https://quest.toeffe.uk — quests, jobs, custom items/mobs, dungeons, dimensions, pads.
-  When the Quest Tool MC repo src/ is available, may also validate/compile via TypeScript.
-  Use when creating quest packs from a prompt, editing project JSON, or explaining import/export.
-  Without src/, never claim buildDatapackZip ran — emit JSON for the user to import and export.
+description: Use when creating, editing, or generating Minecraft quests/datapacks with Quest Tool MC — i.e. building a Quest/Project object and compiling it via buildContext/compileQuest/buildDatapackFiles, or validating one via validateProject. Triggers on requests like "add a quest", "create a kill/gather/delivery/exploration/talk/daily quest", "build a quest chain", "generate the datapack", or "why didn't my quest compile/validate".
 ---
 
-# Quest Tool MC — Generator Skill
+# Quest Tool MC — Quest Generator Skill
 
 ## Overview
 
-**Quest Tool MC** is a free browser app ([quest.toeffe.uk](https://quest.toeffe.uk)) that turns a `Project` into a Minecraft Java **1.21.11** datapack (format **94.1**). There is **no in-game "Quest Tool" item** — players use NPC proximity + `/trigger`.
+**Quest Tool MC** is a browser-based TypeScript app that turns a `Project` JSON object into a Minecraft Java **1.21.11** datapack (scoreboards, mcfunctions, advancements, loot tables). There is **no in-game "Quest Tool" item** — the name refers to this generator. In-game, players interact via NPC proximity and `/trigger` chat prompts; entities/items are tagged with `questtool` / `questtool_id` for identification.
 
-```mermaid
-flowchart LR
-  Prompt[User prompt] --> AI[AI with this skill]
-  AI --> JSON[Project JSON v10]
-  JSON --> Site[Import on quest.toeffe.uk]
-  Site --> Zip[Export datapack ZIP]
-```
+Use this skill when you need to **programmatically construct quests** (not just use the UI): build a `Project`, validate it, compile per-quest mcfunctions, and export a ZIP. Target version: datapack format **94.1** (`src/generator/packFormat.ts`).
 
-### Mode detection (mandatory)
-
-| Mode | When | What you deliver |
-|------|------|------------------|
-| **A — JSON (default)** | No `src/types` / `src/generator` (ChatGPT, Claude Projects, etc.) | Complete schema-**v10** Project `.json` + import steps below |
-| **B — In-repo** | Working inside the Quest Tool MC git checkout | May use factories + `validateProject` + `buildDatapackZip` |
-
-**Without Mode B you cannot call `buildDatapackZip`.** Do not claim you compiled a datapack. Emit JSON; the user imports and exports on the site.
-
-Canonical skeleton: [project.example.json](project.example.json). Full field tables: [reference.md](reference.md).
+**Pipeline:** `createProject` → edit `quests[]` → `validateProject` → `buildContext` → `compileQuest` (per quest) or `buildDatapackFiles` (full pack) → `buildDatapackZip`.
 
 ---
 
-## Mode A — Hand-author Project JSON
+## Interface reference
 
-### Pipeline
+### Core functions
 
+```typescript
+// src/types/factory.ts
+export const PROJECT_SCHEMA_VERSION = 10;
+
+createProject(name?: string, locale: AppLocale = 'da'): Project
+createQuest(name?: string, type: QuestType = 'kill', locale: AppLocale = 'da'): Quest
+createNpc(locale: AppLocale = 'da'): Npc
+newObjectiveFor(type: QuestType, locale?: AppLocale): Objective
+defaultObjectiveFor(type: QuestType, locale?: AppLocale): Objective[]  // [newObjectiveFor(...)]
+
+// src/generator/context.ts
+buildContext(project: Project): CompileContext
+questObjectives(quest: Quest): Objective[]  // min 1; returns [{}] if empty
+
+// src/generator/questFunctions.ts
+compileQuest(ctx: CompileContext, qc: QuestContext): Record<string, string>
+buildKillZoneAdvancementFiles(ctx, qc): Record<string, string>
+buildZoneLootTableFiles(ctx, qc): Record<string, string>
+
+// src/generator/datapack.ts
+buildDatapackFiles(project: Project): FileMap
+buildDatapackZip(project: Project): Promise<Blob>
+buildRawCommands(project: Project): string
+
+// src/generator/validate.ts
+validateProject(project: Project, locale?: AppLocale): ValidationIssue[]
+hasBlockingErrors(issues: ValidationIssue[]): boolean
+
+// src/chain/chainGraph.ts
+wouldCreateCycle(quests: Quest[], sourceId: string, targetId: string): boolean
+findQuestIdsInChainCycles(quests: Quest[]): Set<string>
 ```
-Clone/edit project.example.json (version: 10)
-  → unique ids + valid cross-refs
-  → save as *.json
-  → user imports on quest.toeffe.uk → fixes validation → Export datapack
+
+**Errors:** None of the generator functions throw on bad quest data. `compileQuest` always returns files (even for empty objectives). `validateProject` returns issues; export is blocked only when `hasBlockingErrors(issues)` is true (UI convention in `useExport.ts` — the generator itself does **not** auto-validate).
+
+### Types
+
+```typescript
+type QuestType = 'talk' | 'kill' | 'gather' | 'delivery' | 'exploration' | 'daily'
+type Platform = 'paper' | 'vanilla' | 'lan'
+type SpawnMode = 'player' | 'fixed' | 'manual'
+type ZoneDropMode = 'none' | 'vanilla' | 'custom'
+type RewardType = 'item' | 'xp' | 'money' | 'permission' | 'command' | 'jobXp'
+type AppLocale = 'en' | 'da'
 ```
 
-### JSON authoring rules
+### `Quest` (required fields)
 
-| Rule | Detail |
-|------|--------|
-| `version` | Must be **`10`** |
-| Entity `id`s | Unique strings ≈ `uid()` style (`[a-z0-9]+`, ~12 chars). Never reuse across quests/items/mobs/jobs/dims/pads |
-| Cross-refs | `customItemId` / `eliteMobId` / `jobId` use those **ids**. `chain.requires` / `unlocks` use quest **names** |
-| `consumeOnTurnIn` | Set **`true`** on gather/daily when items should be removed on turn-in. Omitted ⇒ keep items. Delivery always consumes |
-| Required defaults | `platform`, `namespace`, `locale` (`en`\|`da`), `chain.autoStart`/`announce`, full NPC (`entityType`, `profession`, `variant`, `dialogue`, `spawnMode`) |
-| Jobs | Use `"jobs": []` (import migrates starter jobs) **or** full job objects with stable `id`s if you use `requiresJob` / `jobXp` |
-| Tags | NPC/`tag`, item/`tag`, mob/`tag`: lowercase `[a-z0-9_]`, unique where required |
-| Output file | Prefer `{name}.json` (also valid as `quest-tool-project.json`) |
-| Dialogue | Escape newlines as `\n` in JSON strings — raw newlines break generated mcfunctions |
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` | `string` | Internal UUID from `uid()` |
+| `name` | `string` | **Unique** display name; also used by `chain.requires` / `chain.unlocks` |
+| `type` | `QuestType` | Drives tick/turn-in logic |
+| `category` | `string` | Display only |
+| `description` | `string` | Display only |
+| `npc` | `Npc` | Quest giver |
+| `objectives` | `Objective[]` | Min 1 (validated); compiler falls back to `[{}]` if empty |
+| `rewards` | `Reward[]` | Can be empty (warning) |
+| `chain` | `QuestChain` | Prereqs / unlocks |
+| `cooldownSeconds` | `number` | Daily only; default `86400` for `daily`, `0` otherwise |
 
-### User import / export (tell the user this)
+Optional: `targetNpc?: TargetNpc` — required for talk quests that need a separate visit target.
 
-1. Save your output as a `.json` file.
-2. Open [https://quest.toeffe.uk](https://quest.toeffe.uk).
-3. **Import:** sidebar **Import project** (accepts `.json` or a datapack `.zip` containing `quest-tool-project.json`) — or **Settings → Import**.
-4. Check the validation bar; fix any errors in the Editor.
-5. Open **Export** → download the datapack ZIP. If custom mob skins exist, also download the resource pack.
-6. In Minecraft: install pack → `/reload` (custom dimensions need a **world restart**) → `/function {namespace}:setup_guide`.
+### `Objective` — required fields by quest type
 
-### Minimal deliverable shape
+| Type | Required | Optional (common) |
+|------|----------|-------------------|
+| `kill` | `target` **or** `eliteMobId`, `amount` | `spawnZone`, `location`, `radius`, `zoneCap`, `zoneDropMode`, `zoneDrops` |
+| `gather` | `target` **or** `customItemId`, `amount` | `consumeOnTurnIn` (default `true`), spawn zone fields, `zoneMob` |
+| `delivery` | `target` **or** `customItemId`, `amount` | Always consumes on turn-in |
+| `exploration` | `location` | `radius` (default 5), `markerBlock`, `dimensionId` |
+| `daily` | Same as gather | `cooldownSeconds` on quest |
+| `talk` | `description` only | — |
 
-Always include at least: `id`, `name`, `namespace`, `platform`, `locale`, `version: 10`, `quests` (≥1), and arrays for `customItems`, `customMobs`, `dungeons`, `dimensions`, `teleportPads` (use `[]` if unused). See [project.example.json](project.example.json).
+**Spawn zone fields** (kill/gather only): `spawnZone: true`, `location`, `radius`, `zoneCap` (default `min(amount, 5)`), `zoneDropMode` (`none`|`vanilla`|`custom`), `zoneDrops[]`, `zoneMob` (gather only).
 
----
+**ID lookups:** `customItemId`, `eliteMobId`, `jobId` reference internal **`id`** fields, **not** `tag` slugs.
 
-## Critical rules (both modes)
+### `Reward`
 
-| Rule | Detail |
-|------|--------|
-| **IDs vs tags** | Lookups use internal **`id`**. Tags are for NBT / entity tags / `questtool_id` only |
-| **Chain links** | By quest **name**, not `id` |
-| **zoneCap default** | When unset at compile time: `min(max(1, amount), 5)` |
-| **Silent unlock skips** | Missing job id / bad requires name may unlock in compiler; validation should catch bad chain names after import |
-| **autoStart + job gate** | Disabled when next quest has `requiresJob` |
-| **MC 1.21.11** | Attributes without `generic.`; `equipment:{}`; pack format 94.1 |
-
----
-
-## Project shape (must know)
-
-| Field | Role |
+| Field | When |
 |-------|------|
-| `namespace` | Datapack namespace (lowercase identifier) |
-| `platform` | `paper` \| `vanilla` \| `lan` — money/permission commands |
-| `quests` | Required (≥1) |
-| `jobs` | `[]` ok (starters filled on import) or full definitions |
-| `customItems` / `customMobs` | Referenced by **id** |
-| `dungeons` / `dimensions` / `teleportPads` | Optional systems |
-| `version` | **10** |
+| `type` | Always |
+| `value` | Vanilla item id, permission node, or raw command |
+| `customItemId` | Item reward using project custom item |
+| `jobId` | `jobXp` reward |
+| `amount` | Quantity (item/xp/money/jobXp) |
 
-### Quest essentials
+### `QuestChain`
+
+| Field | Type | Default | Notes |
+|-------|------|---------|-------|
+| `requires` | `string?` | — | Prerequisite quest **name** (not id!) |
+| `requiresJob` | `{ jobId, level }?` | — | Job level gate |
+| `unlocks` | `string?` | — | Next quest **name** on completion |
+| `autoStart` | `boolean` | `false` | Skip offer; start next quest immediately |
+| `announce` | `boolean` | `false` | Server-wide completion broadcast |
+
+### `Npc` / `TargetNpc`
 
 | Field | Notes |
 |-------|-------|
-| `name` | **Unique**; chain keys |
-| `type` | `talk` \| `kill` \| `gather` \| `delivery` \| `exploration` \| `daily` |
-| `npc` | Unique `tag`; `fixed` needs `coordinates` |
-| `objectives` | Min 1 |
-| `rewards` | Empty = warning only |
-| `chain` | `requires`/`unlocks` by **name**; `requiresJob` by job **id** |
-| `cooldownSeconds` | Daily default `86400`; else `0` |
-| `targetNpc?` | Talk visit target |
+| `name`, `tag` | Display name + unique entity tag (sanitized to `[a-z0-9_]`) |
+| `entityType` | e.g. `minecraft:villager` |
+| `spawnMode` | `player` (at feet), `fixed` (needs `coordinates`), `manual` |
+| `coordinates` | `{ x, y, z, dimensionId? }` |
+| `dialogue` | `greeting`, `offer`, `inProgress`, `completion` (Npc only) |
 
-### Objectives by type
-
-| Type | Required | Notes |
-|------|----------|-------|
-| `kill` | `target` **or** `eliteMobId`, `amount` | Optional spawn zone + drops |
-| `gather` / `daily` | `target` **or** `customItemId`, `amount` | Zone needs `zoneMob`; set `consumeOnTurnIn` |
-| `delivery` | `target` **or** `customItemId`, `amount` | Always consumes |
-| `exploration` | `location` | `radius` often 5; optional `dimensionId` |
-| `talk` | description | No `targetNpc` → instant complete on Accept |
-
-### Platform rewards
-
-| Reward | paper | vanilla / lan |
-|--------|-------|---------------|
-| `money` | scoreboard + `eco give` | scoreboard only (warning) |
-| `permission` | LuckPerms | tellraw only (warning) |
-| `jobXp` / `item` / `xp` / `command` | supported | same (`{player}` → `@s`) |
-
-### State machine (`q{index}`)
+### Quest state machine (scoreboard `q{index}`)
 
 | Value | Meaning |
 |-------|---------|
-| `-1` | Locked |
-| `0` | Available |
-| `1` | Active |
+| `-1` | Locked (chain/job gate) |
+| `0` | Available (offer shown) |
+| `1` | Active (tracking progress) |
 | `2` | Ready to turn in |
 | `3` | Done |
-| `4` | Daily cooldown |
+| `4` | Daily cooldown (`q{index}cd` holds unlock tick) |
+
+Per-quest identifiers (from `buildContext`): `q0` state, `q0t` trigger, `q0p0` progress, `q0k0` kills, `q0d` done count, `qk_0_0` mob tag, `qg_0` giver tag.
+
+### `compileQuest` output (under `data/{namespace}/function/`)
+
+| File | Purpose |
+|------|---------|
+| `quests/{i}_{slug}/tick.mcfunction` | Per-tick dispatcher |
+| `offer.mcfunction` | Greeting + clickable Accept |
+| `accept.mcfunction` | Start quest (instant-complete for talk w/o target) |
+| `complete.mcfunction` | Objectives done → state 2 |
+| `active.mcfunction` | In-progress dialogue |
+| `ready.mcfunction` | Turn-in prompt |
+| `turnin.mcfunction` | Consume items, grant rewards, chain unlock |
+| `try_unlock.mcfunction` | Prereq/job gate (if locked) |
+| `spawn_mob_{j}.mcfunction` | Spawn one mob in zone |
+| `kill_credit_{j}.mcfunction` | Advancement kill handler (spawn zone / elite mob) |
+
+Also emitted by `buildDatapackFiles`: `load.mcfunction`, `tick.mcfunction`, `spawn/{i}_{slug}.mcfunction`, advancements, zone loot tables, `setup_guide`, `debug`, `reset`.
 
 ---
 
-## Mode A workflows (JSON)
+## Usage examples
 
-Start from [project.example.json](project.example.json). Edit names, objectives, and ids; keep cross-refs consistent.
+All examples mirror `src/generator/questFunctions.test.ts`.
 
-- **Quest chain:** set `chain.unlocks` on quest A to B’s **name**; `chain.requires` on B to A’s **name**.
-- **Custom item gather:** add item under `customItems` with unique `id`/`tag`; objective uses `customItemId` + `consumeOnTurnIn: true`.
-- **Elite kill:** add mob under `customMobs`; objective uses `eliteMobId` (no vanilla `target` required).
-- **Job gate / jobXp:** include real job objects with `id`s (not empty `jobs`) before referencing them.
-- **Dimension exploration:** add dimension; set `location.dimensionId` to that dimension’s `id`. Remind user: world restart.
-- **Dungeon / pads:** see [reference.md](reference.md); pair two pads for round trips.
-
----
-
-## Mode B — In-repo only (TypeScript)
-
-Only when `src/` is available. Prefer factories so defaults stay correct.
-
-```
-createProject → edit → validateProject → hasBlockingErrors?
-  → buildDatapackZip (+ buildResourcePackZip if skins)
-```
+### 1. Simplest — compile a kill quest
 
 ```typescript
-// src/types/factory.ts — PROJECT_SCHEMA_VERSION = 10
-createProject(name?, locale = 'da'): Project
-createQuest(name?, type = 'kill', locale = 'da'): Quest
-createNpc(locale = 'da'): Npc
-newObjectiveFor / defaultObjectiveFor
-createJob / createStarterJobs / createCustomItem / createCustomMob / createCustomMobPhase
-// src/types/dimension.ts / dungeon.ts
-createDimension / createTeleportPad / createDungeon / createDungeonRoom / createRoomSpawn / createRoomTrigger
-// src/generator/*
-buildContext / compileQuest / buildDatapackFiles / buildDatapackZip / buildResourcePackZip
-validateProject / hasBlockingErrors
-// src/state/projectStore.ts
-renameQuestReferences / exportProjectJson / importProjectJson
-// src/chain/chainGraph.ts
-wouldCreateCycle / findQuestIdsInChainCycles
+import { createProject, createQuest } from '../types/factory';
+import { buildContext } from '../generator/context';
+import { compileQuest } from '../generator/questFunctions';
+
+const project = createProject('P', 'en');
+project.namespace = 'p';
+project.quests = [createQuest('Q', 'kill')];
+
+const ctx = buildContext(project);
+const files = compileQuest(ctx, ctx.quests[0]);
+// files['quests/0_q/tick.mcfunction'] contains:
+//   scores={q0=1,q0k0=5..}   — kill progress
+//   scores={q0=1,q0d=1..}    — done aggregate
+//   scoreboard players enable @a q0t
 ```
 
+### 2. Multi-objective kill
+
 ```typescript
-import { validateProject, hasBlockingErrors } from '../generator/validate';
+const q = createQuest('Q', 'kill');
+q.objectives = [
+  { target: 'minecraft:zombie', amount: 5, description: 'Slay zombies' },
+  { target: 'minecraft:skeleton', amount: 3, description: 'Slay skeletons' },
+];
+project.quests = [q];
+const ctx = buildContext(project);
+const tick = compileQuest(ctx, ctx.quests[0])['quests/0_q/tick.mcfunction'];
+// Completes when: scores={q0=1,q0d=2..}
+```
+
+### 3. Gather with custom item (`questtool_id`)
+
+```typescript
+import { createCustomItem } from '../types/factory';
+
+const item = createCustomItem('general', 'Ancient Coin');
+item.baseItem = 'minecraft:gold_nugget';
+item.tag = 'ancient_coin';
+project.customItems = [item];
+
+const q = createQuest('Gather', 'gather');
+q.objectives = [{ customItemId: item.id, amount: 5, description: 'Find coins' }];
+project.quests = [q];
+
+const ctx = buildContext(project);
+const tick = compileQuest(ctx, ctx.quests[0])['quests/0_gather/tick.mcfunction'];
+// clear @s minecraft:gold_nugget[custom_data={questtool_id:"ancient_coin"}] 0
+```
+
+### 4. Delivery (always consumes on turn-in)
+
+```typescript
+const project = createProject('P', 'en');
+project.namespace = 'p';
+project.quests = [createQuest('Q', 'delivery')];
+
+const ctx = buildContext(project);
+const turnin = compileQuest(ctx, ctx.quests[0])['quests/0_q/turnin.mcfunction'];
+// clear @s minecraft:bread 3
+// run return 0  (if player lacks items)
+```
+
+### 5. Kill spawn zone with custom drops and cap
+
+```typescript
+const q = createQuest('Chickens', 'kill');
+q.objectives = [{
+  target: 'minecraft:chicken', amount: 10, zoneCap: 3,
+  spawnZone: true, zoneDropMode: 'custom',
+  zoneDrops: [
+    { target: 'minecraft:feather', amount: 2 },
+    { target: 'minecraft:chicken', amount: 1, chance: 50 },
+  ],
+  location: { x: 10, y: 64, z: 20 }, radius: 5,
+}];
+// tick: matches 0 run function  (NOT matches ..0)
+// tick: max 3 live, matches ..2
+// spawn: DeathLootTable:"p:quests/quests/0_chickens/mob_drops_0"
+```
+
+### 6. Quest chain + job gate + job XP reward
+
+```typescript
+const a = createQuest('First', 'kill');
+const b = createQuest('Second', 'kill');
+b.chain.requires = 'First';       // by NAME, not id
+a.chain.unlocks = 'Second';
+
+// Job gate
+const job = project.jobs![0];
+const gated = createQuest('Pro Fisher', 'talk');
+gated.chain.requiresJob = { jobId: job.id, level: 5 };
+// tick initializes: scoreboard players set @s q0 -1
+// try_unlock checks: j0lvl matches 5..
+
+// Job XP reward
+const bonus = createQuest('Bonus', 'kill');
+bonus.rewards = [{ type: 'jobXp', jobId: job.id, amount: 25 }];
+// turnin: scoreboard players set #j0grant qt_sys 25
+//         function jr:jobs/0_fishing/add_xp
+```
+
+### 7. Exploration in custom dimension
+
+```typescript
+import { createDimension } from '../types/dimension';
+
+const dim = createDimension('Void Arena');
+dim.tag = 'void_arena';
+project.dimensions = [dim];
+
+const q = createQuest('Explore', 'exploration');
+q.objectives = [{
+  location: { x: 0, y: 64, z: 0, dimensionId: dim.id },
+  radius: 8, description: 'Find the center',
+}];
+// tick: execute in p:void_arena run execute positioned 0 64 0 ...
+```
+
+### 8. Full export pipeline
+
+```typescript
 import { buildDatapackZip } from '../generator/datapack';
+import { validateProject, hasBlockingErrors } from '../generator/validate';
 
 const issues = validateProject(project, 'en');
-if (hasBlockingErrors(issues)) throw new Error(issues.map((i) => i.message).join('\n'));
+if (hasBlockingErrors(issues)) throw new Error(issues.map(i => i.message).join('\n'));
+
 const blob = await buildDatapackZip(project);
+// ZIP contains datapack + quest-tool-project.json backup
 ```
 
-Unions and deeper APIs: [reference.md](reference.md). Generator tests: `src/generator/*.test.ts`.
+### 9. Talk quest — instant complete vs target NPC
+
+```typescript
+// No targetNpc → completes on Accept (no complete/turnin files)
+const talk = createQuest('Talk', 'talk');
+talk.targetNpc = undefined;
+// accept.mcfunction contains "Grant rewards"
+// complete.mcfunction is undefined
+
+// With targetNpc → player must reach target entity tagged qtg_{index}
+talk.targetNpc = { name: 'Hermit', tag: 'hermit', entityType: 'minecraft:villager', ... };
+```
 
 ---
 
-## Edge cases
+## Edge cases & constraints
 
 | Topic | Behavior |
 |-------|----------|
-| Spawn timer | `matches 0`, not `..0` |
-| Live mob cap | All tagged mobs globally |
-| Kill tracking | Non-zoned: vanilla criteria; zoned/elite: advancements |
-| Chain cycles | Invalid — avoid cycles in JSON |
-| Daily cooldown | `cooldownSeconds * 20` ticks |
-| Resource pack | Only when custom mob skins present |
+| **Spawn timer** | Spawns when timer `matches 0`, not `..0` — prevents spawn-every-tick bug |
+| **Live mob cap** | Counts **all** tagged mobs globally, not distance-filtered (wanderers still count) |
+| **zoneCap default** | `min(max(1, amount), 5)` when unset |
+| **consumeOnTurnIn** | Forced for `delivery`; default `true` for `gather`/`daily`; set `false` to keep items |
+| **Kill tracking** | Non-zoned kills use vanilla stat criteria; zoned/elite kills use tag-based advancements |
+| **Multiline dialogue** | Must be escaped as `\n` in tellraw (one mcfunction line per command) |
+| **Empty objectives** | Compiler uses `[{}]` fallback — produces broken output; validation catches with `noObjective` |
+| **Chain cycles** | Detected by `validateProject`, **not** by `compileQuest` — cyclic projects compile but lock logic breaks |
+| **Missing job gate ref** | If `requiresJob.jobId` not in `project.jobs`, gate is **silently skipped** (quest starts unlocked) |
+| **chain.requires/unlocks** | Reference quest **`name` strings**, not `id` — fragile on rename (use `renameQuestReferences`) |
+| **autoStart + requiresJob** | `autoStart` disabled when next quest has `requiresJob` (calls `try_unlock` instead) |
+| **Daily cooldown** | `cooldownSeconds` on quest (default 86400); converted to ticks internally (`× 20`) |
+| **Custom dimensions** | Require world restart, not just `/reload` |
+| **Minecraft 1.21.11 syntax** | Attributes: `minecraft:max_health` not `generic.max_health`; equipment via `equipment:{}` not `ArmorItems` |
+| **Performance** | One `tick.mcfunction` per quest; large packs scale linearly with quest count |
 
 ---
 
 ## Common mistakes
 
-1. **Claiming you built a datapack ZIP in Mode A** — you only deliver JSON.
-2. Omitting `version: 10` or unstable/duplicate `id`s.
-3. Using `tag` instead of `id` for `customItemId` / `eliteMobId` / `jobId`.
-4. Chain refs by quest `id` instead of `name`.
-5. Duplicate quest names or NPC tags.
-6. Kill without `target` or `eliteMobId`; spawn zone without `location`; gather zone without `zoneMob`.
-7. `zoneDropMode: 'custom'` with empty `zoneDrops`.
-8. Gather/daily omitting `consumeOnTurnIn: true` when removal is intended.
-9. Raw newlines in dialogue strings.
-10. Expecting `/reload` alone for new custom dimensions.
+1. **Using `tag` instead of `id`** for `customItemId`, `eliteMobId`, `jobId` — lookup fails silently or validation errors.
+2. **Calling `compileQuest` without `buildContext`** — missing `byName`, `jobsById`, custom item maps.
+3. **Assuming the compiler validates** — always call `validateProject` before export; generator never throws.
+4. **Referencing chains by quest id** — must use exact `quest.name` string.
+5. **Duplicate quest or NPC tag names** — validation error; breaks scoreboard/entity resolution.
+6. **Kill quest without `target` or `eliteMobId`** — validation error.
+7. **Spawn zone without `location`** — validation error.
+8. **Gather spawn zone without `zoneMob`** — validation error.
+9. **Custom drops with empty `zoneDrops`** when `zoneDropMode: 'custom'` — validation error.
+10. **Assuming `/reload` refreshes custom mob loot** — players may need to rejoin after reinstall.
+11. **Putting raw newlines in NPC dialogue** — breaks mcfunction lines; use `\n` in the string.
+12. **Confusing `questtool` entity tag with a player item** — it's a datapack management tag, not a quest UI tool.
 
 ---
 
-## Checklist before handing JSON to the user
+## Quick checklist
 
-- [ ] `version: 10`; `namespace`; `locale`; `platform`
-- [ ] Unique quest `name`s; ≥1 valid objective each; unique NPC `tag`s
-- [ ] All `customItemId` / `eliteMobId` / `jobId` refs resolve
-- [ ] Chains by **name**, no cycles
-- [ ] Fixed spawns have coordinates; dimensionIds exist if used
-- [ ] Spawn zones / custom drops / gather `zoneMob` valid when used
-- [ ] File is valid JSON; told user how to import on quest.toeffe.uk and Export
+Before calling `buildDatapackFiles` / `buildDatapackZip`:
 
-Mode B only: `validateProject` clean; then `buildDatapackZip`.
-
----
-
-## Reference
-
-- Example project: [project.example.json](project.example.json)
-- Schema depth: [reference.md](reference.md)
-- Live app: [https://quest.toeffe.uk](https://quest.toeffe.uk)
-- Pack format: `src/generator/packFormat.ts` (1.21.11, 94.1) when in-repo
+- [ ] `project.namespace` set (sanitized lowercase identifier)
+- [ ] `project.locale` set (`'en'` or `'da'`) for correct in-game strings
+- [ ] Every quest has a **unique** `name` and at least one valid objective
+- [ ] Every quest has an NPC with unique `tag` and valid `spawnMode` + coordinates if `fixed`
+- [ ] `customItemId` / `eliteMobId` / `jobId` references use internal **`id`**, and entities exist in `project.customItems` / `customMobs` / `jobs`
+- [ ] `chain.requires` / `chain.unlocks` use exact quest **names**, graph is acyclic (`findQuestIdsInChainCycles` empty)
+- [ ] Spawn zones have `location`, gather zones have `zoneMob`, custom drops have entries
+- [ ] Dimension refs (`dimensionId`) exist in `project.dimensions`
+- [ ] `validateProject(project)` returns no `error`-level issues (`hasBlockingErrors` === false)
+- [ ] For custom mob skins: also export resource pack ZIP
+- [ ] After install: run `/function {namespace}:setup_guide`, spawn NPCs, test with `/function {namespace}:debug`
