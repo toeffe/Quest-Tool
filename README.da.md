@@ -6,7 +6,7 @@ En webbaseret quest-skaber til **Minecraft Java Edition 1.21.11**. Design RPG-ag
 quests, passive job-færdigheder og quest-kæder i browseren, og eksporter derefter en
 klar-til-installation **datapack** — uden behov for kommandoer, datapacks eller kodning.
 
-**Live demo:** [https://quest.toeffe.uk](https://quest.toeffe.uk)
+**Live demo:** [https://quest.t-tek.dev](https://quest.t-tek.dev)
 
 Alt kører client-side i browseren. Dit projekt gemmes automatisk i local
 storage; intet sendes til en server.
