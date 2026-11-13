@@ -6,7 +6,7 @@ A web-based quest creator for **Minecraft Java Edition 1.21.11**. Design RPG-sty
 quests, passive job skills, and quest chains in your browser, then export a
 ready-to-install **datapack** — no commands, datapacks, or coding knowledge required.
 
-**Live demo:** [https://quest.toeffe.uk](https://quest.t-tek.dev)
+**Live demo:** [https://quest.t-tek.dev](https://quest.t-tek.dev)
 
 Everything runs client-side in your browser. Your project auto-saves to local
 storage; nothing is sent to a server.
